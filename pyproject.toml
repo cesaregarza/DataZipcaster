@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "data_zipcaster"
+version = "0.1.0"
+description = "Import and Export SplatNet Data anywhere!"
+authors = ["Cesar E Garza <cesar@cegarza.com>"]
+license = "GPL-3.0-or-later"
+packages = [{include = "data_zipcaster"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+cmd2 = "^2.4.3"
+colorama = "^0.4.6"
+splatnet3-scraper = "^0.8.0"
+msgpack = "^1.0.5"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
+isort = "^5.12.0"
+mypy = "^1.0.1"
+flake8 = "^6.0.0"
+darglint = "^1.8.1"
+pytest = "^7.2.1"
+coverage = "^7.2.0"
+ipykernel = "^6.21.2"
+ipython = "^8.10.0"
+bs4 = "^0.0.1"
+pandas = "^2.0.1"
+numpy = "^1.24.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 80
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 80
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+pretty = true
+exclude = [".venv", "tests", "docs", "examples"]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = [
+    "-v",
+    "--tb=auto",
+    "--showlocals",
+    "--color=yes",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "internet: marks tests as requiring internet access (deselect with '-m \"not internet\"')",
+]
