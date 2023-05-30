@@ -9,6 +9,14 @@ from data_zipcaster.utils import base64_decode
 
 
 def extract_weapon_id(player: QueryResponse) -> int:
+    """Extracts the weapon ID from a player's data.
+
+    Args:
+        player (QueryResponse): The player's data.
+
+    Returns:
+        int: The weapon ID.
+    """
     weapon_id = cast(str, player[player_paths.WEAPON_ID])
     weapon_id = base64_decode(weapon_id)
     weapon_id = weapon_id[len("Weapon-") :]
@@ -16,6 +24,18 @@ def extract_weapon_id(player: QueryResponse) -> int:
 
 
 def extract_gear_stats(gear: QueryResponse) -> dict[str, str | list[str]]:
+    """Extracts the gear stats from a player's gear.
+
+    Args:
+        gear (QueryResponse): The player's gear.
+
+    Returns:
+        dict[str, str | list[str]]: The gear stats. The keys are as follows:
+
+        - ``primary_ability``: The primary ability.
+        - ``additional_abilities``: A list of additional abilities.
+    """
+
     def extract_stat(url: str) -> str:
         path = urlparse(url).path
         hash = path.split("/")[-1][:64]
@@ -39,6 +59,24 @@ def extract_gear_stats(gear: QueryResponse) -> dict[str, str | list[str]]:
 def extract_gear(
     player: QueryResponse,
 ) -> dict[str, dict[str, str | list[str]]]:
+    """Extracts the gear from a player's data.
+
+    Args:
+        player (QueryResponse): The player's data.
+
+    Returns:
+        dict[str, dict[str, str | list[str]]]: The gear. The keys are as
+        follows:
+
+        - ``headGear``: The headgear.
+        - ``clothingGear``: The clothing.
+        - ``shoesGear``: The shoes.
+
+        The values are dicts with the following keys:
+
+        - ``primary_ability``: The primary ability.
+        - ``additional_abilities``: A list of additional abilities.
+    """
     return {
         gear_path: extract_gear_stats(cast(QueryResponse, player[gear_path]))
         for gear_path in player_paths.GEARS
@@ -48,6 +86,40 @@ def extract_gear(
 def extract_player_data(
     player: QueryResponse, scoreboard_position: int
 ) -> dict[str, str | int | dict]:
+    """Extracts the player data from a player's data.
+
+    Args:
+        player (QueryResponse): The player's data.
+        scoreboard_position (int): The player's position on the scoreboard at
+            the end of the match.
+
+    Returns:
+        dict[str, str | int | dict]: The player data. The keys are as follows:
+
+        - ``name``: The player's name.
+        - ``me``: Whether the player is the user.
+        - ``player_number``: The player's number. A discriminator used to
+            differentiate players with the same name.
+        - ``splashtag``: The player's splashtag.
+        - ``weapon``: The player's weapon ID.
+        - ``inked``: The amount of turf inked.
+        - ``species``: The player's species. One of ``inkling`` or ``octoling``.
+        - ``scoreboard_position``: The player's position on the scoreboard at
+            the end of the match.
+        - ``gear``: The player's gear. See :func:`extract_gear` for details.
+        - ``disconnected``: Whether the player disconnected.
+
+        The following keys are only present if the player did not disconnect:
+
+        - ``kills_or_assists``: The number of kills and assists, combined.
+        - ``assists``: The number of assists.
+        - ``kills``: The number of kills.
+        - ``deaths``: The number of deaths.
+        - ``specials``: The number of specials used.
+        - ``signals``: The number of signals obtained.
+        - ``top_500_crown``: Whether the player has a top 500 crown in the
+            match.
+    """
     out = {}
     out["name"] = player[player_paths.NAME]
     out["me"] = player[player_paths.IS_MYSELF]

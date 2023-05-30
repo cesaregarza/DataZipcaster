@@ -5,6 +5,27 @@ from data_zipcaster.importers.splatnet.paths import vs_modes_paths
 
 
 def extract_splatfest_data(battle: QueryResponse) -> dict:
+    """Extracts relevant data from a Splatfest battle and returns it as a
+    dictionary.
+
+    Args:
+        battle (QueryResponse): The Splatfest battle to extract data from.
+
+    Returns:
+        dict: A dictionary containing the extracted data with the following
+            keys:
+
+            - ``clout_change``: The change in clout from the battle.
+            - ``fest_power``: The Splatfest Power of the battle.
+            - ``fest_dragon``: The Splatfest Dragon of the battle. This is only
+                present if the battle is a Dragon (10x, 100x, or 333x) battle.
+            - ``jewel``: Whether or not the player had a Splatfest Jewel
+                indicating they won a Dragon battle.
+            - ``our_team_theme``: The theme of the player's team.
+            - ``their_team_theme``: The theme of the opposing team.
+            - ``third_team_theme``: The theme of the third team. Only present
+                if the battle is a Tri-Color battle.
+    """
     dragon_match_type = battle[vs_modes_paths.DRAGON_MATCH]
     dragon_map = {
         "NORMAL": "1x",
@@ -31,6 +52,33 @@ def extract_splatfest_data(battle: QueryResponse) -> dict:
 
 
 def extract_turf_war_data(battle: QueryResponse) -> dict:
+    """Extracts relevant data from a Turf War battle and returns it as a
+    dictionary.
+
+    Args:
+        battle (QueryResponse): The Turf War battle to extract data from.
+
+    Returns:
+        dict: A dictionary containing the extracted data with the following
+            keys:
+
+            - ``our_team_ink``: The amount of ink the player's team inked.
+            - ``their_team_ink``: The amount of ink the opposing team inked.
+            - ``third_team_ink``: The amount of ink the third team inked. Only
+                present if the battle is a Tri-Color battle.
+            - ``our_team_percent``: The percentage of the map the player's team
+                inked.
+            - ``their_team_percent``: The percentage of the map the opposing
+                team inked.
+            - ``third_team_percent``: The percentage of the map the third team
+                inked. Only present if the battle is a Tri-Color battle.
+            - ``our_team_role``: The role the player's team had in the battle.
+                only present if the battle is a Tri-Color battle.
+            - ``their_team_role``: The role the opposing team had in the
+                battle. Only present if the battle is a Tri-Color battle.
+            - ``third_team_role``: The role the third team had in the battle.
+                Only present if the battle is a Tri-Color battle.
+    """
     teams, team_keys = get_teams_data(battle)
     out = {}
     for i, team in enumerate(teams):

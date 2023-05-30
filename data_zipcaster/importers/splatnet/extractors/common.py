@@ -7,7 +7,9 @@ from splatnet3_scraper.query import QueryResponse
 
 from data_zipcaster.assets import GEAR_HASHES
 from data_zipcaster.constants import MODES, NAMESPACES
-from data_zipcaster.importers.splatnet.extractors.players import extract_player_data
+from data_zipcaster.importers.splatnet.extractors.players import (
+    extract_player_data,
+)
 from data_zipcaster.importers.splatnet.paths import common_paths, vs_modes_paths
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
