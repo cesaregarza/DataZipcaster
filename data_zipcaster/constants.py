@@ -7,8 +7,7 @@ from typing import TypedDict, cast
 
 from data_zipcaster import __version__
 
-DEFAULT_USER_AGENT = f"stat.ink-reporter/{__version__}"
-TROLL_USER_AGENT = "s3s_premium/192.168.1.1"
+DEFAULT_USER_AGENT = f"data_zipcaster/{__version__}"
 
 
 # From S3S
