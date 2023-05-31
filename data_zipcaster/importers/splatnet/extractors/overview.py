@@ -166,6 +166,30 @@ def parse_a_match_series(
     }
 
 
+def extract_overview_xbattle(overview: QueryResponse) -> dict[str, dict]:
+    out = {}
+    for group in overview[overview_paths.X_BATTLE_HISTORY]:
+        group = cast(QueryResponse, group)
+        group_out = extract_x_match_group(group)
+        out.update(group_out)
+    return out
+
+
+def extract_x_match_group(group: QueryResponse) -> dict[str, dict]:
+    out = {}
+
+    group_matches = cast(QueryResponse, group[overview_paths.HISTORY_DETAILS])
+    win_count = cast(int, group[overview_paths.X_WIN_COUNT])
+    lose_count = cast(int, group[overview_paths.X_LOSE_COUNT])
+    x_power_after = cast(float | None, group[overview_paths.X_POWER_AFTER])
+
+    for idx, match in enumerate(group_matches):
+        match = cast(QueryResponse, match)
+        battle_id = match["id"]
+        sub_out = {}
+        pass
+
+
 def parse_judgement(judgement: str) -> str:
     match judgement.lower():
         case "win" | "lose" | "exempted_lose" | "draw":

@@ -6,6 +6,7 @@ from splatnet3_scraper.query import QueryResponse
 from data_zipcaster.assets import GEAR_HASHES
 from data_zipcaster.importers.splatnet.paths import gear_paths, player_paths
 from data_zipcaster.utils import base64_decode
+from data_zipcaster.json_keys import players as players_keys
 
 
 def extract_weapon_id(player: QueryResponse) -> int:
@@ -51,8 +52,8 @@ def extract_gear_stats(gear: QueryResponse) -> dict[str, str | list[str]]:
         sub_stat = extract_stat(sub_url)
         sub_stats.append(sub_stat)
     return {
-        "primary_ability": main_stat,
-        "additional_abilities": sub_stats,
+        players_keys.PRIMARY_ABILITY: main_stat,
+        players_keys.ADDITIONAL_ABILITIES: sub_stats,
     }
 
 
@@ -121,29 +122,29 @@ def extract_player_data(
             match.
     """
     out = {}
-    out["name"] = player[player_paths.NAME]
-    out["me"] = player[player_paths.IS_MYSELF]
+    out[players_keys.NAME] = player[player_paths.NAME]
+    out[players_keys.ME] = player[player_paths.IS_MYSELF]
     if number := player.get(player_paths.PLAYER_NUMBER):
-        out["player_number"] = str(number)
+        out[players_keys.PLAYER_NUMBER] = str(number)
 
-    out["splashtag"] = player[player_paths.SPLASHTAG]
-    out["weapon"] = extract_weapon_id(player)
-    out["inked"] = player[player_paths.INKED]
-    out["species"] = cast(str, player[player_paths.SPECIES]).lower()
-    out["scoreboard_position"] = scoreboard_position + 1
-    out["gear"] = extract_gear(player)
+    out[players_keys.SPLASHTAG] = player[player_paths.SPLASHTAG]
+    out[players_keys.WEAPON] = player[player_paths.WEAPON]
+    out[players_keys.INKED] = player[player_paths.INKED]
+    out[players_keys.SPECIES] = cast(str, player[player_paths.SPECIES]).lower()
+    out[players_keys.SCOREBOARD_POSITION] = scoreboard_position + 1
+    out[players_keys.GEAR] = extract_gear(player)
 
     # The following fields are empty if the player disconnected
     if player.get(player_paths.RESULT) is None:
-        out["disconnected"] = True
+        out[players_keys.DISCONNECTED] = True
         return out
 
-    out["kills_or_assists"] = player[player_paths.KILL_OR_ASSIST]
-    out["assists"] = player[player_paths.ASSIST]
-    out["kills"] = out["kills_or_assists"] - out["assists"]
-    out["deaths"] = player[player_paths.DEATH]
-    out["specials"] = player[player_paths.SPECIAL]
-    out["signals"] = player[player_paths.SIGNAL]
-    out["top_500_crown"] = player[player_paths.TOP_500_CROWN]
-    out["disconnected"] = False
+    out[players_keys.KILLS_OR_ASSISTS] = player[player_paths.KILL_OR_ASSIST]
+    out[players_keys.ASSISTS] = player[player_paths.ASSIST]
+    out[players_keys.KILLS] = out[players_keys.KILLS_OR_ASSISTS] - out[players_keys.ASSISTS]
+    out[players_keys.DEATHS] = player[player_paths.DEATH]
+    out[players_keys.SPECIALS] = player[player_paths.SPECIAL]
+    out[players_keys.SIGNALS] = player[player_paths.SIGNAL]
+    out[players_keys.TOP_500_CROWN] = player[player_paths.TOP_500_CROWN]
+    out[players_keys.DISCONNECTED] = False
     return out

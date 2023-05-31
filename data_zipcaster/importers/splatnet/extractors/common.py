@@ -12,7 +12,7 @@ from data_zipcaster.importers.splatnet.extractors.players import (
 )
 from data_zipcaster.importers.splatnet.paths import common_paths, vs_modes_paths
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
-
+from data_zipcaster.json_keys import teams as teams_keys
 
 def generate_match_uuid(battle_id: str, namespace: uuid.UUID) -> str:
     """Generates a match UUID from a battle ID.
@@ -155,7 +155,7 @@ def get_teams_data(
         battle[common_paths.MY_TEAM],
         *battle[common_paths.OTHER_TEAMS],
     ]
-    out_keys = ("our", "their", "third")
+    out_keys = teams_keys.TEAMS_KEYS
     return teams, out_keys
 
 
@@ -169,10 +169,10 @@ def extract_team_data(
         for idx, player in enumerate(team["players"]):
             player = cast(QueryResponse, player)
             team_data.append(extract_player_data(player, idx))
-        key = "%s_team_players" % team_name_keys[i]
+        key = teams_keys.PLAYERS_FORMAT % team_name_keys[i]
         color_str = color_from_percent_to_str(team["color"])
-        color_key = "%s_team_color" % team_name_keys[i]
-        result_key = "%s_team_result" % team_name_keys[i]
+        color_key = teams_keys.COLOR_FORMAT % team_name_keys[i]
+        result_key = teams_keys.RESULT_FORMAT % team_name_keys[i]
         out[key] = team_data
         out[color_key] = color_str
         try:
