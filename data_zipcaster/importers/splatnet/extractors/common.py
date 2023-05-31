@@ -11,8 +11,9 @@ from data_zipcaster.importers.splatnet.extractors.players import (
     extract_player_data,
 )
 from data_zipcaster.importers.splatnet.paths import common_paths, vs_modes_paths
-from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 from data_zipcaster.json_keys import teams as teams_keys
+from data_zipcaster.utils import base64_decode, color_from_percent_to_str
+
 
 def generate_match_uuid(battle_id: str, namespace: uuid.UUID) -> str:
     """Generates a match UUID from a battle ID.

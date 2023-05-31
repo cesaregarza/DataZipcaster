@@ -168,7 +168,7 @@ def parse_a_match_series(
 
 def extract_overview_xbattle(overview: QueryResponse) -> dict[str, dict]:
     out = {}
-    for group in overview[overview_paths.X_BATTLE_HISTORY]:
+    for group in overview[overview_paths.X_HISTORIES]:
         group = cast(QueryResponse, group)
         group_out = extract_x_match_group(group)
         out.update(group_out)

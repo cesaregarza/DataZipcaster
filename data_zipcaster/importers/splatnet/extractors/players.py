@@ -5,8 +5,8 @@ from splatnet3_scraper.query import QueryResponse
 
 from data_zipcaster.assets import GEAR_HASHES
 from data_zipcaster.importers.splatnet.paths import gear_paths, player_paths
-from data_zipcaster.utils import base64_decode
 from data_zipcaster.json_keys import players as players_keys
+from data_zipcaster.utils import base64_decode
 
 
 def extract_weapon_id(player: QueryResponse) -> int:
@@ -141,7 +141,9 @@ def extract_player_data(
 
     out[players_keys.KILLS_OR_ASSISTS] = player[player_paths.KILL_OR_ASSIST]
     out[players_keys.ASSISTS] = player[player_paths.ASSIST]
-    out[players_keys.KILLS] = out[players_keys.KILLS_OR_ASSISTS] - out[players_keys.ASSISTS]
+    out[players_keys.KILLS] = (
+        out[players_keys.KILLS_OR_ASSISTS] - out[players_keys.ASSISTS]
+    )
     out[players_keys.DEATHS] = player[player_paths.DEATH]
     out[players_keys.SPECIALS] = player[player_paths.SPECIAL]
     out[players_keys.SIGNALS] = player[player_paths.SIGNAL]
