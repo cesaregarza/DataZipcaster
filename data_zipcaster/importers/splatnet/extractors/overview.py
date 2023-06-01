@@ -8,6 +8,8 @@ from data_zipcaster.importers.splatnet.extractors.common import (
 )
 from data_zipcaster.importers.splatnet.paths import overview_paths
 from data_zipcaster.utils import parse_rank
+from data_zipcaster.json_keys import anarchy as a_keys
+from data_zipcaster.json_keys import xbattle as x_keys
 
 
 def extract_overview_anarchy(overview: QueryResponse) -> dict[str, dict]:
@@ -115,15 +117,15 @@ def extract_anarchy_open(overview_group: QueryResponse) -> dict:
         rank_before, s_rank_before = parse_rank(rank_before_str)
         rank_points = cast(int, match[overview_paths.A_OPEN_EARNED_RANK_POINTS])
         subout = {
-            "rank_before": rank_before,
-            "rank_before_s_plus": s_rank_before,
-            "rank_after": rank_before,
-            "rank_after_s_plus": s_rank_before,
-            "rank_exp_change": rank_points,
+            a_keys.RANK_BEFORE: rank_before,
+            a_keys.RANK_BEFORE_S_PLUS: s_rank_before,
+            a_keys.RANK_AFTER: rank_before,
+            a_keys.RANK_AFTER_S_PLUS: s_rank_before,
+            a_keys.RANK_EXP_CHANGE: rank_points,
         }
         if s_rank_before is None:
-            subout.pop("rank_before_s_plus")
-            subout.pop("rank_after_s_plus")
+            subout.pop(a_keys.RANK_BEFORE_S_PLUS)
+            subout.pop(a_keys.RANK_AFTER_S_PLUS)
         out[battle_id] = subout
     return out
 
@@ -140,14 +142,14 @@ def parse_a_last_match_series(
     rank_before_str = cast(str, match[overview_paths.NODE_RANK]).lower()
     rank_before, s_rank_before = parse_rank(rank_before_str)
     return {
-        "rank_before": rank_before,
-        "rank_before_s_plus": s_rank_before,
-        "rank_after": rank_after,
-        "rank_after_s_plus": s_rank_after,
-        "rank_exp_change": rank_points,
-        "is_rank_up": "yes" if is_rank_up else "no",
-        "challenge_win": win_count,
-        "challenge_lose": lose_count,
+        a_keys.RANK_BEFORE: rank_before,
+        a_keys.RANK_BEFORE_S_PLUS: s_rank_before,
+        a_keys.RANK_AFTER: rank_after,
+        a_keys.RANK_AFTER_S_PLUS: s_rank_after,
+        a_keys.RANK_EXP_CHANGE: rank_points,
+        a_keys.IS_RANK_UP: "yes" if is_rank_up else "no",
+        a_keys.CHALLENGE_WIN: win_count,
+        a_keys.CHALLENGE_LOSE: lose_count,
     }
 
 
@@ -157,12 +159,12 @@ def parse_a_match_series(
     rank_before_str = cast(str, match[overview_paths.NODE_RANK]).lower()
     rank_before, s_rank_before = parse_rank(rank_before_str)
     return {
-        "rank_before": rank_before,
-        "rank_before_s_plus": s_rank_before,
-        "rank_after": rank_before,
-        "rank_after_s_plus": s_rank_before,
-        "challenge_win": win_count,
-        "challenge_lose": lose_count,
+        a_keys.RANK_BEFORE: rank_before,
+        a_keys.RANK_BEFORE_S_PLUS: s_rank_before,
+        a_keys.RANK_AFTER: rank_before,
+        a_keys.RANK_AFTER_S_PLUS: s_rank_before,
+        a_keys.CHALLENGE_WIN: win_count,
+        a_keys.CHALLENGE_LOSE: lose_count,
     }
 
 
@@ -182,6 +184,7 @@ def extract_x_match_group(group: QueryResponse) -> dict[str, dict]:
     win_count = cast(int, group[overview_paths.X_WIN_COUNT])
     lose_count = cast(int, group[overview_paths.X_LOSE_COUNT])
     x_power_after = cast(float | None, group[overview_paths.X_POWER_AFTER])
+    state = cast(str, group[overview_paths.X_STATE]).lower()
 
     for idx, match in enumerate(group_matches):
         match = cast(QueryResponse, match)
@@ -202,18 +205,14 @@ def parse_judgement(judgement: str) -> str:
 
 def parse_x_match_series(
     x_power_after: float | None,
-    x_power_before: float | None,
     win_count: int,
     lose_count: int,
 ) -> dict:
     out = {
-        "x_power_before": x_power_before,
-        "x_power_after": x_power_after,
-        "challenge_win": win_count,
-        "challenge_lose": lose_count,
+        x_keys.X_POWER_AFTER: x_power_after,
+        x_keys.CHALLENGE_WIN: win_count,
+        x_keys.CHALLENGE_LOSE: lose_count,
     }
     if x_power_after is None:
-        out.pop("x_power_after")
-    if x_power_before is None:
-        out.pop("x_power_before")
+        out.pop(x_keys.X_POWER_AFTER)
     return out
