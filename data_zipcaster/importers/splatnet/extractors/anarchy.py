@@ -15,7 +15,6 @@ from data_zipcaster.importers.splatnet.extractors.common import (
 from data_zipcaster.importers.splatnet.extractors.overview import (
     extract_overview_anarchy,
 )
-from data_zipcaster.importers.splatnet.paths import vs_modes_paths
 
 
 def extract_anarchy(

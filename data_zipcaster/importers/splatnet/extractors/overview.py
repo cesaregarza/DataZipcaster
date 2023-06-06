@@ -7,9 +7,9 @@ from data_zipcaster.importers.splatnet.extractors.common import (
     parse_result,
 )
 from data_zipcaster.importers.splatnet.paths import overview_paths
-from data_zipcaster.utils import parse_rank
 from data_zipcaster.json_keys import anarchy as a_keys
 from data_zipcaster.json_keys import xbattle as x_keys
+from data_zipcaster.utils import parse_rank
 
 
 def extract_overview_anarchy(overview: QueryResponse) -> dict[str, dict]:
