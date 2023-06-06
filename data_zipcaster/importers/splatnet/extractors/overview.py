@@ -170,7 +170,7 @@ def parse_a_match_series(
 
 def extract_overview_xbattle(overview: QueryResponse) -> dict[str, dict]:
     out = {}
-    for group in overview[overview_paths.X_HISTORIES]:
+    for group in overview[overview_paths.X_HISTORY_GROUPS]:
         group = cast(QueryResponse, group)
         group_out = extract_x_match_group(group)
         out.update(group_out)
@@ -189,8 +189,20 @@ def extract_x_match_group(group: QueryResponse) -> dict[str, dict]:
     for idx, match in enumerate(group_matches):
         match = cast(QueryResponse, match)
         battle_id = match["id"]
-        sub_out = {}
-        pass
+        sub_out = parse_x_match_series(
+            x_power_after=x_power_after if idx == 0 else None,
+            win_count=win_count,
+            lose_count=lose_count,
+        )
+        judgement_str = cast(str, match[overview_paths.NODE_JUDGEMENT])
+        judgement = parse_judgement(judgement_str)
+        if judgement == "win":
+            win_count -= 1
+        elif judgement == "lose":
+            lose_count -= 1
+
+        out[battle_id] = sub_out
+    return out
 
 
 def parse_judgement(judgement: str) -> str:

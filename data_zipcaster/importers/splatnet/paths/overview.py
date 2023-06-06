@@ -28,7 +28,7 @@ X_HISTORY_GROUPS_ONLY_FIRST = (
     "historyGroupsOnlyFirst",
 )
 X_GROUP_DATA = "xBattleMatchChallenge"
-X_MEASURE = (X_GROUP_DATA, "xMatchMeasurement")
+X_MEASURE = "xMatchMeasurement"
 X_STATE = (X_MEASURE, "state")
 X_WIN_COUNT = (X_MEASURE, "winCount")
 X_LOSE_COUNT = (X_MEASURE, "loseCount")
