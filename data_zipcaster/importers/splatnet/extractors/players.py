@@ -1,4 +1,4 @@
-from typing import cast, Literal
+from typing import Literal, cast
 from urllib.parse import urlparse
 
 from splatnet3_scraper.query import QueryResponse
@@ -10,7 +10,6 @@ from data_zipcaster.importers.splatnet.types.players import (
     GearItemDict,
     PlayerDict,
 )
-from data_zipcaster.json_keys import players as players_keys
 from data_zipcaster.utils import base64_decode, cast_qr
 
 
@@ -70,8 +69,8 @@ def extract_gear(
         player (QueryResponse): The player's data.
 
     Returns:
-        dict[str, dict[str, str | list[str]]]: The gear. The keys are as
-        follows:
+        GearDict: The gear. The keys are as
+            follows:
 
         - ``headGear``: The headgear.
         - ``clothingGear``: The clothing.
@@ -116,7 +115,7 @@ def extract_player_data(
             the end of the match.
 
     Returns:
-        dict[str, str | int | dict]: The player data. The keys are as follows:
+        PlayerDict: The player data. The keys are as follows:
 
         - ``name``: The player's name.
         - ``me``: Whether the player is the user.
@@ -163,9 +162,7 @@ def extract_player_data(
     if number := player.get(player_paths.PLAYER_NUMBER):
         out["player_number"] = str(number)
 
-    if disconnected:
-        return out
-    else:
+    if not disconnected:
         out["kills_or_assists"] = player[player_paths.KILL_OR_ASSIST]
         out["assists"] = player[player_paths.ASSIST]
         out["kills"] = out["kills_or_assists"] - out["assists"]
@@ -173,4 +170,4 @@ def extract_player_data(
         out["specials"] = player[player_paths.SPECIAL]
         out["signals"] = player[player_paths.SIGNAL]
         out["top_500_crown"] = player[player_paths.TOP_500_CROWN]
-        return out
+    return out

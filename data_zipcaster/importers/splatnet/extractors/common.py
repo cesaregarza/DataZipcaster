@@ -54,6 +54,7 @@ def extract_mode(battle: QueryResponse) -> str:
     - ``1``: ``regular`` (regular battle)
     - ``2``: ``bankara_challenge`` (anarchy series battle)
     - ``3``: ``xbattle`` (x battle)
+    - ``4``: ``league`` (challenge battle)
     - ``5``: ``private`` (private battle)
     - ``51``: ``bankara-open`` (anarchy open battle)
     - ``6``: ``splatfest_open`` (splatfest open battle)
