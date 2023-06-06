@@ -1,12 +1,17 @@
-from typing import cast
+from typing import cast, Literal
 from urllib.parse import urlparse
 
 from splatnet3_scraper.query import QueryResponse
 
 from data_zipcaster.assets import GEAR_HASHES
 from data_zipcaster.importers.splatnet.paths import gear_paths, player_paths
+from data_zipcaster.importers.splatnet.types.players import (
+    GearDict,
+    GearItemDict,
+    PlayerDict,
+)
 from data_zipcaster.json_keys import players as players_keys
-from data_zipcaster.utils import base64_decode
+from data_zipcaster.utils import base64_decode, cast_qr
 
 
 def extract_weapon_id(player: QueryResponse) -> int:
@@ -24,17 +29,17 @@ def extract_weapon_id(player: QueryResponse) -> int:
     return int(weapon_id)
 
 
-def extract_gear_stats(gear: QueryResponse) -> dict[str, str | list[str]]:
+def extract_gear_stats(gear: QueryResponse) -> GearItemDict:
     """Extracts the gear stats from a player's gear.
 
     Args:
         gear (QueryResponse): The player's gear.
 
     Returns:
-        dict[str, str | list[str]]: The gear stats. The keys are as follows:
+        GearItemDict: The gear stats. The keys are as follows:
 
-        - ``primary_ability``: The primary ability.
-        - ``additional_abilities``: A list of additional abilities.
+        - ``primary_ability``: str: The main ability.
+        - ``additional_abilities``: list[str]: A list of additional abilities.
     """
 
     def extract_stat(url: str) -> str:
@@ -51,15 +56,14 @@ def extract_gear_stats(gear: QueryResponse) -> dict[str, str | list[str]]:
         sub_url = cast(str, sub[gear_paths.ADDITIONAL_ABILITIES_URL])
         sub_stat = extract_stat(sub_url)
         sub_stats.append(sub_stat)
-    return {
-        players_keys.PRIMARY_ABILITY: main_stat,
-        players_keys.ADDITIONAL_ABILITIES: sub_stats,
-    }
+    return GearItemDict(
+        primary_ability=main_stat, additional_abilities=sub_stats
+    )
 
 
 def extract_gear(
     player: QueryResponse,
-) -> dict[str, dict[str, str | list[str]]]:
+) -> GearDict:
     """Extracts the gear from a player's data.
 
     Args:
@@ -78,15 +82,32 @@ def extract_gear(
         - ``primary_ability``: The primary ability.
         - ``additional_abilities``: A list of additional abilities.
     """
-    return {
-        gear_path: extract_gear_stats(cast(QueryResponse, player[gear_path]))
-        for gear_path in player_paths.GEARS
-    }
+    headger = cast_qr(player[player_paths.HEADGEAR])
+    clothing = cast_qr(player[player_paths.CLOTHING])
+    shoes = cast_qr(player[player_paths.SHOES])
+    return GearDict(
+        headgear=extract_gear_stats(headger),
+        clothing=extract_gear_stats(clothing),
+        shoes=extract_gear_stats(shoes),
+    )
+
+
+def extract_species(player: QueryResponse) -> Literal["inkling", "octoling"]:
+    """Extracts the player's species from a player's data.
+
+    Args:
+        player (QueryResponse): The player's data.
+
+    Returns:
+        Literal["inkling", "octoling"]: The player's species.
+    """
+    species = cast(str, player[player_paths.SPECIES])
+    return cast(Literal["inkling", "octoling"], species.lower())
 
 
 def extract_player_data(
     player: QueryResponse, scoreboard_position: int
-) -> dict[str, str | int | dict]:
+) -> PlayerDict:
     """Extracts the player data from a player's data.
 
     Args:
@@ -121,35 +142,35 @@ def extract_player_data(
         - ``top_500_crown``: Whether the player has a top 500 crown in the
             match.
     """
-    out = {}
-    out[players_keys.NAME] = player[player_paths.NAME]
-    out[players_keys.ME] = player[player_paths.IS_MYSELF]
-    if number := player.get(player_paths.PLAYER_NUMBER):
-        out[players_keys.PLAYER_NUMBER] = str(number)
+    disconnected = player.get(player_paths.RESULT) is None
 
-    out[players_keys.SPLASHTAG] = player[player_paths.SPLASHTAG]
-    out[players_keys.WEAPON_NAME] = player[player_paths.WEAPON_NAME]
-    out[players_keys.WEAPON_ID] = extract_weapon_id(player)
-    out[players_keys.SUB_NAME] = player[player_paths.SUB_NAME]
-    out[players_keys.SPECIAL_NAME] = player[player_paths.SPECIAL_NAME]
-    out[players_keys.INKED] = player[player_paths.INKED]
-    out[players_keys.SPECIES] = cast(str, player[player_paths.SPECIES]).lower()
-    out[players_keys.SCOREBOARD_POSITION] = scoreboard_position + 1
-    out[players_keys.GEAR] = extract_gear(player)
-
-    # The following fields are empty if the player disconnected
-    if player.get(player_paths.RESULT) is None:
-        out[players_keys.DISCONNECTED] = True
-        return out
-
-    out[players_keys.KILLS_OR_ASSISTS] = player[player_paths.KILL_OR_ASSIST]
-    out[players_keys.ASSISTS] = player[player_paths.ASSIST]
-    out[players_keys.KILLS] = (
-        out[players_keys.KILLS_OR_ASSISTS] - out[players_keys.ASSISTS]
+    # Mandatory fields
+    out = PlayerDict(
+        name=player[player_paths.NAME],
+        me=player[player_paths.IS_MYSELF],
+        splashtag=player[player_paths.SPLASHTAG],
+        weapon_name=player[player_paths.WEAPON_NAME],
+        weapon_id=extract_weapon_id(player),
+        sub_name=player[player_paths.SUB_NAME],
+        special_name=player[player_paths.SPECIAL_NAME],
+        inked=player[player_paths.INKED],
+        species=extract_species(player),
+        scoreboard_position=scoreboard_position + 1,
+        gear=extract_gear(player),
+        disconnected=disconnected,
     )
-    out[players_keys.DEATHS] = player[player_paths.DEATH]
-    out[players_keys.SPECIALS] = player[player_paths.SPECIAL]
-    out[players_keys.SIGNALS] = player[player_paths.SIGNAL]
-    out[players_keys.TOP_500_CROWN] = player[player_paths.TOP_500_CROWN]
-    out[players_keys.DISCONNECTED] = False
-    return out
+    # Optional fields
+    if number := player.get(player_paths.PLAYER_NUMBER):
+        out["player_number"] = str(number)
+
+    if disconnected:
+        return out
+    else:
+        out["kills_or_assists"] = player[player_paths.KILL_OR_ASSIST]
+        out["assists"] = player[player_paths.ASSIST]
+        out["kills"] = out["kills_or_assists"] - out["assists"]
+        out["deaths"] = player[player_paths.DEATH]
+        out["specials"] = player[player_paths.SPECIAL]
+        out["signals"] = player[player_paths.SIGNAL]
+        out["top_500_crown"] = player[player_paths.TOP_500_CROWN]
+        return out

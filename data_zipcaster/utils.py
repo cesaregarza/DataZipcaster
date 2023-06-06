@@ -1,6 +1,6 @@
 import base64
 import re
-from typing import cast
+from typing import Any, cast
 
 from splatnet3_scraper.query import QueryResponse
 
@@ -66,3 +66,7 @@ def parse_rank(rank: str) -> tuple[str, int | None]:
         s_rank_val = int(s_rank_val)
 
     return cast(tuple[str, int | None], (rank_val, s_rank_val))
+
+
+def cast_qr(item: Any) -> QueryResponse:
+    return cast(QueryResponse, item)
