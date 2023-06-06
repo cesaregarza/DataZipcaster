@@ -2,10 +2,7 @@ from typing import cast
 
 from splatnet3_scraper.query import QueryResponse
 
-from data_zipcaster.importers.splatnet.extractors.common import (
-    extract_mode,
-    parse_result,
-)
+from data_zipcaster.importers.splatnet.extractors.common import parse_result
 from data_zipcaster.importers.splatnet.paths import overview_paths
 from data_zipcaster.json_keys import anarchy as a_keys
 from data_zipcaster.json_keys import xbattle as x_keys
@@ -46,7 +43,7 @@ def extract_overview_anarchy(overview: QueryResponse) -> dict[str, dict]:
         group = cast(QueryResponse, group)
         try:
             group_out = extract_anarchy_series_data(group)
-        except TypeError as e:
+        except TypeError as e:  # noqa
             # Anarchy Open has no series data
             group_out = extract_anarchy_open(group)
         out.update(group_out)
@@ -184,7 +181,6 @@ def extract_x_match_group(group: QueryResponse) -> dict[str, dict]:
     win_count = cast(int, group[overview_paths.X_WIN_COUNT])
     lose_count = cast(int, group[overview_paths.X_LOSE_COUNT])
     x_power_after = cast(float | None, group[overview_paths.X_POWER_AFTER])
-    state = cast(str, group[overview_paths.X_STATE]).lower()
 
     for idx, match in enumerate(group_matches):
         match = cast(QueryResponse, match)

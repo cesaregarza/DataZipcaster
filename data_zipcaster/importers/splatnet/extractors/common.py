@@ -1,12 +1,10 @@
 import datetime as dt
 import uuid
-from typing import Literal, cast
-from urllib.parse import urlparse
+from typing import Any, Literal, cast
 
 from splatnet3_scraper.query import QueryResponse
 
-from data_zipcaster.assets import GEAR_HASHES
-from data_zipcaster.constants import MODES, NAMESPACES
+from data_zipcaster.constants import MODES
 from data_zipcaster.importers.splatnet.extractors.players import (
     extract_player_data,
 )
@@ -104,6 +102,7 @@ def extract_rule(
             ``vsHistoryDetail``. This is the response from a
             ``vsHistoryDetail`` query from the ``splatnet3_scraper``
             package.
+        path (str | tuple[str, ...], optional): The path to the rule field.
 
     Returns:
         str: The rule of the battle. This is not to be confused with the mode of
@@ -123,6 +122,21 @@ def extract_rule(
 
 
 def extract_stage(battle: QueryResponse) -> str:
+    """Extracts the stage from a battle response.
+
+    Given a response from a ``vsHistoryDetail`` query, this method will extract
+    the stage and convert it to a string. The stage is extracted from the
+    path ``vsHistoryDetail`` -> ``stage`` -> ``id``. The ``id`` field is a
+    base64 encoded string, which is decoded and is of the form
+    ``VsStage-<stage_id>``. The ``stage_id`` is then returned.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        str: The stage where the battle took place. This is the stage ID, not
+            the stage name, to prevent language localization issues.
+    """
     stage_id = cast(str, battle[common_paths.STAGE])
     stage = base64_decode(stage_id)[len("VsStage-") :]
     return stage
@@ -156,15 +170,18 @@ def get_teams_data(
         battle[common_paths.MY_TEAM],
         *battle[common_paths.OTHER_TEAMS],
     ]
-    out_keys = teams_keys.TEAMS_KEYS
+    out_keys = cast(
+        tuple[Literal["our"], Literal["their"], Literal["third"]],
+        teams_keys.TEAMS_KEYS,
+    )
     return teams, out_keys
 
 
 def extract_team_data(
     battle: QueryResponse,
-) -> dict:
+) -> dict[str, Any]:
     teams, team_name_keys = get_teams_data(battle)
-    out = {}
+    out: dict = {}
     for i, team in enumerate(teams):
         team_data = []
         for idx, player in enumerate(team["players"]):
