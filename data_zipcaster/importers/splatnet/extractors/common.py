@@ -143,11 +143,39 @@ def extract_stage(battle: QueryResponse) -> str:
 
 
 def extract_result(battle: QueryResponse) -> str:
+    """Extracts the result from a battle response.
+
+    Given a response from a ``vsHistoryDetail`` query, this method will extract
+    the result and convert it to a string. The result is extracted from the
+    path ``vsHistoryDetail`` -> ``judgement``. This result is then parsed and
+    forced to lowercase. The parsing essentially just converts the result of
+    ``DEEMED_LOSE`` to ``lose``.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        str: The result of the battle. This is either ``win``, ``lose``, or
+            ``draw``.
+    """
     judgement = cast(str, battle[common_paths.JUDGEMENT])
     return parse_result(judgement)
 
 
 def parse_result(result: str) -> str:
+    """Parses the result of a battle.
+
+    This method parses the result of a battle and converts it to a string. The
+    result is forced to lowercase. The parsing essentially just converts the
+    result of ``DEEMED_LOSE`` to ``lose``.
+
+    Args:
+        result (str): The result of the battle.
+
+    Returns:
+        str: The result of the battle. This is either ``win``, ``lose``, or
+            ``draw``.
+    """
     if result == "DEEMED_LOSE":
         return "lose"
     return result.lower()
