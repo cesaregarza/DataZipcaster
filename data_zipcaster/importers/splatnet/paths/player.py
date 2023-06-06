@@ -1,10 +1,14 @@
-WEAPON = "weapon"
+WEAPON = ("weapon",)
 WEAPON_ID = (WEAPON, "id")
+WEAPON_NAME = (WEAPON, "name")
+SUB_NAME = (WEAPON, "subWeapon", "name")
+SPECIAL_NAME = (WEAPON, "specialWeapon", "name")
 HEADGEAR = "headGear"
 CLOTHING = "clothingGear"
 SHOES = "shoesGear"
 GEARS = [HEADGEAR, CLOTHING, SHOES]
 NAME = "name"
+ID = "id"
 IS_MYSELF = "isMyself"
 PLAYER_NUMBER = "nameId"
 NAMEPLATE = "nameplate"

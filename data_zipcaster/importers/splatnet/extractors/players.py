@@ -128,7 +128,10 @@ def extract_player_data(
         out[players_keys.PLAYER_NUMBER] = str(number)
 
     out[players_keys.SPLASHTAG] = player[player_paths.SPLASHTAG]
-    out[players_keys.WEAPON] = player[player_paths.WEAPON]
+    out[players_keys.WEAPON_NAME] = player[player_paths.WEAPON_NAME]
+    out[players_keys.WEAPON_ID] = extract_weapon_id(player)
+    out[players_keys.SUB_NAME] = player[player_paths.SUB_NAME]
+    out[players_keys.SPECIAL_NAME] = player[player_paths.SPECIAL_NAME]
     out[players_keys.INKED] = player[player_paths.INKED]
     out[players_keys.SPECIES] = cast(str, player[player_paths.SPECIES]).lower()
     out[players_keys.SCOREBOARD_POSITION] = scoreboard_position + 1
