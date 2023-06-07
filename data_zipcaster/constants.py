@@ -33,6 +33,12 @@ class MODES:
     X_BATTLE = Mode(
         name="X Battle", key="xbattle", properties=["xbattle"], _id=3
     )
+    LEAGUE_BATTLE = Mode(
+        name="Challenge Battle",
+        key="league",
+        properties=[],
+        _id=4,
+    )
     PRIVATE_BATTLE = Mode(
         name="Private Battle", key="private", properties=["private"], _id=5
     )

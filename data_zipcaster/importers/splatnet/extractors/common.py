@@ -1,6 +1,6 @@
 import datetime as dt
 import uuid
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypeGuard, cast
 
 from splatnet3_scraper.query import QueryResponse
 
@@ -10,6 +10,19 @@ from data_zipcaster.importers.splatnet.extractors.players import (
 )
 from data_zipcaster.importers.splatnet.paths import common_paths, vs_modes_paths
 from data_zipcaster.json_keys import teams as teams_keys
+from data_zipcaster.schemas.players import PlayerDict
+from data_zipcaster.schemas.typing import (
+    KnockoutType,
+    ModeType,
+    ResultType,
+    RuleType,
+)
+from data_zipcaster.schemas.vs_modes import (
+    MedalDict,
+    TeamDict,
+    TeamResult,
+    VsExtractDict,
+)
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
 
@@ -40,7 +53,7 @@ def generate_match_uuid(battle_id: str, namespace: uuid.UUID) -> str:
     return str(uuid.uuid5(namespace, battle_id[-52:]))
 
 
-def extract_mode(battle: QueryResponse) -> str:
+def extract_mode(battle: QueryResponse) -> ModeType:
     """Extracts and converts the mode from a battle response.
 
     Given a response from a ``vsHistoryDetail`` query, this method will extract
@@ -78,12 +91,12 @@ def extract_mode(battle: QueryResponse) -> str:
 
     mode_idx = mode_id[len("VsMode-") :]
 
-    return MODES.get_mode_by_id(mode_idx)["key"]
+    return cast(ModeType, MODES.get_mode_by_id(mode_idx)["key"])
 
 
 def extract_rule(
     battle: QueryResponse, path: str | tuple[str, ...] = common_paths.RULE
-) -> str:
+) -> RuleType:
     """Extracts and converts the rule from a battle response.
 
     Given a response from a ``vsHistoryDetail`` query, this method will extract
@@ -111,7 +124,7 @@ def extract_rule(
             is confusing, but is the terminology used by SplatNet 3.
     """
     rule = cast(str, battle[path]).lower()
-    rule_remap = {
+    rule_remap: dict[str, RuleType] = {
         "turf_war": "turf_war",
         "area": "splat_zones",  # Splat Zones
         "loft": "tower_control",  # Tower Control
@@ -143,7 +156,7 @@ def extract_stage(battle: QueryResponse) -> str:
     return stage
 
 
-def extract_result(battle: QueryResponse) -> str:
+def extract_result(battle: QueryResponse) -> ResultType:
     """Extracts the result from a battle response.
 
     Given a response from a ``vsHistoryDetail`` query, this method will extract
@@ -163,7 +176,11 @@ def extract_result(battle: QueryResponse) -> str:
     return parse_result(judgement)
 
 
-def parse_result(result: str) -> str:
+def is_result_type(judgement: str) -> TypeGuard[ResultType]:
+    return judgement in ["win", "lose", "exempted_lose", "draw"]
+
+
+def parse_result(judgement: str) -> ResultType:
     """Parses the result of a battle.
 
     This method parses the result of a battle and converts it to a string. The
@@ -174,12 +191,17 @@ def parse_result(result: str) -> str:
         result (str): The result of the battle.
 
     Returns:
-        str: The result of the battle. This is either ``win``, ``lose``, or
-            ``draw``.
+        str: The result of the battle. This is either ``win``, ``lose``,
+            ``exempted_lose``, or ``draw``.
     """
-    if result == "DEEMED_LOSE":
-        return "lose"
-    return result.lower()
+    judgement = judgement.lower()
+    if judgement == "deemed_lose":
+        judgement = "lose"
+
+    if is_result_type(judgement):
+        return judgement
+    else:
+        raise ValueError(f"Unknown judgement: {judgement}")
 
 
 def extract_start_time(battle: QueryResponse) -> float:
@@ -191,50 +213,49 @@ def extract_start_time(battle: QueryResponse) -> float:
 
 def get_teams_data(
     battle: QueryResponse,
-) -> tuple[
-    list[QueryResponse],
-    tuple[Literal["our"], Literal["their"], Literal["third"]],
-]:
+) -> list[QueryResponse]:
     teams = [
         battle[common_paths.MY_TEAM],
         *battle[common_paths.OTHER_TEAMS],
     ]
-    out_keys = cast(
-        tuple[Literal["our"], Literal["their"], Literal["third"]],
-        teams_keys.TEAMS_KEYS,
-    )
-    return teams, out_keys
+    return teams
 
 
 def extract_team_data(
     battle: QueryResponse,
-) -> dict[str, Any]:
-    teams, team_name_keys = get_teams_data(battle)
-    out: dict = {}
-    for i, team in enumerate(teams):
-        team_data = []
+) -> list[TeamDict]:
+    teams = get_teams_data(battle)
+    out: list[TeamDict] = []
+    for team in teams:
+        players: list[PlayerDict] = []
         for idx, player in enumerate(team["players"]):
             player = cast(QueryResponse, player)
-            team_data.append(extract_player_data(player, idx))
-        key = teams_keys.PLAYERS_FORMAT % team_name_keys[i]
+            players.append(extract_player_data(player, idx))
         color_str = color_from_percent_to_str(team["color"])
-        color_key = teams_keys.COLOR_FORMAT % team_name_keys[i]
-        result_key = teams_keys.RESULT_FORMAT % team_name_keys[i]
-        out[key] = team_data
-        out[color_key] = color_str
+        sub_out = TeamDict(
+            players=players,
+            color=color_str,
+        )
         try:
-            out[result_key] = team["result"].data
+            sub_out["result"] = team["result"].data
         except AttributeError:
             pass
+        out.append(sub_out)
     return out
 
 
-def extract_knockout(battle: QueryResponse) -> bool | None:
-    return cast(bool | None, battle.get(vs_modes_paths.KNOCKOUT))
+def extract_knockout(battle: QueryResponse) -> KnockoutType:
+    return cast(KnockoutType, battle.get(vs_modes_paths.KNOCKOUT))
 
 
-def extract_medals(battle: QueryResponse) -> list[dict]:
-    return cast(list[dict], battle[common_paths.MEDALS].data)
+def extract_medals(battle: QueryResponse) -> list[MedalDict]:
+    medal_data = cast(list[dict], battle[common_paths.MEDALS].data)
+    out: list[MedalDict] = []
+    for medal in medal_data:
+        medal_name = cast(str, medal[common_paths.NAME])
+        medal_rank = cast(Literal["GOLD", "SILVER"], medal[common_paths.RANK])
+        out.append(MedalDict(name=medal_name, rank=medal_rank))
+    return out
 
 
 def extract_duration(battle: QueryResponse) -> int:

@@ -9,3 +9,5 @@ OTHER_TEAMS = (VS_HISTORY_DETAIL, "otherTeams")
 MEDALS = (VS_HISTORY_DETAIL, "awards")
 DURATION = (VS_HISTORY_DETAIL, "duration")
 ID = (VS_HISTORY_DETAIL, "id")
+NAME = "name"
+RANK = "rank"

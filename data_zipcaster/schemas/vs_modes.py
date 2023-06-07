@@ -2,13 +2,14 @@ from typing import Literal
 
 from typing_extensions import NotRequired, TypedDict
 
-from data_zipcaster.importers.splatnet.types.aliases import (
+from data_zipcaster.schemas.overview import VsOverviewDict
+from data_zipcaster.schemas.players import PlayerDict
+from data_zipcaster.schemas.typing import (
     KnockoutType,
     ModeType,
     ResultType,
     RuleType,
 )
-from data_zipcaster.importers.splatnet.types.players import PlayerDict
 
 
 class MedalDict(TypedDict):
@@ -23,9 +24,9 @@ class TeamResult(TypedDict):
 
 
 class TeamDict(TypedDict):
-    team_players: list[PlayerDict]
-    team_color: str
-    team_result: NotRequired[TeamResult]
+    players: list[PlayerDict]
+    color: str
+    result: NotRequired[TeamResult]
 
 
 class VsExtractDict(TypedDict):
@@ -36,8 +37,7 @@ class VsExtractDict(TypedDict):
     stage: str
     start_time: float
     duration: int
-    our_team: TeamDict
-    their_team: TeamDict
-    third_team: NotRequired[TeamDict]
+    teams: list[TeamDict]
     medals: list[MedalDict]
     id: str
+    series_metadata: NotRequired[VsOverviewDict]
