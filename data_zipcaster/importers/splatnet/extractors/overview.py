@@ -1,20 +1,16 @@
-from typing import TypeAlias, cast
+from typing import cast
 
 from splatnet3_scraper.query import QueryResponse
 
 from data_zipcaster.importers.splatnet.extractors.common import parse_result
 from data_zipcaster.importers.splatnet.paths import overview_paths
-from data_zipcaster.json_keys import anarchy as a_keys
-from data_zipcaster.json_keys import xbattle as x_keys
 from data_zipcaster.schemas.overview import (
     AnarchyOpenOverviewDict,
     AnarchyOverviewDict,
     AnarchyOverviewOut,
     AnarchySeriesOverviewDict,
-    VsOverviewDict,
     XOverviewDict,
 )
-from data_zipcaster.schemas.typing import ResultType
 from data_zipcaster.utils import cast_qr, parse_rank
 
 

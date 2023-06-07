@@ -1,6 +1,6 @@
 import datetime as dt
 import uuid
-from typing import Any, Literal, TypeGuard, cast
+from typing import Literal, TypeGuard, cast
 
 from splatnet3_scraper.query import QueryResponse
 
@@ -9,7 +9,6 @@ from data_zipcaster.importers.splatnet.extractors.players import (
     extract_player_data,
 )
 from data_zipcaster.importers.splatnet.paths import common_paths, vs_modes_paths
-from data_zipcaster.json_keys import teams as teams_keys
 from data_zipcaster.schemas.players import PlayerDict
 from data_zipcaster.schemas.typing import (
     KnockoutType,
@@ -20,8 +19,6 @@ from data_zipcaster.schemas.typing import (
 from data_zipcaster.schemas.vs_modes import (
     MedalDict,
     TeamDict,
-    TeamResult,
-    VsExtractDict,
 )
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
@@ -81,10 +78,12 @@ def extract_mode(battle: QueryResponse) -> ModeType:
             package.
 
     Returns:
-        str: The mode of the battle. This is not to be confused with the
-            rule of the battle, which is what is commonly referred to as
-            the mode. This is confusing, but is the terminology used by
-            SplatNet 3.
+        ModeType: The mode of the battle. This is not to be confused with the
+            rule of the battle, which is what is commonly referred to as the
+            mode. This is confusing, but is the terminology used by SplatNet 3.
+            One of ``regular``, ``bankara_challenge``, ``xbattle``, ``league``,
+            ``private``, ``bankara-open``, ``splatfest_open``,
+            ``splatfest_challenge``, or ``splatfest_open``.
     """
     battle_id = battle[common_paths.MODE]
     mode_id = base64_decode(cast(str, battle_id))
@@ -119,9 +118,11 @@ def extract_rule(
         path (str | tuple[str, ...], optional): The path to the rule field.
 
     Returns:
-        str: The rule of the battle. This is not to be confused with the mode of
-            the battle, which is what the rule is commonly referred to as. This
-            is confusing, but is the terminology used by SplatNet 3.
+        RuleType: The rule of the battle. This is not to be confused with the
+            mode of the battle, which is what the rule is commonly referred to
+            as. This is confusing, but is the terminology used by SplatNet 3.
+            One of ``turf_war``, ``splat_zones``, ``tower_control``,
+            ``rainmaker``, ``clam_blitz``, or ``tricolor``.
     """
     rule = cast(str, battle[path]).lower()
     rule_remap: dict[str, RuleType] = {
@@ -169,8 +170,8 @@ def extract_result(battle: QueryResponse) -> ResultType:
         battle (QueryResponse): The base battle response.
 
     Returns:
-        str: The result of the battle. This is either ``win``, ``lose``, or
-            ``draw``.
+        ResultType: The result of the battle. This is either ``win``, ``lose``,
+            ``exempted_lose``, or ``draw``.
     """
     judgement = cast(str, battle[common_paths.JUDGEMENT])
     return parse_result(judgement)
@@ -188,10 +189,13 @@ def parse_result(judgement: str) -> ResultType:
     result of ``DEEMED_LOSE`` to ``lose``.
 
     Args:
-        result (str): The result of the battle.
+        judgement (str): The result of the battle.
+
+    Raises:
+        ValueError: If the judgement is not a valid result type.
 
     Returns:
-        str: The result of the battle. This is either ``win``, ``lose``,
+        ResultType: The result of the battle. This is either ``win``, ``lose``,
             ``exempted_lose``, or ``draw``.
     """
     judgement = judgement.lower()

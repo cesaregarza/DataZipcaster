@@ -47,6 +47,9 @@ def parse_rank(rank: str) -> tuple[str, int | None]:
     Args:
         rank (str): The rank string to parse.
 
+    Raises:
+        ValueError: If the rank string is invalid.
+
     Returns:
         tuple[str, str | None]: The parsed rank. The first element is the rank,
             so it will be one of ``c``, ``b``, ``a``, or ``s`` with an optional
