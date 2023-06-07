@@ -16,10 +16,7 @@ from data_zipcaster.schemas.typing import (
     ResultType,
     RuleType,
 )
-from data_zipcaster.schemas.vs_modes import (
-    MedalDict,
-    TeamDict,
-)
+from data_zipcaster.schemas.vs_modes import MedalDict, TeamDict
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
 
