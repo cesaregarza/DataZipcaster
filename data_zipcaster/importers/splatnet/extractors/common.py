@@ -178,6 +178,14 @@ def extract_result(battle: QueryResponse) -> ResultType:
 
 
 def is_result_type(judgement: str) -> TypeGuard[ResultType]:
+    """Type guard for ``ResultType``. Checks if the judgement is a valid result.
+
+    Args:
+        judgement (str): The judgement to check.
+
+    Returns:
+        TypeGuard[ResultType]: Whether or not the judgement is a valid result.
+    """
     return judgement in ["win", "lose", "exempted_lose", "draw"]
 
 
@@ -209,6 +217,20 @@ def parse_result(judgement: str) -> ResultType:
 
 
 def extract_start_time(battle: QueryResponse) -> float:
+    """Extracts the start time of a battle.
+
+    Given a response from a ``vsHistoryDetail`` query, this method will extract
+    the start time of the battle and convert it to a float. The start time is
+    extracted from the path ``vsHistoryDetail`` -> ``playedTime``. This is then
+    converted to a ``datetime`` object, which is then converted to a float
+    representing the number of seconds since the epoch.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        float: The start time of the battle, in seconds since the epoch.
+    """
     start_time = cast(str, battle[common_paths.PLAYED_TIME])
     absolute_time = dt.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ")
     epoch = dt.datetime.utcfromtimestamp(0)
@@ -218,23 +240,62 @@ def extract_start_time(battle: QueryResponse) -> float:
 def get_teams_data(
     battle: QueryResponse,
 ) -> list[QueryResponse]:
-    teams = [
+    """Gets the data for all teams in a battle.
+
+    Given a response from a ``vsHistoryDetail`` query, this method will extract
+    the data for all teams in the battle. This includes the player data for
+    each player on the team, as well as the team color and result. There will be
+    either two or three teams in a battle, depending on the game mode. The order
+    of the teams is as follows:
+
+    - Player's team, at index 0
+    - Enemy team, at index 1
+    - If the game mode is ``tricolor``, there will be a third team at index 2.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        list[QueryResponse]: The data for all teams in the battle, in the order
+            of [``our_team``, ``their_team``, ``third_team``].
+    """
+    return [
         battle[common_paths.MY_TEAM],
         *battle[common_paths.OTHER_TEAMS],
     ]
-    return teams
 
 
 def extract_team_data(
     battle: QueryResponse,
 ) -> list[TeamDict]:
+    """Extracts the data for all teams in a battle.
+
+    Given a response from a ``vsHistoryDetail`` query, this method will extract
+    the data for all teams in the battle. This includes the player data for
+    each player on the team, as well as the team color and result. There will be
+    either two or three teams in a battle, depending on the game mode. The order
+    of the teams is as follows:
+
+    - Player's team, at index 0
+    - Enemy team, at index 1
+    - If the game mode is ``tricolor``, there will be a third team at index 2.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        list[TeamDict]: The data for all teams in the battle, in the order of
+            [``our_team``, ``their_team``, ``third_team``].
+    """
     teams = get_teams_data(battle)
     out: list[TeamDict] = []
+
     for team in teams:
         players: list[PlayerDict] = []
         for idx, player in enumerate(team["players"]):
             player = cast(QueryResponse, player)
             players.append(extract_player_data(player, idx))
+
         color_str = color_from_percent_to_str(team["color"])
         sub_out = TeamDict(
             players=players,
@@ -249,10 +310,27 @@ def extract_team_data(
 
 
 def extract_knockout(battle: QueryResponse) -> KnockoutType:
+    """Extracts the knockout status of a battle.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        KnockoutType: The knockout status of the battle. This is either
+            ``win``, ``lose``, ``neither``, or None.
+    """
     return cast(KnockoutType, battle.get(vs_modes_paths.KNOCKOUT))
 
 
 def extract_medals(battle: QueryResponse) -> list[MedalDict]:
+    """Extracts the medals earned in a battle.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        list[MedalDict]: The medals earned in the battle.
+    """
     medal_data = cast(list[dict], battle[common_paths.MEDALS].data)
     out: list[MedalDict] = []
     for medal in medal_data:
@@ -263,8 +341,24 @@ def extract_medals(battle: QueryResponse) -> list[MedalDict]:
 
 
 def extract_duration(battle: QueryResponse) -> int:
+    """Extracts the duration of a battle.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        int: The duration of the battle, in seconds.
+    """
     return cast(int, battle[common_paths.DURATION])
 
 
 def extract_id(battle: QueryResponse) -> str:
+    """Extracts the ID of a battle.
+
+    Args:
+        battle (QueryResponse): The base battle response.
+
+    Returns:
+        str: The ID of the battle.
+    """
     return cast(str, battle[common_paths.ID])
