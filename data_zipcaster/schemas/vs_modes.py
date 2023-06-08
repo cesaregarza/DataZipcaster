@@ -41,3 +41,4 @@ class VsExtractDict(TypedDict):
     medals: list[MedalDict]
     id: str
     series_metadata: NotRequired[VsOverviewDict]
+    anarchy_power: NotRequired[float]

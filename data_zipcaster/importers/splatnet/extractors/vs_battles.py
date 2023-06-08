@@ -16,6 +16,7 @@ from data_zipcaster.importers.splatnet.extractors.overview import (
     extract_overview_anarchy,
     extract_overview_xbattle,
 )
+from data_zipcaster.importers.splatnet.paths.vs_modes import ANARCHY_POWER
 from data_zipcaster.schemas.overview import VsOverviewOut
 from data_zipcaster.schemas.vs_modes import VsExtractDict
 
@@ -71,6 +72,11 @@ def build_vs_extract(
 
         if (overview_data is not None) and (battle_id in overview_data):
             subout["series_metadata"] = overview_data[battle_id]
+
+        if (mode == "bankara_open") and (
+            (anarchy_power := battle[ANARCHY_POWER]) is not None
+        ):
+            subout["anarchy_power"] = anarchy_power
         out.append(subout)
     return out
 

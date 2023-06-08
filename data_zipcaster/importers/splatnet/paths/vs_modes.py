@@ -12,3 +12,6 @@ FEST_TEAM_NAME = (VS_HISTORY_DETAIL, "festTeamName")
 # Turf War
 PAINT_RATIO = (VS_HISTORY_DETAIL, "result", "paintRatio")
 TRI_COLOR_ROLE = (VS_HISTORY_DETAIL, "triColorRole")
+
+# Anarchy Open
+ANARCHY_POWER = (VS_HISTORY_DETAIL, "bankaraMatch", "bankaraPower", "power")

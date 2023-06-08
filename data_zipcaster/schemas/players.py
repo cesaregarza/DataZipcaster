@@ -4,6 +4,8 @@ from typing_extensions import NotRequired, TypedDict
 
 
 class GearItemDict(TypedDict):
+    name: str
+    brand: str
     primary_ability: str
     additional_abilities: list[str]
 

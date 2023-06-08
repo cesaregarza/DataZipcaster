@@ -33,6 +33,8 @@ def extract_gear_stats(gear: QueryResponse) -> GearItemDict:
     Returns:
         GearItemDict: The gear stats. The keys are as follows:
 
+        - ``name``: str: The name of the gear.
+        - ``brand``: str: The brand of the gear.
         - ``primary_ability``: str: The main ability.
         - ``additional_abilities``: list[str]: A list of additional abilities.
     """
@@ -42,6 +44,8 @@ def extract_gear_stats(gear: QueryResponse) -> GearItemDict:
         hash = path.split("/")[-1][:64]
         return GEAR_HASHES[hash]
 
+    gear_name = cast(str, gear[gear_paths.NAME])
+    gear_brand = cast(str, gear[gear_paths.BRAND])
     main_stat = extract_stat(cast(str, gear[gear_paths.PRIMARY_ABILITY]))
     sub_query_responses = cast(
         QueryResponse, gear[gear_paths.ADDITIONAL_ABILITIES]
@@ -52,7 +56,10 @@ def extract_gear_stats(gear: QueryResponse) -> GearItemDict:
         sub_stat = extract_stat(sub_url)
         sub_stats.append(sub_stat)
     return GearItemDict(
-        primary_ability=main_stat, additional_abilities=sub_stats
+        name=gear_name,
+        brand=gear_brand,
+        primary_ability=main_stat,
+        additional_abilities=sub_stats,
     )
 
 
