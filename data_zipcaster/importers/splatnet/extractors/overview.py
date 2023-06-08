@@ -17,33 +17,34 @@ from data_zipcaster.utils import cast_qr, parse_rank
 def extract_overview_anarchy(
     overview: QueryResponse,
 ) -> dict[str, AnarchyOverviewDict]:
-    """Extracts data from the overview of Anarchy data.
+    """Extracts the Anarchy metadata from the "Overview" data from SplatNet 3.
 
-    Given a QueryResponse object containing the overview of Anarchy data, from
-    the splatnet3_scraper query "get_vs_battles", this function extracts the
-    data from the overview. This includes the following data:
+    Given the "Overview" data from SplatNet 3, this function extracts the
+    Anarchy metadata from the data. This contains various metadata about the
+    Anarchy battles. This includes the following data:
 
     - ``rank_before``: The rank before the battle.
-    - ``s_rank_before``: The S+ rank before the battle. If the player is not
-        S+, this will be ``None``.
     - ``rank_after``: The rank after the battle.
-    - ``s_rank_after``: The S+ rank after the battle. If the player is not
-        S+, this will be ``None``.
-    - ``is_rank_up``: Whether the series is a rank-up series.
-    - ``challenge_win``: The number of wins so far in the challenge, after this
-        battle is included.
-    - ``challenge_lose``: The number of losses so far in the challenge, after
-        this battle is included.
-    - ``rank_exp_change`` (optional): The change in rank experience after the
-        series. This is only present for the last battle once a series is over.
+    - ``rank_before_s_plus`` (optional): The S+ rank before the battle.
+    - ``rank_after_s_plus`` (optional): The S+ rank after the battle.
+    - ``rank_exp_change`` (optional): The change in rank experience.
+
+    If the battle is an Anarchy Series battle, then the following data is also
+    included:
+
+    - ``series_win_count``: The number of wins in the series as of this battle.
+    - ``series_lose_count``: The number of losses in the series as of this
+        battle.
+    - ``is_rank_up`` (optional): Whether the series is a rank up series.
 
     Args:
         overview (QueryResponse): The overview of Anarchy data, from the
             ``splatnet3_scraper`` query ``get_vs_battles``.
 
     Returns:
-        dict: A dictionary containing the extracted data. The keys are as
-
+        dict[str, AnarchyOverviewDict]: A dictionary of ``AnarchyOverviewDict``
+            objects, keyed by the battle ID. This is the internal representation
+            of the data that importers convert to and exporters convert from.
     """
     out: dict[str, AnarchyOverviewDict] = {}
     for group in overview[overview_paths.A_HISTORY_GROUPS]:
@@ -60,6 +61,34 @@ def extract_overview_anarchy(
 def extract_anarchy_series_data(
     overview_group: QueryResponse,
 ) -> dict[str, AnarchySeriesOverviewDict]:
+    """Extracts the Anarchy Series metadata from the "Overview" data from
+    SplatNet 3.
+
+    Given the "Overview" data from SplatNet 3, this function extracts the
+    Anarchy Series metadata from the data. This contains various metadata about
+    the Anarchy Series battles. This includes the following data:
+
+    - ``rank_before``: The rank before the battle.
+    - ``rank_after``: The rank after the battle.
+    - ``rank_before_s_plus`` (optional): The S+ rank before the battle.
+    - ``rank_after_s_plus`` (optional): The S+ rank after the battle.
+    - ``rank_exp_change`` (optional): The change in rank experience.
+    - ``is_rank_up`` (optional): Whether the series is a rank up series.
+    - ``series_win_count``: The number of wins in the series as of this battle.
+    - ``series_lose_count``: The number of losses in the series as of this
+        battle.
+
+    Args:
+        overview_group (QueryResponse): The overview of Anarchy data, from the
+            ``splatnet3_scraper`` query ``get_vs_battles``. This is a single
+            series.
+
+    Returns:
+        dict[str, AnarchySeriesOverviewDict]: A dictionary of
+            ``AnarchySeriesOverviewDict`` objects, keyed by the battle ID. This
+            is the internal representation of the data that importers convert
+            to and exporters convert from.
+    """
     out: dict[str, AnarchySeriesOverviewDict] = {}
 
     try:
@@ -116,6 +145,30 @@ def extract_anarchy_series_data(
 def extract_anarchy_open(
     overview_group: QueryResponse,
 ) -> dict[str, AnarchyOpenOverviewDict]:
+    """Extracts the Anarchy Open metadata from the "Overview" data from
+    SplatNet 3.
+
+    Given the "Overview" data from SplatNet 3, this function extracts the
+    Anarchy Open metadata from the data. This contains various metadata about
+    the Anarchy Open battles. This includes the following data:
+
+    - ``rank_before``: The rank before the battle.
+    - ``rank_after``: The rank after the battle.
+    - ``rank_before_s_plus`` (optional): The S+ rank before the battle.
+    - ``rank_after_s_plus`` (optional): The S+ rank after the battle.
+    - ``rank_exp_change`` (optional): The change in rank experience.
+
+    Args:
+        overview_group (QueryResponse): The overview of Anarchy Open data, from
+            the ``splatnet3_scraper`` query ``get_vs_battles``. Realistically,
+            this is a single battle.
+
+    Returns:
+        dict[str, AnarchyOpenOverviewDict]: A dictionary of
+            ``AnarchyOpenOverviewDict`` objects, keyed by the battle ID. This
+            is the internal representation of the data that importers convert
+            to and exporters convert from.
+    """
     out: dict[str, AnarchyOpenOverviewDict] = {}
 
     group_matches = cast_qr(overview_group[overview_paths.HISTORY_DETAILS])
@@ -151,8 +204,30 @@ def parse_a_last_match_series(
     rank_points: int,
     is_rank_up: bool,
 ) -> AnarchySeriesOverviewDict:
+    """Parses the last match in an Anarchy series.
+
+    This function parses the last match in an Anarchy series. This is a special
+    case, as the last match in the series will have the overall result of the
+    series, as well as the rank after the series.
+
+    Args:
+        match (QueryResponse): The match data.
+        rank_after (str): The rank after the series is over.
+        s_rank_after (int | None): The S+ rank after the series is over. This
+            is ``None`` if the player is not at least S+0.
+        win_count (int): The number of wins in the series at the end of the
+            series.
+        lose_count (int): The number of losses in the series at the end of the
+            series.
+        rank_points (int): The number of rank points earned in the series.
+        is_rank_up (bool): Whether the series is a rank-up series.
+
+    Returns:
+        AnarchySeriesOverviewDict: The parsed data.
+    """
     rank_before_str = cast(str, match[overview_paths.NODE_RANK]).lower()
     rank_before, s_rank_before = parse_rank(rank_before_str)
+    # Series metadata
     out = AnarchySeriesOverviewDict(
         rank_before=rank_before,
         rank_after=rank_after,
@@ -171,6 +246,18 @@ def parse_a_last_match_series(
 def parse_a_match_series(
     match: QueryResponse, win_count: int, lose_count: int
 ) -> AnarchySeriesOverviewDict:
+    """Parses a match in an Anarchy series.
+
+    This function parses a match in an Anarchy series.
+
+    Args:
+        match (QueryResponse): The match data.
+        win_count (int): The number of wins at this point in the series.
+        lose_count (int): The number of losses at this point in the series.
+
+    Returns:
+        AnarchySeriesOverviewDict: The parsed data.
+    """
     rank_before_str = cast(str, match[overview_paths.NODE_RANK]).lower()
     rank_before, s_rank_before = parse_rank(rank_before_str)
     out = AnarchySeriesOverviewDict(
@@ -188,6 +275,25 @@ def parse_a_match_series(
 def extract_overview_xbattle(
     overview: QueryResponse,
 ) -> dict[str, XOverviewDict]:
+    """Extracts the Xbattle metadata from the "Overview" data from SplatNet 3.
+
+    Given the "Overview" data from SplatNet 3, this function extracts the
+    Xbattle metadata from the data. This contains various metadata about the
+    Xbattles. This includes the following data:
+
+    - ``series_win_count``: The number of wins at this point in the series.
+    - ``series_lose_count``: The number of losses at this point in the series.
+    - ``x_power_after`` (optional): The X Power after the match. This is not
+        present if the battle is not the last battle in the series.
+
+    Args:
+        overview (QueryResponse): The "Overview" data from SplatNet 3.
+
+    Returns:
+        dict[str, XOverviewDict]: A dictionary of ``XOverviewDict`` objects,
+            keyed by battle ID. This is the internal representation of the data
+            that importers convert to and exporters convert from.
+    """
     out = {}
     for group in overview[overview_paths.X_HISTORY_GROUPS]:
         group = cast(QueryResponse, group)
@@ -197,6 +303,25 @@ def extract_overview_xbattle(
 
 
 def extract_x_match_group(group: QueryResponse) -> dict[str, XOverviewDict]:
+    """Extracts the Xbattle metadata from the "Overview" data from SplatNet 3.
+
+    Given the "Overview" data from SplatNet 3, this function extracts the
+    Xbattle metadata from the data. This contains various metadata about the
+    Xbattles. This includes the following data:
+
+    - ``series_win_count``: The number of wins at this point in the series.
+    - ``series_lose_count``: The number of losses at this point in the series.
+    - ``x_power_after`` (optional): The X Power after the match. This is not
+        present if the battle is not the last battle in the series.
+
+    Args:
+        group (QueryResponse): The "Overview" data from SplatNet 3.
+
+    Returns:
+        dict[str, XOverviewDict]: A dictionary of ``XOverviewDict`` objects,
+            keyed by battle ID. This is the internal representation of the data
+            that importers convert to and exporters convert from.
+    """
     out = {}
 
     group_matches = cast(QueryResponse, group[overview_paths.HISTORY_DETAILS])
@@ -228,6 +353,19 @@ def parse_x_match_series(
     win_count: int,
     lose_count: int,
 ) -> XOverviewDict:
+    """Parses a match in an Xbattle series.
+
+    This function parses a match in an Xbattle series.
+
+    Args:
+        x_power_after (float | None): The X Power after the match. This is not
+            present if the battle is not the last battle in the series.
+        win_count (int): The number of wins at this point in the series.
+        lose_count (int): The number of losses at this point in the series.
+
+    Returns:
+        XOverviewDict: The parsed data.
+    """
     out = XOverviewDict(
         series_win_count=win_count,
         series_lose_count=lose_count,
