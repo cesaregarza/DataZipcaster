@@ -5,8 +5,17 @@ from splatnet3_scraper.query import QueryResponse
 
 from data_zipcaster.assets import GEAR_HASHES
 from data_zipcaster.importers.splatnet.paths import gear_paths, player_paths
-from data_zipcaster.schemas.players import GearDict, GearItemDict, PlayerDict
-from data_zipcaster.utils import base64_decode, cast_qr
+from data_zipcaster.schemas.players import (
+    GearDict,
+    GearItemDict,
+    NamePlateDict,
+    PlayerDict,
+)
+from data_zipcaster.utils import (
+    base64_decode,
+    cast_qr,
+    color_from_percent_to_str,
+)
 
 
 def extract_weapon_id(player: QueryResponse) -> int:
@@ -107,6 +116,42 @@ def extract_species(player: QueryResponse) -> Literal["inkling", "octoling"]:
     return cast(Literal["inkling", "octoling"], species.lower())
 
 
+def extract_nameplate(player: QueryResponse) -> NamePlateDict:
+    """Extracts the player's nameplate from a player's data.
+
+    Args:
+        player (QueryResponse): The player's data.
+
+    Returns:
+        NamePlateDict: The player's nameplate. The keys are as follows:
+
+        - ``badges``: A tuple of the player's badges. Each badge is a base64
+            encoded string, or ``None`` if the player has no badge at that slot.
+        - ``text_color``: The text color of the nameplate.
+        - ``background_id``: The background ID of the nameplate.
+    """
+    badges_qr = cast_qr(player[player_paths.BADGES])
+    badges = []
+    for badge in badges_qr:
+        if badge is None:
+            badges.append(None)
+            continue
+        badge_id = cast(str, badge[player_paths.ID])
+        badges.append(base64_decode(badge_id))
+
+    text_color_dict = cast_qr(player[player_paths.NAMEPLATE_TEXT_COLOR])
+    text_color = color_from_percent_to_str(text_color_dict)
+
+    background_id = base64_decode(
+        cast(str, player[player_paths.NAMEPLATE_BACKGROUND_ID])
+    )
+    return NamePlateDict(
+        badges=badges,
+        background_color=text_color,
+        background_id=background_id,
+    )
+
+
 def extract_player_data(
     player: QueryResponse, scoreboard_position: int
 ) -> PlayerDict:
@@ -151,6 +196,7 @@ def extract_player_data(
         name=player[player_paths.NAME],
         me=player[player_paths.IS_MYSELF],
         splashtag=player[player_paths.SPLASHTAG],
+        nameplate=extract_nameplate(player),
         weapon_name=player[player_paths.WEAPON_NAME],
         weapon_id=extract_weapon_id(player),
         sub_name=player[player_paths.SUB_NAME],

@@ -15,3 +15,7 @@ TRI_COLOR_ROLE = (VS_HISTORY_DETAIL, "triColorRole")
 
 # Anarchy Open
 ANARCHY_POWER = (VS_HISTORY_DETAIL, "bankaraMatch", "bankaraPower", "power")
+
+# Challenge
+CHALLENGE_POWER = (VS_HISTORY_DETAIL, "leagueMatch", "myLeaguePower")
+CHALLENGE_ID = (VS_HISTORY_DETAIL, "leagueMatch", "leagueMatchEvent", "id")

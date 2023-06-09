@@ -2,6 +2,8 @@ from typing import Literal
 
 from typing_extensions import NotRequired, TypedDict
 
+from data_zipcaster.schemas.typing import BadgeType
+
 
 class GearItemDict(TypedDict):
     name: str
@@ -16,11 +18,18 @@ class GearDict(TypedDict):
     shoes: GearItemDict
 
 
+class NamePlateDict(TypedDict):
+    badges: BadgeType
+    text_color: str
+    background_id: str
+
+
 class PlayerDict(TypedDict):
     name: str
     me: bool
     player_number: NotRequired[str]
     splashtag: str
+    nameplate: NamePlateDict
     weapon_name: str
     weapon_id: int
     sub_name: str

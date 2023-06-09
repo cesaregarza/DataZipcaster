@@ -63,7 +63,7 @@ def extract_mode(battle: QueryResponse) -> ModeType:
     - ``3``: ``xbattle`` (x battle)
     - ``4``: ``league`` (challenge battle)
     - ``5``: ``private`` (private battle)
-    - ``51``: ``bankara-open`` (anarchy open battle)
+    - ``51``: ``bankara_open`` (anarchy open battle)
     - ``6``: ``splatfest_open`` (splatfest open battle)
     - ``7``: ``splatfest_challenge`` (splatfest pro battle)
     - ``8``: ``splatfest_open`` (splatfest tricolor battle)

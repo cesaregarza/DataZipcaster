@@ -10,7 +10,7 @@ packages = [{include = "data_zipcaster"}]
 python = "^3.10"
 cmd2 = "^2.4.3"
 colorama = "^0.4.6"
-splatnet3-scraper = "^0.8.0"
+splatnet3-scraper = "^0.8.1"
 msgpack = "^1.0.5"
 
 

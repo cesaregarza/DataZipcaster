@@ -663,14 +663,14 @@ test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio"
 
 [[package]]
 name = "ipython"
-version = "8.13.2"
+version = "8.14.0"
 description = "IPython: Productive Interactive Computing"
 category = "dev"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "ipython-8.13.2-py3-none-any.whl", hash = "sha256:ffca270240fbd21b06b2974e14a86494d6d29290184e788275f55e0b55914926"},
-    {file = "ipython-8.13.2.tar.gz", hash = "sha256:7dff3fad32b97f6488e02f87b970f309d082f758d7b7fc252e3b19ee0e432dbb"},
+    {file = "ipython-8.14.0-py3-none-any.whl", hash = "sha256:248aca623f5c99a6635bc3857677b7320b9b8039f99f070ee0d20a5ca5a8e6bf"},
+    {file = "ipython-8.14.0.tar.gz", hash = "sha256:1d197b907b6ba441b692c48cf2a3a2de280dc0ac91a3405b39349a50272ca0a1"},
 ]
 
 [package.dependencies]
@@ -1527,14 +1527,14 @@ files = [
 
 [[package]]
 name = "splatnet3-scraper"
-version = "0.8.0"
+version = "0.8.1"
 description = "Scraper for SplatNet 3 for Splatoon 3"
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "splatnet3_scraper-0.8.0-py3-none-any.whl", hash = "sha256:a0f37ffbccf23141557914045055477fa394adb892800b27adb2cc3db87fc973"},
-    {file = "splatnet3_scraper-0.8.0.tar.gz", hash = "sha256:3428a370c5cd6034a64d56101ea8dd1ba807662b27b9e14041e7acaa3813b8c1"},
+    {file = "splatnet3_scraper-0.8.1-py3-none-any.whl", hash = "sha256:44f66f4b949ce1878e2632c56270b17dab1a2782f20b0f51cc882f700634cc72"},
+    {file = "splatnet3_scraper-0.8.1.tar.gz", hash = "sha256:530140213d39ee678f5ef2dc0cef9429e202da739cc8009c15b4b98c229c67e8"},
 ]
 
 [package.dependencies]
@@ -1639,14 +1639,14 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.0.2"
+version = "2.0.3"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "urllib3-2.0.2-py3-none-any.whl", hash = "sha256:d055c2f9d38dc53c808f6fdc8eab7360b6fdbbde02340ed25cfbcd817c62469e"},
-    {file = "urllib3-2.0.2.tar.gz", hash = "sha256:61717a1095d7e155cdb737ac7bb2f4324a858a1e2e6466f6d03ff630ca68d3cc"},
+    {file = "urllib3-2.0.3-py3-none-any.whl", hash = "sha256:48e7fafa40319d358848e1bc6809b208340fafe2096f1725d05d67443d0483d1"},
+    {file = "urllib3-2.0.3.tar.gz", hash = "sha256:bee28b5e56addb8226c96f7f13ac28cb4c301dd5ea8a6ca179c0b9835e032825"},
 ]
 
 [package.extras]
@@ -1670,4 +1670,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e8c1067a28716ed0d76ac9be1f468392442ba2be303ed5e0be99d718ad10b040"
+content-hash = "f14ff39563b42d7a6578939db45a6cd85a8a20bc169f50562512207c0bc90048"
