@@ -137,7 +137,7 @@ def extract_nameplate(player: QueryResponse) -> NamePlateDict:
         if badge is None:
             continue
         badge_id = cast(str, badge[player_paths.ID])
-        badges[i] = base64_decode(badge_id)
+        badges[i] = base64_decode(badge_id)[len("Badge-") :]
 
     badges_out = cast(BadgeType, tuple(badges))
 
@@ -150,7 +150,7 @@ def extract_nameplate(player: QueryResponse) -> NamePlateDict:
     return NamePlateDict(
         badges=badges_out,
         text_color=text_color,
-        background_id=background_id,
+        background_id=background_id[len("NameplateBackground-") :],
     )
 
 
@@ -188,8 +188,16 @@ def extract_player_data(
         - ``deaths``: The number of deaths.
         - ``specials``: The number of specials used.
         - ``signals``: The number of signals obtained.
-        - ``top_500_crown``: Whether the player has a top 500 crown in the
-            match.
+        - ``crown``: Whether the player has a "crown". This is a special badge
+            that is given to players within the top 500 players for the current
+            division and rule combination in X battles. Alternatively, this
+            will show up in two types within Splatfests: players who have won a
+            100x battle will have a small crown, and players who have won a
+            333x battle will have a large crown.
+        - ``crown_type``: The type of crown the player has. Will either be
+            ``DRAGON`` or ``DOUBLE_DRAGON`` to indicate 100x and 333x crowns,
+            respectively. This will not be present if the player does not have
+            a crown, or has a top 500 crown.
     """
     disconnected = player.get(player_paths.RESULT) is None
 
@@ -220,5 +228,12 @@ def extract_player_data(
         out["deaths"] = player[player_paths.DEATH]
         out["specials"] = player[player_paths.SPECIAL]
         out["signals"] = player[player_paths.SIGNAL]
-        out["top_500_crown"] = player[player_paths.TOP_500_CROWN]
+        out["crown"] = player[player_paths.CROWN]
+
+    if (crown_type := player.get(player_paths.CROWN_TYPE)) is not None and (
+        crown_type != "NONE"
+    ):
+        out["crown"] = True
+        out["crown_type"] = crown_type
+
     return out

@@ -26,4 +26,5 @@ ASSIST = (RESULT, "assist")
 DEATH = (RESULT, "death")
 SPECIAL = (RESULT, "special")
 SIGNAL = (RESULT, "noroshiTry")
-TOP_500_CROWN = "crown"
+CROWN = "crown"
+CROWN_TYPE = "festDragonCert"

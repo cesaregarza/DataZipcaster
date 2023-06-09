@@ -23,10 +23,17 @@ class TeamResult(TypedDict):
     noroshi: int | None
 
 
+class SplatfestDict(TypedDict):
+    team_name: str
+    synergy_bonus: NotRequired[str]
+    synergy_name: NotRequired[str]
+
+
 class TeamDict(TypedDict):
     players: list[PlayerDict]
     color: str
     result: NotRequired[TeamResult]
+    splatfest: NotRequired[SplatfestDict]
 
 
 class VsExtractDict(TypedDict):

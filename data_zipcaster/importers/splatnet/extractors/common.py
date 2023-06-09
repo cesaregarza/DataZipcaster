@@ -358,4 +358,5 @@ def extract_id(battle: QueryResponse) -> str:
     Returns:
         str: The ID of the battle.
     """
-    return cast(str, battle[common_paths.ID])
+    battle_id = cast(str, battle[common_paths.ID])
+    return base64_decode(battle_id)

@@ -45,4 +45,5 @@ class PlayerDict(TypedDict):
     deaths: NotRequired[int]
     specials: NotRequired[int]
     signals: NotRequired[int | None]
-    top_500_crown: NotRequired[bool]
+    crown: NotRequired[bool]
+    crown_type: NotRequired[Literal["DRAGON", "DOUBLE_DRAGON"]]
