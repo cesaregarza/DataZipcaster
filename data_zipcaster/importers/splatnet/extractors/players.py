@@ -11,6 +11,7 @@ from data_zipcaster.schemas.players import (
     NamePlateDict,
     PlayerDict,
 )
+from data_zipcaster.schemas.typing import BadgeType
 from data_zipcaster.utils import (
     base64_decode,
     cast_qr,
@@ -131,13 +132,14 @@ def extract_nameplate(player: QueryResponse) -> NamePlateDict:
         - ``background_id``: The background ID of the nameplate.
     """
     badges_qr = cast_qr(player[player_paths.BADGES])
-    badges = []
-    for badge in badges_qr:
+    badges: list[str | None] = [None] * 3
+    for i, badge in enumerate(badges_qr):
         if badge is None:
-            badges.append(None)
             continue
         badge_id = cast(str, badge[player_paths.ID])
-        badges.append(base64_decode(badge_id))
+        badges[i] = base64_decode(badge_id)
+
+    badges_out = cast(BadgeType, tuple(badges))
 
     text_color_dict = cast_qr(player[player_paths.NAMEPLATE_TEXT_COLOR])
     text_color = color_from_percent_to_str(text_color_dict)
@@ -146,8 +148,8 @@ def extract_nameplate(player: QueryResponse) -> NamePlateDict:
         cast(str, player[player_paths.NAMEPLATE_BACKGROUND_ID])
     )
     return NamePlateDict(
-        badges=badges,
-        background_color=text_color,
+        badges=badges_out,
+        text_color=text_color,
         background_id=background_id,
     )
 

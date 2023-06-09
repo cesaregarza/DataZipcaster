@@ -23,6 +23,7 @@ from data_zipcaster.importers.splatnet.paths.vs_modes import (
 )
 from data_zipcaster.schemas.overview import VsOverviewOut
 from data_zipcaster.schemas.vs_modes import VsExtractDict
+from data_zipcaster.utils import base64_decode
 
 
 def build_vs_extract(
@@ -85,7 +86,7 @@ def build_vs_extract(
             (challenge_power := battle[CHALLENGE_POWER]) is not None
         ):
             subout["match_power"] = challenge_power
-            subout["challenge_id"] = battle[CHALLENGE_ID]
+            subout["challenge_id"] = base64_decode(battle[CHALLENGE_ID])
         out.append(subout)
     return out
 
