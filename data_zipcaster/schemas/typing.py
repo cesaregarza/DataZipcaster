@@ -23,3 +23,7 @@ RuleType: TypeAlias = Literal[
 ResultType: TypeAlias = Literal["win", "lose", "draw", "exempted_lose"]
 
 BadgeType: TypeAlias = tuple[str | None, str | None, str | None]
+
+MatchMultiplierType: TypeAlias = Literal[
+    "NORMAL", "DECUPLE", "DRAGON", "DOUBLE_DRAGON"
+]

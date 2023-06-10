@@ -23,7 +23,7 @@ class TeamResult(TypedDict):
     noroshi: int | None
 
 
-class SplatfestDict(TypedDict):
+class SplatfestTeamDict(TypedDict):
     team_name: str
     synergy_bonus: NotRequired[str]
     synergy_name: NotRequired[str]
@@ -33,7 +33,13 @@ class TeamDict(TypedDict):
     players: list[PlayerDict]
     color: str
     result: NotRequired[TeamResult]
-    splatfest: NotRequired[SplatfestDict]
+    splatfest: NotRequired[SplatfestTeamDict]
+
+
+class SplatfestMetadataDict(TypedDict):
+    match_multiplier: int
+    clout: int
+    jewel: int
 
 
 class VsExtractDict(TypedDict):
@@ -50,3 +56,4 @@ class VsExtractDict(TypedDict):
     series_metadata: NotRequired[VsOverviewDict]
     match_power: NotRequired[float]
     challenge_id: NotRequired[str]
+    splatfest_metadata: NotRequired[SplatfestMetadataDict]

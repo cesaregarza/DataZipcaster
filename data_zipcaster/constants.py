@@ -113,3 +113,10 @@ RANKS = [
     "S",
     "S+",
 ]
+
+MATCH_MULTIPLIERS = {
+    "NORMAL": 1,
+    "DECUPLE": 10,
+    "DRAGON": 100,
+    "DOUBLE_DRAGON": 333,
+}

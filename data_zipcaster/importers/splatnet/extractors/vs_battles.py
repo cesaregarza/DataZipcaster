@@ -16,10 +16,14 @@ from data_zipcaster.importers.splatnet.extractors.overview import (
     extract_overview_anarchy,
     extract_overview_xbattle,
 )
+from data_zipcaster.importers.splatnet.extractors.turf import (
+    extract_splatfest_data,
+)
 from data_zipcaster.importers.splatnet.paths.vs_modes import (
     ANARCHY_POWER,
     CHALLENGE_ID,
     CHALLENGE_POWER,
+    FEST_POWER,
 )
 from data_zipcaster.schemas.overview import VsOverviewOut
 from data_zipcaster.schemas.vs_modes import VsExtractDict
@@ -87,7 +91,11 @@ def build_vs_extract(
         ):
             subout["match_power"] = challenge_power
             subout["challenge_id"] = base64_decode(battle[CHALLENGE_ID])
+        elif mode == "splatfest_challenge":
+            subout["splatfest_metadata"] = extract_splatfest_data(battle)
+            subout["match_power"] = battle[FEST_POWER]
         out.append(subout)
+
     return out
 
 
