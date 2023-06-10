@@ -298,11 +298,13 @@ def extract_team_data(
     out: list[TeamDict] = []
 
     for team in teams:
+        # Extract the player data
         players: list[PlayerDict] = []
         for idx, player in enumerate(team[team_paths.PLAYERS]):
             player = cast(QueryResponse, player)
             players.append(extract_player_data(player, idx))
 
+        # Extract the team data
         color_str = color_from_percent_to_str(team[team_paths.COLOR])
         order = cast(int, team[team_paths.ORDER])
         sub_out = TeamDict(
@@ -311,6 +313,7 @@ def extract_team_data(
             order=order,
         )
 
+        # Add the result data if it exists
         try:
             paint_ratio = cast(float | None, team[team_paths.PAINT_RATIO])
             score = cast(int | None, team[team_paths.SCORE])
@@ -324,6 +327,7 @@ def extract_team_data(
         except (AttributeError, TypeError):
             pass
 
+        # Add the splatfest team data if it exists
         if (
             splatfest_team_name := team.get(team_paths.SPLATFEST_TEAM_NAME)
         ) is not None:

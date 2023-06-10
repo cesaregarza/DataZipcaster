@@ -11,7 +11,7 @@ from data_zipcaster.schemas.overview import (
     AnarchySeriesOverviewDict,
     XOverviewDict,
 )
-from data_zipcaster.utils import cast_qr, parse_rank, base64_decode
+from data_zipcaster.utils import base64_decode, cast_qr, parse_rank
 
 
 def extract_overview_anarchy(
