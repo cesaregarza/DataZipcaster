@@ -11,7 +11,7 @@ from data_zipcaster.schemas.overview import (
     AnarchySeriesOverviewDict,
     XOverviewDict,
 )
-from data_zipcaster.utils import cast_qr, parse_rank
+from data_zipcaster.utils import cast_qr, parse_rank, base64_decode
 
 
 def extract_overview_anarchy(
@@ -109,7 +109,7 @@ def extract_anarchy_series_data(
     # Parse the series data in reverse order
     for idx, match in enumerate(group_matches):
         match = cast_qr(match)
-        battle_id = cast(str, match["id"])
+        battle_id = base64_decode(cast(str, match["id"]))
         # idx of 0 is the last match in the series, which has the rank after
         # if the series is over. Otherwise, parse the match as normal.
         if (idx == 0) and (rank_after is not None):
@@ -177,7 +177,7 @@ def extract_anarchy_open(
     # reverse order.
     for match in group_matches:
         match = cast_qr(match)
-        battle_id = cast(str, match["id"])
+        battle_id = base64_decode(cast(str, match["id"]))
         rank_before_str = cast(str, match[overview_paths.NODE_RANK]).lower()
 
         rank_before, s_rank_before = parse_rank(rank_before_str)
@@ -331,7 +331,7 @@ def extract_x_match_group(group: QueryResponse) -> dict[str, XOverviewDict]:
 
     for idx, match in enumerate(group_matches):
         match = cast(QueryResponse, match)
-        battle_id = match["id"]
+        battle_id = base64_decode(match["id"])
         sub_out = parse_x_match_series(
             x_power_after=x_power_after if idx == 0 else None,
             win_count=win_count,

@@ -8,7 +8,11 @@ from data_zipcaster.constants import MODES
 from data_zipcaster.importers.splatnet.extractors.players import (
     extract_player_data,
 )
-from data_zipcaster.importers.splatnet.paths import common_paths, vs_modes_paths
+from data_zipcaster.importers.splatnet.paths import (
+    common_paths,
+    team_paths,
+    vs_modes_paths,
+)
 from data_zipcaster.schemas.players import PlayerDict
 from data_zipcaster.schemas.typing import (
     KnockoutType,
@@ -16,7 +20,12 @@ from data_zipcaster.schemas.typing import (
     ResultType,
     RuleType,
 )
-from data_zipcaster.schemas.vs_modes import MedalDict, TeamDict
+from data_zipcaster.schemas.vs_modes import (
+    MedalDict,
+    SplatfestTeamDict,
+    TeamDict,
+    TeamResult,
+)
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
 
@@ -129,6 +138,7 @@ def extract_rule(
         "goal": "rainmaker",  # Rainmaker
         "clam": "clam_blitz",  # Clam Blitz
         "tricolor": "tricolor",
+        "tri_color": "tricolor",
     }
     return rule_remap[rule]
 
@@ -289,19 +299,53 @@ def extract_team_data(
 
     for team in teams:
         players: list[PlayerDict] = []
-        for idx, player in enumerate(team["players"]):
+        for idx, player in enumerate(team[team_paths.PLAYERS]):
             player = cast(QueryResponse, player)
             players.append(extract_player_data(player, idx))
 
-        color_str = color_from_percent_to_str(team["color"])
+        color_str = color_from_percent_to_str(team[team_paths.COLOR])
+        order = cast(int, team[team_paths.ORDER])
         sub_out = TeamDict(
             players=players,
             color=color_str,
+            order=order,
         )
+
         try:
-            sub_out["result"] = team["result"].data
-        except AttributeError:
+            paint_ratio = cast(float | None, team[team_paths.PAINT_RATIO])
+            score = cast(int | None, team[team_paths.SCORE])
+            noroshi = cast(int | None, team[team_paths.NOROSHI])
+
+            sub_out["result"] = TeamResult(
+                paint_ratio=paint_ratio,
+                score=score,
+                noroshi=noroshi,
+            )
+        except (AttributeError, TypeError):
             pass
+
+        if (
+            splatfest_team_name := team.get(team_paths.SPLATFEST_TEAM_NAME)
+        ) is not None:
+            tricolor_role = cast(str, team[team_paths.TRI_COLOR_ROLE])
+            synergy_bonus = cast(float, team.get(team_paths.SYNERGY_BONUS))
+            synergy_name = cast(str, team.get(team_paths.SYNERGY_NAME))
+            splatfest_team_data = SplatfestTeamDict(
+                team_name=splatfest_team_name,
+            )
+            if tricolor_role is not None:
+                tricolor = cast(
+                    Literal["defense", "attack1", "attack2"],
+                    tricolor_role.lower(),
+                )
+                splatfest_team_data["tricolor_role"] = tricolor
+            if synergy_bonus is not None:
+                splatfest_team_data["synergy_bonus"] = synergy_bonus
+            if synergy_name is not None:
+                splatfest_team_data["synergy_name"] = synergy_name
+
+            sub_out["splatfest"] = splatfest_team_data
+
         out.append(sub_out)
     return out
 

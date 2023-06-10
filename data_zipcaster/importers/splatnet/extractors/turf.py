@@ -3,7 +3,6 @@ from typing import cast
 from splatnet3_scraper.query import QueryResponse
 
 from data_zipcaster.constants import MATCH_MULTIPLIERS
-from data_zipcaster.importers.splatnet.extractors.common import get_teams_data
 from data_zipcaster.importers.splatnet.paths import vs_modes_paths
 from data_zipcaster.schemas.typing import MatchMultiplierType
 from data_zipcaster.schemas.vs_modes import SplatfestMetadataDict

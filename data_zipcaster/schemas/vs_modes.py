@@ -25,13 +25,15 @@ class TeamResult(TypedDict):
 
 class SplatfestTeamDict(TypedDict):
     team_name: str
-    synergy_bonus: NotRequired[str]
+    synergy_bonus: NotRequired[float]
     synergy_name: NotRequired[str]
+    tricolor_role: NotRequired[Literal["defense", "attack1", "attack2"]]
 
 
 class TeamDict(TypedDict):
     players: list[PlayerDict]
     color: str
+    order: int
     result: NotRequired[TeamResult]
     splatfest: NotRequired[SplatfestTeamDict]
 
