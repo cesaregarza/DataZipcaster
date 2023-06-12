@@ -8,10 +8,10 @@ packages = [{include = "data_zipcaster"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-cmd2 = "^2.4.3"
 colorama = "^0.4.6"
 splatnet3-scraper = "^0.8.1"
 msgpack = "^1.0.5"
+rich-click = "^1.6.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -47,7 +47,7 @@ line_length = 80
 python_version = "3.10"
 ignore_missing_imports = true
 pretty = true
-exclude = [".venv", "tests", "docs", "examples"]
+exclude = [".venv", "tests", "docs", "examples", "data_zipcaster/cli"]
 
 [tool.pytest.ini_options]
 testpaths = "tests"

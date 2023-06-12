@@ -8,6 +8,7 @@ exclude =
     test.py
     .venv
     docs
+    data_zipcaster/cli
 [darglint]
 docstring_style = google
 strictness = full
