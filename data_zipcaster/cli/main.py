@@ -3,7 +3,13 @@ import time
 from typing import Callable, ParamSpec, TypeVar
 
 import rich_click as click
+import splatnet3_scraper as sn3s
 from rich import print
+
+from data_zipcaster import exporters, importers
+from data_zipcaster.base_plugin import BasePlugin
+from data_zipcaster.cli.config_reader import read_config
+from data_zipcaster.cli.plugin_discover import discover_plugins
 
 click.rich_click.USE_RICH_MARKUP = True
 
@@ -11,8 +17,20 @@ BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 DATA_ZIPCASTER_TEXT = "[bold green]Data Zipcaster[/bold green]"
 
+EXPORTERS = discover_plugins(exporters, BasePlugin)
+IMPORTERS = discover_plugins(importers, BasePlugin)
+
 
 @click.group(invoke_without_command=True)
+@click.option(
+    "--config",
+    type=click.Path(exists=False, dir_okay=False),
+    help=(
+        "Path to the config file. If not specified, the default path is "
+        + "[bold yellow]config.ini[/] in the current directory."
+    ),
+    default=os.path.join(os.getcwd(), "config.ini"),
+)
 @click.option(
     "-e",
     "--exporter",
@@ -27,7 +45,7 @@ DATA_ZIPCASTER_TEXT = "[bold green]Data Zipcaster[/bold green]"
 @click.option(
     "-i",
     "--importer",
-    type=str,
+    type=click.Choice([plugin.name for plugin in IMPORTERS]),
     required=True,
     help="Which [yellow bold]importer[/] to use. Can only be specified once.",
     default="splatnet",
@@ -76,8 +94,9 @@ DATA_ZIPCASTER_TEXT = "[bold green]Data Zipcaster[/bold green]"
 @click.pass_context
 def main(
     ctx: click.Context,
-    export: list[str],
-    ingest: str,
+    config: str,
+    exporter: list[str],
+    importer: str,
     s: bool,
     x: bool,
     t: bool,
@@ -96,8 +115,9 @@ def main(
     if ctx.invoked_subcommand is None:
         __main(
             ctx,
-            export,
-            ingest,
+            config,
+            exporter,
+            importer,
             s,
             x,
             t,
@@ -113,8 +133,9 @@ def main(
 
 def __main(
     ctx: click.Context,
-    export: list[str],
-    import_: str,
+    config_path: str,
+    exporter: list[str],
+    importer: str,
     s: bool,
     x: bool,
     t: bool,
@@ -148,6 +169,11 @@ def __main(
         flag_anarchy,
         flag_private,
     )
+
+    # Get the importer
+    selected_importer = [imp for imp in IMPORTERS if imp.name == importer][0]
+    config = read_config(config_path)
+    data = selected_importer.run(config)
 
 
 def manage_flags(
