@@ -168,3 +168,6 @@ tokens.ini
 !reports/junit/*.html
 reports/flake8/*.css
 !gear_hashes.json
+
+# Data Zipcaster files
+config.ini

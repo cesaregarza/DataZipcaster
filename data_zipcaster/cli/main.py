@@ -9,6 +9,7 @@ from rich import print
 from data_zipcaster import exporters, importers
 from data_zipcaster.base_plugin import BasePlugin
 from data_zipcaster.cli.config_reader import read_config
+from data_zipcaster.cli.constants import FLAGS
 from data_zipcaster.cli.plugin_discover import discover_plugins
 
 click.rich_click.USE_RICH_MARKUP = True
@@ -170,10 +171,18 @@ def __main(
         flag_private,
     )
 
+    flags = {
+        FLAGS.SALMON: flag_salmon,
+        FLAGS.XBATTLE: flag_xbattle,
+        FLAGS.TURF: flag_turf,
+        FLAGS.ANARCHY: flag_anarchy,
+        FLAGS.PRIVATE: flag_private,
+    }
+
     # Get the importer
     selected_importer = [imp for imp in IMPORTERS if imp.name == importer][0]
     config = read_config(config_path)
-    data = selected_importer.run(config)
+    data = selected_importer.run(config, flags)
 
 
 def manage_flags(
