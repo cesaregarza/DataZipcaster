@@ -1,13 +1,13 @@
 import importlib
 import pkgutil
-from typing import Type
+from typing import Type, TypeVar
 
 from data_zipcaster.base_plugin import BasePlugin
 
+T = TypeVar("T")
 
-def discover_plugins(
-    package, base_class: Type[BasePlugin]
-) -> list[Type[BasePlugin]]:
+
+def discover_plugins(package, base_class: Type[T]) -> list[Type[T]]:
     """Discovers all plugins in a package.
 
     Args:

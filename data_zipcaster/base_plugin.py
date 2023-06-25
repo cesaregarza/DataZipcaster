@@ -1,4 +1,8 @@
 from abc import ABC, abstractmethod, abstractproperty
+from typing import Callable, ParamSpec, Type, TypeVar
+
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class BasePlugin(ABC):
@@ -22,37 +26,8 @@ class BasePlugin(ABC):
         """
         pass
 
-    @abstractproperty
-    def requires_config(self) -> bool:
-        """Whether or not the plugin requires a config file. If this is True,
-        the plugin will not be loaded if the config file is not found.
-
-        Returns:
-            bool: Whether or not the plugin requires a config file.
-        """
-        pass
-
-    def verify_config(self, config: dict[str, dict[str, str]]) -> bool:
-        """Verifies that the config file has the required information for the
-        plugin to run. This function is called before the plugin is loaded, only
-        if the ``requires_config`` property is True. If this function returns
-        False, the plugin will not be loaded.
-
-        Args:
-            config (dict[str, str]): The config dictionary. The keys are the
-                section names in the config file.
-
-        Returns:
-            bool: Whether or not the config file has the required information
-                for the plugin to run.
-        """
-        return self.name in config
-
     def run(
         self,
-        config: dict[str, dict[str, str]],
-        flags: dict[str, bool],
-        *args,
         **kwargs,
     ):
         """The function that will be called when the plugin's command is
@@ -73,13 +48,8 @@ class BasePlugin(ABC):
             *args: The arguments passed to the plugin's command.
             **kwargs: The keyword arguments passed to the plugin's command.
         """
-        if self.requires_config and not self.verify_config(config):
-            raise KeyError(
-                f"The plugin {self.name} requires a config file, but the "
-                + "config file does not have the required information."
-            )
 
-        self.do_run(config, flags, *args, **kwargs)
+        self.do_run(**kwargs)
 
     @abstractmethod
     def do_run(
@@ -109,3 +79,23 @@ class BasePlugin(ABC):
             **kwargs: The keyword arguments passed to the plugin's command.
         """
         pass
+
+    def add_exporters(
+        self, exporters: list[Type["BasePlugin"]]
+    ) -> Callable[P, T]:
+        """Decorator to add exporters to the plugin.
+
+        Args:
+            exporters (list[Type[BasePlugin]]): A list of exporters to add to
+                the plugin.
+
+        Returns:
+            Callable[P, T]: The decorated function.
+        """
+
+        for exporter in exporters:
+            exporter_object = exporter()
+            # TODO 6/25/2023: Finish this function. This function should run
+            # after do_run and should take the output of do_run and pass it to
+            # the exporters, running each exporter in the order they were
+            # passed to the CLI.
