@@ -122,7 +122,7 @@ class SplatNetImporter(BaseImporter):
                 token_manager.add_token(bullet_token, TOKENS.BULLET_TOKEN)
             return out
         else:
-            raise ValueError(
+            raise click.ClickException(
                 "No session token was provided. Please provide a session token "
                 + "by adding ``session_token = <your session token>`` to the "
                 + "``[splatnet]`` section of your config file"
@@ -130,12 +130,72 @@ class SplatNetImporter(BaseImporter):
 
     def do_run(
         self,
-        config: dict[str, dict[str, str]],
-        flags: dict[str, bool],
-        *args,
         **kwargs,
     ):
-        settings = config.get("settings", None)
-        config_data = config[self.name]
+        a = 1 + 1
+        return a
 
-        scraper = self.get_scraper(config_data)
+    def parse_flags(
+        self, kwargs: dict
+    ) -> tuple[bool, bool, bool, bool, bool, bool]:
+        flag_all = kwargs.get("all", False)
+        flag_salmon = kwargs.get("salmon", False)
+        flag_xbattle = kwargs.get("xbattle", False)
+        flag_turf = kwargs.get("turf", False)
+        flag_anarchy = kwargs.get("anarchy", False)
+        flag_private = kwargs.get("private", False)
+        flag_challenge = kwargs.get("challenge", False)
+
+        return self.manage_flags(
+            flag_all,
+            flag_salmon,
+            flag_xbattle,
+            flag_turf,
+            flag_anarchy,
+            flag_private,
+            flag_challenge,
+        )
+
+    def manage_flags(
+        self,
+        flag_all: bool,
+        flag_salmon: bool,
+        flag_xbattle: bool,
+        flag_turf: bool,
+        flag_anarchy: bool,
+        flag_private: bool,
+        flag_challenge: bool,
+    ) -> tuple[bool, bool, bool, bool, bool, bool, bool]:
+        non_all_flags = [
+            flag_salmon,
+            flag_xbattle,
+            flag_turf,
+            flag_anarchy,
+            flag_private,
+            flag_challenge,
+        ]
+        # This will be True if all is True, or if all the flags are True
+        flag_all = (flag_all) or all(non_all_flags)
+
+        # If all the flags are false, then set all to True
+        if not any(non_all_flags):
+            flag_all = True
+
+        # If all is True, then set all the flags to True
+        if flag_all:
+            flag_salmon = True
+            flag_xbattle = True
+            flag_turf = True
+            flag_anarchy = True
+            flag_private = True
+            flag_challenge = True
+
+        return (
+            flag_all,
+            flag_salmon,
+            flag_xbattle,
+            flag_turf,
+            flag_anarchy,
+            flag_private,
+            flag_challenge,
+        )

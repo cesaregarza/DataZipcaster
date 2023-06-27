@@ -1,18 +1,16 @@
-import os
-import time
-from typing import Callable, ParamSpec, TypeVar
-
 import rich_click as click
-import splatnet3_scraper as sn3s
-from rich import print
 
 from data_zipcaster import exporters, importers
 from data_zipcaster.base_plugins import BaseExporter, BaseImporter
-from data_zipcaster.cli.config_reader import read_config
-from data_zipcaster.cli.constants import FLAGS
 from data_zipcaster.cli.plugin_discover import discover_plugins
 
 click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.ERRORS_EPILOGUE = (
+    "If you believe this is a bug, please report it at our GitHub repository: "
+    + "[bold green]"
+    + "https://github.com/cesaregarza/DataZipcaster"
+    + "[/]"
+)
 
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
@@ -23,7 +21,9 @@ IMPORTERS = discover_plugins(importers, BaseImporter)
 
 
 @click.group()
-def cli():
+@click.option("-v", "--verbose", count=True, help="Increase verbosity level.")
+@click.pass_context
+def cli(ctx: click.Context, verbose: int) -> None:
     pass
 
 

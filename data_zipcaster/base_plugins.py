@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, ParamSpec, Type, TypeVar
+from typing import Callable, ParamSpec, TypeVar, cast
 
+import rich
 import rich_click as click
 from typing_extensions import NotRequired, TypedDict
+
+from data_zipcaster.cli.utils import handle_exception
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -32,6 +35,11 @@ class BaseExporter(ABC):
     @abstractmethod
     def do_run(self, data: dict, **kwargs):
         pass
+
+    def vprint(self, *args, level: int = 1) -> None:
+        verbose_level = click.get_current_context().obj["verbose"]
+        if verbose_level >= level:
+            rich.print(*args)
 
 
 class BaseImporter(ABC):
@@ -128,10 +136,9 @@ class BaseImporter(ABC):
 
         return parse_options_decorator
 
-    def build_command(
-        self, exporters: list[Type[BaseExporter]]
-    ) -> Callable[P, T]:
-        out_func = click.pass_context(self.do_run)
+    def build_command(self, exporters: list[BaseExporter]) -> Callable[P, T]:
+        out_func = handle_exception(self.run)
+        out_func = click.pass_context(out_func)
 
         # Add options if they exist
         if self.has_options:
@@ -150,13 +157,38 @@ class BaseImporter(ABC):
         )(out_func)
 
         # Save the exporter list
-        self.exporters = [exporter() for exporter in exporters]
+        self.exporters = exporters
 
-        # Pass the context just in case and return the newly wrapped function
+        # Add the verbose flag
+        out_func = click.option(
+            "-v",
+            "--verbose",
+            count=True,
+            help="Increase verbosity level.",
+        )(out_func)
+
         return click.command(name=self.name, help=self.help)(out_func)
 
-    def run(self, **kwargs) -> None:
+    def run(self, ctx: click.Context, *, verbose: int = 0, **kwargs) -> None:
+        exporters = cast(tuple[BaseExporter, ...], kwargs.pop("exporter", None))
+
+        if len(exporters) == 0:
+            raise click.ClickException(
+                "No exporters were specified. Please specify at least one "
+                + "exporter with the -e/--exporter flag. Available exporters "
+                + "are: "
+                + "[/], [yellow bold]".join(
+                    [exporter.name for exporter in self.exporters]
+                )
+                + ("[/]" if len(self.exporters) > 1 else "")
+            )
+
         internal_data = self.do_run(**kwargs)
 
-        for exporter in self.exporters:
+        for exporter in exporters:
             exporter.do_run(internal_data)
+
+    def vprint(self, *args, level: int = 1) -> None:
+        verbose_level = click.get_current_context().obj["verbose"]
+        if verbose_level >= level:
+            rich.print(*args)
