@@ -37,6 +37,17 @@ class BaseExporter(ABC):
         pass
 
     def vprint(self, *args, level: int = 1) -> None:
+        """Prints a message if the verbose level is greater than or equal to the
+        specified level. This is a wrapper around rich.print that checks the
+        verbose level. It is capped to level 3, so any level greater than 3
+        will be treated as 3.
+
+        Args:
+            *args: The arguments to pass to rich.print.
+            level (int): The verbose level required to print the message. If the
+                current verbose level is greater than or equal to this level,
+                the message will be printed. Capped at 3. Defaults to 1.
+        """
         verbose_level = click.get_current_context().obj["verbose"]
         if verbose_level >= level:
             rich.print(*args)
@@ -65,6 +76,16 @@ class BaseImporter(ABC):
 
     @abstractmethod
     def do_run(self, **kwargs) -> dict:
+        """The main function for the importer. This is where the importer should
+        do its work. This function should return a dictionary of data that will
+        be passed to the exporters.
+
+        Args:
+            **kwargs: The keyword arguments passed to the command.
+
+        Returns:
+            dict: A dictionary of data that will be passed to the exporters.
+        """
         pass
 
     class Options(TypedDict):
@@ -100,6 +121,11 @@ class BaseImporter(ABC):
 
     @property
     def get_option_names(self) -> list[str] | None:
+        """Get the option names for the importer. By default, this returns None.
+
+        Returns:
+            list[str] | None: A list of option names for the importer.
+        """
         if (options := self.get_options()) is None:
             return None
 
@@ -143,6 +169,18 @@ class BaseImporter(ABC):
         return parse_options_decorator
 
     def build_command(self, exporters: list[BaseExporter]) -> Callable[P, T]:
+        """Builds the click command for the importer. This is a wrapper around
+        the run function that adds an error handler, options, exporters, and
+        potentially any other things that need to be added to all subclasses of
+        BaseImporter.
+
+        Args:
+            exporters (list[BaseExporter]): A list of exporters to pass to the
+                run function.
+
+        Returns:
+            Callable[P, T]: The click command.
+        """
         out_func = handle_exception(self.run)
         out_func = click.pass_context(out_func)
 
