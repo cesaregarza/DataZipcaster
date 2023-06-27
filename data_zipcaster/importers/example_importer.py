@@ -1,4 +1,4 @@
-from data_zipcaster.importers import BaseImporter
+from data_zipcaster.base_plugins import BaseImporter
 
 
 class ExampleImporter(BaseImporter):
@@ -29,10 +29,6 @@ class ExampleImporter(BaseImporter):
     @property
     def help(self) -> str:
         return "An example importer."
-
-    @property
-    def requires_config(self) -> bool:
-        return False
 
     def do_run(self, **kwargs) -> None:
         print("Example importer running!")

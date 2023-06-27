@@ -2,21 +2,19 @@ import importlib
 import pkgutil
 from typing import Type, TypeVar
 
-from data_zipcaster.base_plugin import BasePlugin
 
 T = TypeVar("T")
 
 
-def discover_plugins(package, base_class: Type[T]) -> list[Type[T]]:
+def discover_plugins(package, base_class: Type[T]) -> list[T]:
     """Discovers all plugins in a package.
 
     Args:
         package (str): The package to search for plugins.
-        base_class (Type[BasePlugin]): The base class that all plugins must
-            inherit from.
+        base_class (Type[T]): The base class that all plugins inherit from.
 
     Returns:
-        list[Type[BasePlugin]]: A list of all plugins in the package.
+        list[T]: A list of the plugins, already instantiated.
     """
     plugins = []
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
