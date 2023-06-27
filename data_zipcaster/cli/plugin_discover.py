@@ -2,7 +2,6 @@ import importlib
 import pkgutil
 from typing import Type, TypeVar
 
-
 T = TypeVar("T")
 
 

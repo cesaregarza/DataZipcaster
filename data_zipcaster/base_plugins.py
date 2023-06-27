@@ -117,7 +117,7 @@ class BaseImporter(ABC):
                 # If there is a second option name, add it to the list
                 if option_name_2 := option.pop("option_name_2", None):
                     option_name_args.append(option_name_2)
-                
+
                 # The key "type_" is reserved by Python, so we need to rename it
                 # to "type" for the click.option decorator
                 if "type_" in option:

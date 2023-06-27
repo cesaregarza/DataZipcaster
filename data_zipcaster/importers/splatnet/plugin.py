@@ -1,5 +1,6 @@
-import click
 import os
+
+import rich_click as click
 from splatnet3_scraper.constants import TOKENS
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
@@ -16,12 +17,12 @@ class SplatNetImporter(BaseImporter):
         return (
             "Imports data from SplatNet 3. This is the default importer.  "
             + "This requires one of the following arguments: \n"
-            + " - `--session-token` to load your SplatNet 3 session token "
+            + " 1) `--session-token` to load your SplatNet 3 session token "
             + "directly from the command line. \n"
-            + " - `--config` to load your SplatNet 3 tokens from a config "
+            + " 2) `--config` to load your SplatNet 3 tokens from a config "
             + "file. If no path is specified, the default path is "
             + "[bold yellow].splatnet3_scraper[/] in the current directory. \n"
-            + " - If neither of these are specified, the importer will "
+            + "If neither of these are specified, the importer will "
             + "attempt to load your SplatNet 3 session token from the "
             + "environment variables [bold yellow]SESSION_TOKEN[/], "
             + "[bold yellow]GTOKEN[/], and [bold yellow]BULLET_TOKEN[/]."
@@ -29,7 +30,7 @@ class SplatNetImporter(BaseImporter):
             + "If you do not have a SplatNet 3 session token, you can "
             + "generate one by following the instructions at "
         )
-    
+
     def get_options(self) -> list[BaseImporter.Options]:
         OPTIONS = [
             BaseImporter.Options(
@@ -103,7 +104,6 @@ class SplatNetImporter(BaseImporter):
             ),
         ]
         return OPTIONS
-
 
     def get_scraper(self, config_data: dict[str, str]) -> SplatNet_Scraper:
         session_token = config_data.get(TOKENS.SESSION_TOKEN, None)
