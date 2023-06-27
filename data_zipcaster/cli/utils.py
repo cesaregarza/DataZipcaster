@@ -2,14 +2,20 @@ import datetime
 import os
 import sys
 import traceback
+from typing import Callable, ParamSpec, TypeVar
 
 import rich
 import rich_click as click
 
 from data_zipcaster import __version__
 
+T = TypeVar("T")
+P = ParamSpec("P")
 
-def handle_exception(func) -> None:
+
+def handle_exception(
+    func: Callable[P, T]
+) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)

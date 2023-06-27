@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, ParamSpec, TypeVar, cast
+from typing import Callable, ParamSpec, Type, TypeVar, cast
 
 import rich
 import rich_click as click
@@ -71,9 +71,9 @@ class BaseImporter(ABC):
         option_name_1: str
         option_name_2: NotRequired[str]
         type_: NotRequired[
-            str
-            | int
-            | float
+            Type[str]
+            | Type[int]
+            | Type[float]
             | click.Choice
             | click.Path
             | click.FloatRange
@@ -81,7 +81,7 @@ class BaseImporter(ABC):
         ]
         is_flag: NotRequired[bool]
         help: str
-        default: NotRequired[str | int | float | bool]
+        default: NotRequired[str | int | float | bool | None]
         multiple: NotRequired[bool]
         nargs: NotRequired[int]
 
@@ -100,12 +100,14 @@ class BaseImporter(ABC):
 
     @property
     def get_option_names(self) -> list[str] | None:
-        if self.get_options() is None:
+        if (options := self.get_options()) is None:
             return None
 
-        return [option["option_name_1"] for option in self.get_options()]
+        return [option["option_name_1"] for option in options]
 
-    def parse_options(self, options: list[Options]) -> Callable[P, T]:
+    def parse_options(
+        self, options: list[Options]
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]:
         """Decorator to parse options for a command.
 
         Given a list of options, this decorator will wrap the function in a
@@ -120,18 +122,22 @@ class BaseImporter(ABC):
 
         def parse_options_decorator(func: Callable[P, T]) -> Callable[P, T]:
             for option in options:
+                option_dict = dict(option)
                 # pop out the option names
-                option_name_args = [option.pop("option_name_1")]
+                option_name_args = [option_dict.pop("option_name_1")]
                 # If there is a second option name, add it to the list
-                if option_name_2 := option.pop("option_name_2", None):
+                if option_name_2 := option_dict.pop("option_name_2", None):
                     option_name_args.append(option_name_2)
 
                 # The key "type_" is reserved by Python, so we need to rename it
                 # to "type" for the click.option decorator
-                if "type_" in option:
-                    option["type"] = option.pop("type_")
+                if "type_" in option_dict:
+                    option_dict["type"] = option_dict.pop("type_")
                 # Wrap the option in a click.option decorator
-                func = click.option(*option_name_args, **option)(func)
+                wrapper = click.option(
+                    *option_name_args, **option_dict  # type: ignore
+                )
+                func = wrapper(func)
             return func
 
         return parse_options_decorator
@@ -141,8 +147,8 @@ class BaseImporter(ABC):
         out_func = click.pass_context(out_func)
 
         # Add options if they exist
-        if self.has_options:
-            out_func = self.parse_options(self.get_options())(out_func)
+        if (options := self.get_options()) is not None:
+            out_func = self.parse_options(options)(out_func)
 
         # Add exporters
         out_func = click.option(
@@ -189,6 +195,17 @@ class BaseImporter(ABC):
             exporter.do_run(internal_data)
 
     def vprint(self, *args, level: int = 1) -> None:
+        """Prints a message if the verbose level is greater than or equal to the
+        specified level. This is a wrapper around rich.print that checks the
+        verbose level. It is capped to level 3, so any level greater than 3
+        will be treated as 3.
+
+        Args:
+            *args: The arguments to pass to rich.print.
+            level (int): The verbose level required to print the message. If the
+                current verbose level is greater than or equal to this level,
+                the message will be printed. Capped at 3. Defaults to 1.
+        """
         verbose_level = click.get_current_context().obj["verbose"]
         if verbose_level >= level:
             rich.print(*args)

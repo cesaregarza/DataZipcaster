@@ -2,9 +2,8 @@ from data_zipcaster.base_plugins import BaseImporter
 
 
 class ExampleImporter(BaseImporter):
-    @property
     def get_options(self) -> list[BaseImporter.Options]:
-        OPTIONS = [
+        options = [
             BaseImporter.Options(
                 option_name_1="-x",
                 option_name_2="--example",
@@ -20,7 +19,7 @@ class ExampleImporter(BaseImporter):
                 default=False,
             ),
         ]
-        return OPTIONS
+        return options
 
     @property
     def name(self) -> str:
@@ -30,7 +29,7 @@ class ExampleImporter(BaseImporter):
     def help(self) -> str:
         return "An example importer."
 
-    def do_run(self, **kwargs) -> None:
+    def do_run(self, **kwargs):
         print("Example importer running!")
         print("Flags:")
         for key, value in kwargs.items():

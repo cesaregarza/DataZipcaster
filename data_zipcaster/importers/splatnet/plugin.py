@@ -15,24 +15,24 @@ class SplatNetImporter(BaseImporter):
     @property
     def help(self):
         return (
-            "Imports data from SplatNet 3. This is the default importer.  "
-            + "This requires one of the following arguments: \n"
-            + " 1) `--session-token` to load your SplatNet 3 session token "
-            + "directly from the command line. \n"
-            + " 2) `--config` to load your SplatNet 3 tokens from a config "
-            + "file. If no path is specified, the default path is "
-            + "[bold yellow].splatnet3_scraper[/] in the current directory. \n"
-            + "If neither of these are specified, the importer will "
-            + "attempt to load your SplatNet 3 session token from the "
-            + "environment variables [bold yellow]SESSION_TOKEN[/], "
-            + "[bold yellow]GTOKEN[/], and [bold yellow]BULLET_TOKEN[/]."
-            + "\n"
-            + "If you do not have a SplatNet 3 session token, you can "
-            + "generate one by following the instructions at "
+            "Imports data from SplatNet 3. This is the default importer.\n\n"
+            "This requires one of the following arguments: \n\n"
+            " * --session-token to load your SplatNet 3 session token "
+            "directly from the command line. \n\n"
+            " * --config to load your SplatNet 3 tokens from a config "
+            "file. If no path is specified, the default path is "
+            "[bold yellow]config.ini[/] in the current directory. \n\n"
+            "If neither of these are specified, the importer will "
+            "attempt to load your SplatNet 3 session token from the "
+            "environment variables [bold yellow]SESSION_TOKEN[/], "
+            "[bold yellow]GTOKEN[/], and [bold yellow]BULLET_TOKEN[/]."
+            "\n"
+            "If you do not have a SplatNet 3 session token, you can "
+            "generate one by following the instructions at "
         )
 
     def get_options(self) -> list[BaseImporter.Options]:
-        OPTIONS = [
+        options = [
             BaseImporter.Options(
                 option_name_1="-s",
                 option_name_2="--salmon",
@@ -103,7 +103,7 @@ class SplatNetImporter(BaseImporter):
                 nargs=1,
             ),
         ]
-        return OPTIONS
+        return options
 
     def get_scraper(self, config_data: dict[str, str]) -> SplatNet_Scraper:
         session_token = config_data.get(TOKENS.SESSION_TOKEN, None)
@@ -137,7 +137,7 @@ class SplatNetImporter(BaseImporter):
 
     def parse_flags(
         self, kwargs: dict
-    ) -> tuple[bool, bool, bool, bool, bool, bool]:
+    ) -> tuple[bool, bool, bool, bool, bool, bool, bool]:
         flag_all = kwargs.get("all", False)
         flag_salmon = kwargs.get("salmon", False)
         flag_xbattle = kwargs.get("xbattle", False)
