@@ -22,7 +22,7 @@ class JSONExporter(BaseExporter):
         return "Exports data to a JSON file.\n\n"
 
     def do_run(self, data: VsExtractDict, **kwargs) -> None:
-        config = click.get_current_context().obj["config"]
+        config = self.get_from_context("config")
         output_path = self.parse_output_path()
         gzip_output = config["gzip_output"]
         json_lines = config["json_lines"]
@@ -42,7 +42,7 @@ class JSONExporter(BaseExporter):
         Returns:
             str: The output path.
         """
-        config = click.get_current_context().obj["config"]
+        config = self.get_from_context("config")
         output_path = config["output_path"]
         output_path_format = config["output_path_format"]
 
@@ -66,7 +66,7 @@ class JSONExporter(BaseExporter):
         Returns:
             str: The output path format.
         """
-        config = click.get_current_context().obj["config"]
+        config = self.get_from_context("config")
 
         # If the output directory was specified in the config, check if it is
         # a full path or a relative path

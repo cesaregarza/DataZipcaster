@@ -1,5 +1,7 @@
+import configparser
+import os
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, ParamSpec, Type, TypeVar, cast
+from typing import Any, Callable, ParamSpec, Type, TypeVar, cast
 
 import rich
 import rich_click as click
@@ -53,6 +55,20 @@ class BaseExporter(ABC):
         if verbose_level >= level:
             rich.print(*args)
 
+    def get_from_context(self, key: str) -> Any | None:
+        """Get a value from the context.
+
+        Args:
+            key (str): The key to get.
+
+        Returns:
+            Any | None: The value, or None if it doesn't exist.
+        """
+        try:
+            return click.get_current_context().obj[key]
+        except KeyError:
+            return None
+
 
 class BaseImporter(ABC):
     @abstractproperty
@@ -72,6 +88,15 @@ class BaseImporter(ABC):
 
         Returns:
             str: The help message for the plugin.
+        """
+        pass
+
+    @abstractproperty
+    def requires_config(self) -> bool:
+        """Whether or not the importer requires a config file to run.
+
+        Returns:
+            bool: Whether or not the importer requires a config file to run.
         """
         pass
 
@@ -230,6 +255,8 @@ class BaseImporter(ABC):
             ClickException: If no exporters were specified. This is a
                 non-fatal error that will not trigger the error handler.
         """
+        if self.requires_config:
+            self.read_config()
         exporters_string = cast(tuple[str, ...], kwargs.pop("exporter", None))
         exporters = [
             exporter
@@ -268,3 +295,37 @@ class BaseImporter(ABC):
         verbose_level = click.get_current_context().params["verbose"]
         if verbose_level >= level:
             rich.print(*args)
+
+    def get_from_context(self, key: str) -> Any | None:
+        """Get a value from the context.
+
+        Args:
+            key (str): The key to get.
+
+        Returns:
+            Any | None: The value, or None if it doesn't exist.
+        """
+        try:
+            return click.get_current_context().obj[key]
+        except KeyError:
+            return None
+
+    def read_config(self) -> None:
+        """Reads the config file and saves it to the context. This should be
+        called in the do_run function of the importer. This will save the config
+        to the context under the key "config".
+        """
+        config_path = click.get_current_context().params["config"]
+        # If the file doesn't exist, raise an error suggesting the user to
+        # create a config file
+        if not os.path.exists(config_path):
+            raise click.ClickException(
+                f"The config file at {config_path} does not exist. Please "
+                "create a config file."
+            )
+        config = configparser.ConfigParser()
+        config.read(config_path)
+        ctx = click.get_current_context()
+        ctx.ensure_object(dict)
+
+        click.get_current_context().obj["config"] = config

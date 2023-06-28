@@ -31,6 +31,10 @@ class SplatNetImporter(BaseImporter):
             "generate one by following the instructions at "
         )
 
+    @property
+    def requires_config(self) -> bool:
+        return True
+
     def get_options(self) -> list[BaseImporter.Options]:
         options = [
             BaseImporter.Options(
