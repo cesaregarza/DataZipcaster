@@ -6,6 +6,7 @@ import rich_click as click
 from typing_extensions import NotRequired, TypedDict
 
 from data_zipcaster.cli.utils import handle_exception
+from data_zipcaster.schemas.vs_modes import VsExtractDict
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -33,7 +34,7 @@ class BaseExporter(ABC):
         pass
 
     @abstractmethod
-    def do_run(self, data: dict, **kwargs):
+    def do_run(self, data: VsExtractDict, **kwargs) -> None:
         pass
 
     def vprint(self, *args, level: int = 1) -> None:
@@ -48,7 +49,7 @@ class BaseExporter(ABC):
                 current verbose level is greater than or equal to this level,
                 the message will be printed. Capped at 3. Defaults to 1.
         """
-        verbose_level = click.get_current_context().obj["verbose"]
+        verbose_level = click.get_current_context().params["verbose"]
         if verbose_level >= level:
             rich.print(*args)
 
@@ -75,7 +76,7 @@ class BaseImporter(ABC):
         pass
 
     @abstractmethod
-    def do_run(self, **kwargs) -> dict:
+    def do_run(self, **kwargs) -> VsExtractDict:
         """The main function for the importer. This is where the importer should
         do its work. This function should return a dictionary of data that will
         be passed to the exporters.
@@ -84,7 +85,8 @@ class BaseImporter(ABC):
             **kwargs: The keyword arguments passed to the command.
 
         Returns:
-            dict: A dictionary of data that will be passed to the exporters.
+            VsExtractDict: A dictionary of data that will be passed to the
+                exporters.
         """
         pass
 
@@ -228,7 +230,12 @@ class BaseImporter(ABC):
             ClickException: If no exporters were specified. This is a
                 non-fatal error that will not trigger the error handler.
         """
-        exporters = cast(tuple[BaseExporter, ...], kwargs.pop("exporter", None))
+        exporters_string = cast(tuple[str, ...], kwargs.pop("exporter", None))
+        exporters = [
+            exporter
+            for exporter in self.exporters
+            if exporter.name in exporters_string
+        ]
 
         if len(exporters) == 0:
             raise click.ClickException(
@@ -258,6 +265,6 @@ class BaseImporter(ABC):
                 current verbose level is greater than or equal to this level,
                 the message will be printed. Capped at 3. Defaults to 1.
         """
-        verbose_level = click.get_current_context().obj["verbose"]
+        verbose_level = click.get_current_context().params["verbose"]
         if verbose_level >= level:
             rich.print(*args)

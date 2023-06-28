@@ -9,11 +9,11 @@ from data_zipcaster.base_plugins import BaseImporter
 
 class SplatNetImporter(BaseImporter):
     @property
-    def name(self):
+    def name(self) -> str:
         return "splatnet"
 
     @property
-    def help(self):
+    def help(self) -> str:
         return (
             "Imports data from SplatNet 3. This is the default importer.\n\n"
             "This requires one of the following arguments: \n\n"
