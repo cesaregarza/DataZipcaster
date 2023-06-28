@@ -16,6 +16,21 @@ P = ParamSpec("P")
 def handle_exception(
     func: Callable[P, T]
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    """A decorator that handles exceptions. If an exception is raised, it will
+    first check if it is a ClickException, which is a special exception that
+    Click uses to print a message and exit. If it is not a ClickException, it
+    will save the error to a file and then raise a ClickException with a
+    message telling the user to report the issue on GitHub. All exceptions
+    running within a function decorated with this decorator should be caught if
+    they are not intended to be handled by this decorator.
+
+    Args:
+        func (Callable[P, T]): The function to decorate.
+
+    Returns:
+        Callable[[Callable[P, T]], Callable[P, T]]: The wrapper function.
+    """
+
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)

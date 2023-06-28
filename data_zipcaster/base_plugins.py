@@ -214,6 +214,20 @@ class BaseImporter(ABC):
         return click.command(name=self.name, help=self.help)(out_func)
 
     def run(self, ctx: click.Context, *, verbose: int = 0, **kwargs) -> None:
+        """The main function for the importer. This is what's called when the
+        command is run. This function will call the do_run function and pass the
+        data to the exporters.
+
+        Args:
+            ctx (click.Context): The click context.
+            verbose (int): The verbose level. Defaults to 0.
+            **kwargs: The keyword arguments passed to the command. This will
+                include the options specified by the user.
+
+        Raises:
+            ClickException: If no exporters were specified. This is a
+                non-fatal error that will not trigger the error handler.
+        """
         exporters = cast(tuple[BaseExporter, ...], kwargs.pop("exporter", None))
 
         if len(exporters) == 0:
