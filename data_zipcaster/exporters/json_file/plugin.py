@@ -4,8 +4,6 @@ import pathlib
 import time
 from typing import cast
 
-import rich_click as click
-
 from data_zipcaster.base_plugins import BaseExporter
 from data_zipcaster.schemas.vs_modes import VsExtractDict
 
@@ -21,11 +19,59 @@ class JSONExporter(BaseExporter):
     def help(self) -> str:
         return "Exports data to a JSON file.\n\n"
 
+    def get_config_keys(self) -> list[BaseExporter.ConfigKeys]:
+        keys = [
+            BaseExporter.ConfigKeys(
+                key_name="output_path",
+                help=(
+                    "The path to the output file. If this is not specified, "
+                    "the default path is "
+                    "[bold yellow]Splatoon-3-Battles-%Y-%m-%d-%H-%M-%S.json[/] "
+                    "in the current directory. This key takes precedence over "
+                    "all other output path keys."
+                ),
+                type_=str,
+            ),
+            BaseExporter.ConfigKeys(
+                key_name="output_path_format",
+                help=(
+                    "The format of the output path. This is formatted using "
+                    "Python's strftime format. This key is ignored if "
+                    "[bold yellow]output_path[/] is specified."
+                ),
+                type_=str,
+            ),
+            BaseExporter.ConfigKeys(
+                key_name="output_directory",
+                help=(
+                    "The directory to output the file to. If this is not "
+                    "specified, the current directory is used."
+                ),
+                type_=str,
+            ),
+            BaseExporter.ConfigKeys(
+                key_name="gzip_output",
+                help=(
+                    "Whether or not to gzip the output file. If this is not "
+                    "specified, the default is [bold yellow]False[/]."
+                ),
+                type_=bool,
+            ),
+            BaseExporter.ConfigKeys(
+                key_name="json_lines",
+                help=(
+                    "Whether or not to output the file as JSON Lines. If this "
+                    "is not specified, the default is [bold yellow]False[/]."
+                ),
+                type_=bool,
+            ),
+        ]
+        return keys
+
     def do_run(self, data: VsExtractDict, **kwargs) -> None:
-        config = self.get_from_context("config")
         output_path = self.parse_output_path()
-        gzip_output = config["gzip_output"]
-        json_lines = config["json_lines"]
+        gzip_output = self.get_from_config("gzip_output")
+        json_lines = self.get_from_config("json_lines")
 
         if gzip_output:
             if not output_path.endswith(".gz"):
@@ -42,9 +88,8 @@ class JSONExporter(BaseExporter):
         Returns:
             str: The output path.
         """
-        config = self.get_from_context("config")
-        output_path = config["output_path"]
-        output_path_format = config["output_path_format"]
+        output_path = self.get_from_config("output_path")
+        output_path_format = self.get_from_config("output_path_format")
 
         if output_path and pathlib.Path(output_path).is_absolute():
             return output_path
@@ -66,11 +111,10 @@ class JSONExporter(BaseExporter):
         Returns:
             str: The output path format.
         """
-        config = self.get_from_context("config")
 
         # If the output directory was specified in the config, check if it is
         # a full path or a relative path
-        if output_directory := config["output_directory"]:
+        if output_directory := self.get_from_config("output_directory"):
             if pathlib.Path(output_directory).is_absolute():
                 path = pathlib.Path(output_directory)
             else:
@@ -78,7 +122,9 @@ class JSONExporter(BaseExporter):
         else:
             path = pathlib.Path.cwd()
 
-        output_path_format = cast(str, config["output_path_format"])
+        output_path_format = cast(
+            str, self.get_from_config("output_path_format")
+        )
         return (path / output_path_format).as_posix()
 
     def to_json(

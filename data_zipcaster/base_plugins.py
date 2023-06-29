@@ -39,6 +39,21 @@ class BaseExporter(ABC):
     def do_run(self, data: VsExtractDict, **kwargs) -> None:
         pass
 
+    class ConfigKeys(TypedDict):
+        key_name: str
+        type_: Type[str] | Type[int] | Type[float] | Type[bool]
+        help: str
+
+    @abstractmethod
+    def get_config_keys(self) -> list[ConfigKeys]:
+        """A list of keys that will be read from the config file. This is used
+        to check if the config file is valid and to populate the help message.
+
+        Returns:
+            list[str]: A list of keys that will be read from the config file.
+        """
+        pass
+
     def vprint(self, *args, level: int = 1) -> None:
         """Prints a message if the verbose level is greater than or equal to the
         specified level. This is a wrapper around rich.print that checks the
@@ -66,6 +81,32 @@ class BaseExporter(ABC):
         """
         try:
             return click.get_current_context().obj[key]
+        except KeyError:
+            return None
+
+    def get_from_config(self, key: str) -> Any | None:
+        """Get a value from the config.
+
+        Args:
+            key (str): The key to get.
+
+        Raises:
+            KeyError: If the key is not in the config_keys list.
+
+        Returns:
+            Any | None: The value, or None if it doesn't exist.
+        """
+        if key not in (
+            [config_key["key_name"] for config_key in self.get_config_keys()]
+        ):
+            raise KeyError(
+                f"The key {key} is not in the config_keys list. Please add it "
+                + "to the config_keys list. This is not an error that the user "
+                + "should see."
+            )
+        config = self.get_from_context("config")
+        try:
+            return config[key]  # type: ignore
         except KeyError:
             return None
 
@@ -97,6 +138,16 @@ class BaseImporter(ABC):
 
         Returns:
             bool: Whether or not the importer requires a config file to run.
+        """
+        pass
+
+    @abstractproperty
+    def config_keys(self) -> list[str]:
+        """A list of keys that will be read from the config file. This is used
+        to check if the config file is valid and to populate the help message.
+
+        Returns:
+            list[str]: A list of keys that will be read from the config file.
         """
         pass
 
@@ -314,6 +365,9 @@ class BaseImporter(ABC):
         """Reads the config file and saves it to the context. This should be
         called in the do_run function of the importer. This will save the config
         to the context under the key "config".
+
+        Raises:
+            ClickException: If the config file does not exist.
         """
         config_path = click.get_current_context().params["config"]
         # If the file doesn't exist, raise an error suggesting the user to
@@ -329,3 +383,27 @@ class BaseImporter(ABC):
         ctx.ensure_object(dict)
 
         click.get_current_context().obj["config"] = config
+
+    def get_from_config(self, key: str) -> Any | None:
+        """Get a value from the config.
+
+        Args:
+            key (str): The key to get.
+
+        Raises:
+            KeyError: If the key is not in the config_keys list.
+
+        Returns:
+            Any | None: The value, or None if it doesn't exist.
+        """
+        if key not in self.config_keys:
+            raise KeyError(
+                f"The key {key} is not in the config_keys list. Please add it "
+                + "to the config_keys list. This is not an error that the user "
+                + "should see."
+            )
+        config = self.get_from_context("config")
+        try:
+            return config[key]  # type: ignore
+        except KeyError:
+            return None
