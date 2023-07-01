@@ -323,7 +323,7 @@ class BaseImporter(ABC):
             )
 
         self.read_config()
-        self.set_options()
+        self.set_options(kwargs)
         internal_data = self.do_run(**kwargs)
 
         for exporter in exporters:
@@ -424,12 +424,18 @@ class BaseImporter(ABC):
         except KeyError:
             return None
 
-    def set_options(self) -> None:
-        """Set the options for this importer. This will grab the options defined
-        in the config file and validate them. If the config file contains an
-        invalid option, a warning will be printed to the user and the default
-        value will be used instead. The config value has a priority over the
-        default value, but not over any other value specified by the user.
+    def set_options(self, kwargs: dict) -> None:
+        """Set the options for this importer.
+
+        This will grab the options defined in the config file and validate them.
+        If the config file contains an invalid option, a warning will be printed
+        to the user and the default value will be used instead. The config value
+        has a priority over the default value, but not over any other value
+        specified by the user.
+
+        Args:
+            kwargs (dict): The keyword arguments passed to the command. This
+                will include the options specified by the user.
         """
         ctx = click.get_current_context()
         config = cast(
@@ -466,7 +472,7 @@ class BaseImporter(ABC):
             if param_source is None:
                 continue
             if param_source.name == "DEFAULT":
-                ctx.params[key_name] = out_value
+                kwargs[key_name] = out_value
 
         if len(bad_options) > 0:
             self.warn(

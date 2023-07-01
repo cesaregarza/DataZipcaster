@@ -1,6 +1,11 @@
 import os
 
 import rich_click as click
+from splatnet3_scraper.auth.exceptions import (
+    FTokenException,
+    NintendoException,
+    SplatNetException,
+)
 from splatnet3_scraper.constants import TOKENS
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
@@ -25,7 +30,7 @@ class SplatNetImporter(BaseImporter):
             f"{s.EMPHASIZE}config.ini[/] in the current directory. \n\n"
             "If neither of these are specified, the importer will "
             "attempt to load your SplatNet 3 session token from the "
-            f"environment variable {s.EMPHASIZE}SESSION_TOKEN[/], "
+            f"environment variable {s.ENVVAR_COLOR}SESSION_TOKEN[/], "
             "\n"
             "If you do not have a SplatNet 3 session token, you can "
             "generate one by following the instructions at "
@@ -103,39 +108,30 @@ class SplatNetImporter(BaseImporter):
         ]
         return options
 
-    def get_scraper(self, config_data: dict[str, str]) -> SplatNet_Scraper:
-        session_token = config_data.get(TOKENS.SESSION_TOKEN, None)
-        gtoken = config_data.get(TOKENS.GTOKEN, None)
-        bullet_token = config_data.get(TOKENS.BULLET_TOKEN, None)
-        env_vars = config_data.get("env_vars", False)
-
-        if env_vars:
-            return SplatNet_Scraper.from_env()
-        elif session_token is not None:
-            out = SplatNet_Scraper.from_session_token(session_token)
-            token_manager = out._query_handler.config.token_manager
-            if gtoken is not None:
-                token_manager.add_token(gtoken, TOKENS.GTOKEN)
-            if bullet_token is not None:
-                token_manager.add_token(bullet_token, TOKENS.BULLET_TOKEN)
-            return out
-        else:
-            raise click.ClickException(
-                "No session token was provided. Please provide a session token "
-                + "by adding ``session_token = <your session token>`` to the "
-                + "``[splatnet]`` section of your config file"
-            )
-
     def do_run(
         self,
         **kwargs,
     ):
-        session_token = self.get_from_config("session_token")
+        session_token = kwargs.get("session_token", None)
+        try:
+            scraper = SplatNet_Scraper.from_session_token(session_token)
+        except NintendoException:
+            raise click.ClickException(
+                "Failed to log in. This is likely due to an invalid "
+                "session token. Please check your session token and try "
+                "again."
+            )
+        except FTokenException:
+            raise click.ClickException(
+                "Failed to generate f-token. This is likely due to the f-token "
+                "server being down and is out of your control. Please try "
+                "again later."
+            )
+
+        self.parse_flags(kwargs)
         return 6
 
-    def parse_flags(
-        self, kwargs: dict
-    ) -> tuple[bool, bool, bool, bool, bool, bool, bool]:
+    def parse_flags(self, kwargs: dict) -> None:
         flag_all = kwargs.get("all", False)
         flag_salmon = kwargs.get("salmon", False)
         flag_xbattle = kwargs.get("xbattle", False)
@@ -144,7 +140,7 @@ class SplatNetImporter(BaseImporter):
         flag_private = kwargs.get("private", False)
         flag_challenge = kwargs.get("challenge", False)
 
-        return self.manage_flags(
+        flags = self.manage_flags(
             flag_all,
             flag_salmon,
             flag_xbattle,
@@ -153,6 +149,14 @@ class SplatNetImporter(BaseImporter):
             flag_private,
             flag_challenge,
         )
+
+        kwargs["all"] = flags[0]
+        kwargs["salmon"] = flags[1]
+        kwargs["xbattle"] = flags[2]
+        kwargs["turf"] = flags[3]
+        kwargs["anarchy"] = flags[4]
+        kwargs["private"] = flags[5]
+        kwargs["challenge"] = flags[6]
 
     def manage_flags(
         self,
