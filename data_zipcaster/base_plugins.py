@@ -281,8 +281,8 @@ class BaseImporter(ABC):
             "--silent",
             is_flag=True,
             help=(
-                "Do not show any dialogs. This will override the "
-                f"{s.OPTION_COLOR}--verbose[/] level."
+                "Do not show any dialogs. This will override the --verbose[-v] "
+                "option."
             ),
             default=False,
         )(out_func)
@@ -323,7 +323,7 @@ class BaseImporter(ABC):
             )
 
         self.read_config()
-        self.set_options(**kwargs)
+        self.set_options()
         internal_data = self.do_run(**kwargs)
 
         for exporter in exporters:
@@ -425,9 +425,11 @@ class BaseImporter(ABC):
             return None
 
     def set_options(self) -> None:
-        """Set the options for this importer. It will read the options from the
-        config file and override them with the values passed in kwargs. If the
-        option is not specified in kwargs, it will not be overridden.
+        """Set the options for this importer. This will grab the options defined
+        in the config file and validate them. If the config file contains an
+        invalid option, a warning will be printed to the user and the default
+        value will be used instead. The config value has a priority over the
+        default value, but not over any other value specified by the user.
         """
         ctx = click.get_current_context()
         config = cast(
@@ -436,7 +438,9 @@ class BaseImporter(ABC):
         if config is None:
             return
 
-        params = ctx.command.params
+        param_map = {
+            param.human_readable_name: param for param in ctx.command.params
+        }
         bad_options: list[str] = []
         for key, value in config.items(self.name):
             # Check if the key is a valid option
@@ -450,11 +454,7 @@ class BaseImporter(ABC):
                 )
                 continue
             # Check if the value is a valid option for this key
-            given_option = [
-                param
-                for param in params
-                if param.human_readable_name == key_name
-            ][0]
+            given_option = param_map[key_name]
             try:
                 out_value = given_option.type_cast_value(ctx, value)
             except click.BadParameter:
@@ -472,6 +472,7 @@ class BaseImporter(ABC):
             self.warn(
                 f"The config file contains invalid values for the following "
                 f"options: {s.OPTION_COLOR}{', '.join(bad_options)}[/]. "
-                "Please check the config file and correct these values."
+                "Please check the config file and correct these values, the "
+                "default values will be used for now.",
             )
         return None
