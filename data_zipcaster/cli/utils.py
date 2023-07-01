@@ -39,23 +39,35 @@ def handle_exception(
                 raise e
 
             filepath = os.path.join(os.getcwd(), "error.txt")
+            try:
+                with open(filepath, "a") as f:
+                    f.write(f"====================\n")
+                    f.write(f"Fatal Error Occured!\n")
+                    f.write(f"Date: {datetime.datetime.now()}\n")
+                    f.write(f"Exception: {e}\n")
+                    f.write(f"Version: {__version__}\n")
+                    f.write(
+                        "".join(traceback.format_exception(*sys.exc_info()))
+                    )
+                    f.write(f"====================\n")
 
-            with open(filepath, "a") as f:
-                f.write(f"====================\n")
-                f.write(f"Fatal Error Occured!\n")
-                f.write(f"Date: {datetime.datetime.now()}\n")
-                f.write(f"Exception: {e}\n")
-                f.write(f"Version: {__version__}\n")
-                f.write("".join(traceback.format_exception(*sys.exc_info())))
-                f.write(f"====================\n")
+                rich.print(
+                    f"Saved [bold red]ERROR[/] to [bold green]{filepath}[/]"
+                )
 
-            rich.print(f"Saved [bold red]ERROR[/] to [bold green]{filepath}[/]")
-
-            raise click.ClickException(
-                "A fatal error occurred. Please report this issue on "
-                + "GitHub, found below this message. Your error has been "
-                + "saved to the file mentioned above. Please attach this "
-                + "file to your issue."
-            )
+                raise click.ClickException(
+                    "A fatal error occurred. Please report this issue on "
+                    + "GitHub, found below this message. Your error has been "
+                    + "saved to the file mentioned above. Please attach this "
+                    + "file to your issue."
+                )
+            except Exception as ee:
+                raise click.ClickException(
+                    "A fatal error occurred and could not be saved to a file. "
+                    + "Please report this issue on GitHub, found below this "
+                    + "message. The error that occurred while trying to save "
+                    + "the error to a file is below this message. Please "
+                    + "attach this error to your issue."
+                ) from ee
 
     return wrapper

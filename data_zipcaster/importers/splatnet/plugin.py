@@ -5,6 +5,7 @@ from splatnet3_scraper.constants import TOKENS
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
 from data_zipcaster.base_plugins import BaseImporter
+from data_zipcaster.cli import styles as s
 
 
 class SplatNetImporter(BaseImporter):
@@ -21,19 +22,14 @@ class SplatNetImporter(BaseImporter):
             "directly from the command line. \n\n"
             " * --config to load your SplatNet 3 tokens from a config "
             "file. If no path is specified, the default path is "
-            "[bold yellow]config.ini[/] in the current directory. \n\n"
+            f"{s.EMPHASIZE}config.ini[/] in the current directory. \n\n"
             "If neither of these are specified, the importer will "
             "attempt to load your SplatNet 3 session token from the "
-            "environment variables [bold yellow]SESSION_TOKEN[/], "
-            "[bold yellow]GTOKEN[/], and [bold yellow]BULLET_TOKEN[/]."
+            f"environment variable {s.EMPHASIZE}SESSION_TOKEN[/], "
             "\n"
             "If you do not have a SplatNet 3 session token, you can "
             "generate one by following the instructions at "
         )
-
-    @property
-    def requires_config(self) -> bool:
-        return True
 
     def get_options(self) -> list[BaseImporter.Options]:
         options = [
@@ -91,20 +87,18 @@ class SplatNetImporter(BaseImporter):
                 type_=click.Path(exists=False, dir_okay=False),
                 help=(
                     "Path to the config file. If not specified, the default "
-                    + "path is [bold yellow]config.ini[/] in the current "
-                    + "directory."
+                    f"path is {s.EMPHASIZE}config.ini[/] in the current "
+                    "directory."
                 ),
                 default=os.path.join(os.getcwd(), "config.ini"),
             ),
             BaseImporter.Options(
                 option_name_1="--session-token",
                 type_=str,
-                help=(
-                    "Your SplatNet 3 session token. This is required if "
-                    + "you do not have a config file."
-                ),
+                help=("Your Nintendo Switch Online session token."),
                 default=None,
                 nargs=1,
+                envvar="SESSION_TOKEN",
             ),
         ]
         return options
@@ -136,8 +130,8 @@ class SplatNetImporter(BaseImporter):
         self,
         **kwargs,
     ):
-        a = 1 + 1
-        return a
+        session_token = self.get_from_config("session_token")
+        return 6
 
     def parse_flags(
         self, kwargs: dict
