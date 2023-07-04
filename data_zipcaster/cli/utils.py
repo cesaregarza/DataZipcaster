@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import sys
 import traceback
@@ -6,6 +7,8 @@ from typing import Callable, ParamSpec, TypeVar
 
 import rich
 import rich_click as click
+import tqdm.rich as tqdm
+from rich.progress import Progress
 
 from data_zipcaster import __version__
 
@@ -55,19 +58,69 @@ def handle_exception(
                     f"Saved [bold red]ERROR[/] to [bold green]{filepath}[/]"
                 )
 
-                raise click.ClickException(
-                    "A fatal error occurred. Please report this issue on "
-                    + "GitHub, found below this message. Your error has been "
-                    + "saved to the file mentioned above. Please attach this "
-                    + "file to your issue."
-                )
-            except Exception as ee:
+            except Exception:
                 raise click.ClickException(
                     "A fatal error occurred and could not be saved to a file. "
                     + "Please report this issue on GitHub, found below this "
                     + "message. The error that occurred while trying to save "
                     + "the error to a file is below this message. Please "
                     + "attach this error to your issue."
-                ) from ee
+                ) from e
+
+            raise click.ClickException(
+                "A fatal error occurred. Please report this issue on "
+                + "GitHub, found below this message. Your error has been "
+                + "saved to the file mentioned above. Please attach this "
+                + "file to your issue."
+            )
 
     return wrapper
+
+
+class ProgressBar:
+    def __init__(self, task_message: str = ""):
+        self.progress: Progress | None = None
+        self.task_id: str | None = None
+        self.task_message = task_message
+        ctx = click.get_current_context()
+        self.silent = ctx.params.get("silent", False)
+
+    def __enter__(self) -> Callable[[int, int], None]:
+        def progress_bar_callback(current: int, total: int) -> None:
+            if current == 0:
+                self.progress = Progress()
+                self.task_id = self.progress.add_task(
+                    self.task_message, total=total
+                )
+                self.progress.start()
+            else:
+                self.progress.update(self.task_id, advance=1)
+
+        if self.silent:
+            return None
+        return progress_bar_callback
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.progress:
+            self.progress.stop()
+            self.progress = None
+
+
+class LogListener(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.MATCHES = {
+            "token_regen": "regenerating tokens",
+        }
+        self.DISPATCH = {
+            "token_regen": self.handle_token_regen,
+        }
+    def emit(self, record: logging.LogRecord) -> None:
+        msg = self.format(record)
+        for key, match in self.MATCHES.items():
+            if match in msg:
+                self.DISPATCH[key]()
+                break
+    
+    def handle_token_regen(self) -> None:
+        pass

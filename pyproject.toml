@@ -9,9 +9,10 @@ packages = [{include = "data_zipcaster"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 colorama = "^0.4.6"
-splatnet3-scraper = "^0.8.1"
 msgpack = "^1.0.5"
 rich-click = "^1.6.1"
+tqdm = "^4.65.0"
+splatnet3-scraper = "^0.9.1"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -70,8 +70,8 @@ class JSONExporter(BaseExporter):
 
     def do_run(self, data: VsExtractDict, **kwargs) -> None:
         output_path = self.parse_output_path()
-        gzip_output = self.get_from_config("gzip_output")
-        json_lines = self.get_from_config("json_lines")
+        gzip_output = self.get_from_config(self.name, "gzip_output")
+        json_lines = self.get_from_config(self.name, "json_lines")
 
         if gzip_output:
             if not output_path.endswith(".gz"):
@@ -88,8 +88,10 @@ class JSONExporter(BaseExporter):
         Returns:
             str: The output path.
         """
-        output_path = self.get_from_config("output_path")
-        output_path_format = self.get_from_config("output_path_format")
+        output_path = self.get_from_config(self.name, "output_path")
+        output_path_format = self.get_from_config(
+            self.name, "output_path_format"
+        )
 
         if output_path and pathlib.Path(output_path).is_absolute():
             return output_path

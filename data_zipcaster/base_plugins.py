@@ -1,7 +1,16 @@
 import configparser
 import os
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Callable, ParamSpec, Type, TypeAlias, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    ParamSpec,
+    Type,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+)
 
 import rich
 import rich_click as click
@@ -27,7 +36,7 @@ OptionType: TypeAlias = (  # noqa: ECE001
 )
 
 
-class BaseExporter(ABC):
+class BasePlugin(ABC):
     @abstractproperty
     def name(self) -> str:
         """The name of the plugin. This will be used as the command name in
@@ -48,6 +57,160 @@ class BaseExporter(ABC):
         """
         pass
 
+    def vprint(self, *args, level: int = 1, **kwargs) -> None:
+        """Prints a message if the verbose level is greater than or equal to the
+        specified level. This is a wrapper around rich.print that checks the
+        verbose level. It is capped to level 3, so any level greater than 3
+        will be treated as 3.
+
+        Args:
+            *args: The arguments to pass to rich.print.
+            level (int): The verbose level required to print the message. If the
+                current verbose level is greater than or equal to this level,
+                the message will be printed. Capped at 3. Defaults to 1.
+            **kwargs: The keyword arguments to pass to rich.print.
+        """
+        ctx = click.get_current_context()
+        silent = ctx.params["silent"]
+        if silent:
+            return
+
+        verbose_level = ctx.params["verbose"]
+        if verbose_level >= level:
+            rich.print(*args, **kwargs)
+
+    def warn(self, *args, **kwargs) -> None:
+        """Prints a warning message. This is a wrapper around vprint that
+        prints the message with a warning style.
+
+        Args:
+            *args: The arguments to pass to rich.print.
+            **kwargs: The keyword arguments to pass to rich.print.
+        """
+        # Pop the level keyword argument so it doesn't get passed to vprint
+        kwargs.pop("level", None)
+        self.vprint(s.WARNING_COLOR + "WARNING:[/]", *args, level=0, **kwargs)
+
+    def get_from_context(self, key: str) -> Any | None:
+        """Get a value from the context.
+
+        Args:
+            key (str): The key to get.
+
+        Returns:
+            Any | None: The value, or None if it doesn't exist.
+        """
+        try:
+            return click.get_current_context().obj[key]
+        except (KeyError, TypeError):
+            return None
+
+    def set_to_context(self, key: str, value: Any) -> None:
+        """Set a value in the context.
+
+        Args:
+            key (str): The key to set.
+            value (Any): The value to set.
+        """
+        click.get_current_context().obj[key] = value
+
+    def read_config(self) -> None:
+        """Reads the config file and saves it to the context. This will save the
+        config to the context under the key "config". If the config file does
+        not exist, this will print a message to the user suggesting that they
+        create a config file.
+        """
+        ctx = click.get_current_context()
+        config_path = ctx.params["config"]
+        # If the file doesn't exist, raise an error suggesting the user to
+        # create a config file
+        if not os.path.exists(config_path):
+            self.warn(
+                "Config file does not exist, please consider "
+                f"creating one via the {s.COMMAND_COLOR}config[/] command.",
+            )
+            return
+        config = configparser.ConfigParser()
+        config.read(config_path)
+        ctx.ensure_object(dict)
+        self.set_to_context("config", config)
+        self.set_to_context("config_changed", False)
+
+    def get_from_config(self, section: str, key: str) -> Any | None:
+        """Get a value from the config file. The list of valid keys is
+        determined by the importer's options.
+
+        Args:
+            section (str): The section to get the key from.
+            key (str): The key to get.
+
+        Raises:
+            KeyError: If the key is not a valid option for this importer.
+
+        Returns:
+            Any | None: The value, or None if it doesn't exist.
+        """
+        ctx = click.get_current_context()
+        if key not in ctx.params.keys():
+            raise KeyError(
+                f"The key {key} is not a valid option for this importer. "
+                "Please check the --help for a list of valid options."
+            )
+        config = self.get_from_context("config")
+        try:
+            return config[section][key]  # type: ignore
+        except KeyError:
+            return None
+
+    def set_to_config(self, section: str, key: str, value: str) -> None:
+        """Sets a value in the config parser. If the section or key does not
+        exist, it will be created.
+
+        Args:
+            section (str): The section to which the key belongs.
+            key (str): The key to set.
+            value (str): The value to set for the key.
+        """
+        config = cast(
+            configparser.ConfigParser, self.get_from_context("config")
+        )
+
+        if not config.has_section(section):
+            config.add_section(section)
+            self.vprint(
+                f"Added section {s.OPTION_COLOR}{section}[/] to the config "
+                "file.",
+                level=3,
+            )
+
+        config.set(section, key, value)
+        self.set_to_context("config_changed", True)
+
+    def save_config(self) -> None:
+        """Saves the config file to disk. This will only save the config file if
+        it has been changed.
+        """
+        ctx = click.get_current_context()
+        config_path = ctx.params["config"]
+        config = cast(
+            configparser.ConfigParser, self.get_from_context("config")
+        )
+        if not self.get_from_context("config_changed"):
+            self.vprint(
+                "Config file has not been changed, not saving to disk.",
+                level=3,
+            )
+            return
+
+        with open(config_path, "w") as f:
+            config.write(f)
+            self.vprint(
+                f"Saved config file to {s.OPTION_COLOR}{config_path}[/].",
+                level=3,
+            )
+
+
+class BaseExporter(BasePlugin):
     @abstractmethod
     def do_run(self, data: VsExtractDict, **kwargs) -> None:
         pass
@@ -67,84 +230,8 @@ class BaseExporter(ABC):
         """
         pass
 
-    def vprint(self, *args, level: int = 1) -> None:
-        """Prints a message if the verbose level is greater than or equal to the
-        specified level. This is a wrapper around rich.print that checks the
-        verbose level. It is capped to level 3, so any level greater than 3
-        will be treated as 3.
 
-        Args:
-            *args: The arguments to pass to rich.print.
-            level (int): The verbose level required to print the message. If the
-                current verbose level is greater than or equal to this level,
-                the message will be printed. Capped at 3. Defaults to 1.
-        """
-        verbose_level = click.get_current_context().params["verbose"]
-        if verbose_level >= level:
-            rich.print(*args)
-
-    def get_from_context(self, key: str) -> Any | None:
-        """Get a value from the context.
-
-        Args:
-            key (str): The key to get.
-
-        Returns:
-            Any | None: The value, or None if it doesn't exist.
-        """
-        try:
-            return click.get_current_context().obj[key]
-        except KeyError:
-            return None
-
-    def get_from_config(self, key: str) -> Any | None:
-        """Get a value from the config.
-
-        Args:
-            key (str): The key to get.
-
-        Raises:
-            KeyError: If the key is not in the config_keys list.
-
-        Returns:
-            Any | None: The value, or None if it doesn't exist.
-        """
-        if key not in (
-            [config_key["key_name"] for config_key in self.get_config_keys()]
-        ):
-            raise KeyError(
-                f"The key {key} is not in the config_keys list. Please add it "
-                + "to the config_keys list. This is not an error that the user "
-                + "should see."
-            )
-        config = self.get_from_context("config")
-        try:
-            return config[key]  # type: ignore
-        except KeyError:
-            return None
-
-
-class BaseImporter(ABC):
-    @abstractproperty
-    def name(self) -> str:
-        """The name of the plugin. This will be used as the command name in
-        Click.
-
-        Returns:
-            str: The name of the plugin.
-        """
-        pass
-
-    @abstractproperty
-    def help(self) -> str:
-        """The help message for the plugin. This will be used as the help
-        message for the command in Click.
-
-        Returns:
-            str: The help message for the plugin.
-        """
-        pass
-
+class BaseImporter(BasePlugin):
     @abstractmethod
     def do_run(self, **kwargs) -> VsExtractDict:
         """The main function for the importer. This is where the importer should
@@ -329,101 +416,6 @@ class BaseImporter(ABC):
         for exporter in exporters:
             exporter.do_run(internal_data)
 
-    def vprint(self, *args, level: int = 1, **kwargs) -> None:
-        """Prints a message if the verbose level is greater than or equal to the
-        specified level. This is a wrapper around rich.print that checks the
-        verbose level. It is capped to level 3, so any level greater than 3
-        will be treated as 3.
-
-        Args:
-            *args: The arguments to pass to rich.print.
-            level (int): The verbose level required to print the message. If the
-                current verbose level is greater than or equal to this level,
-                the message will be printed. Capped at 3. Defaults to 1.
-            **kwargs: The keyword arguments to pass to rich.print.
-        """
-        ctx = click.get_current_context()
-        silent = ctx.params["silent"]
-        if silent:
-            return
-
-        verbose_level = ctx.params["verbose"]
-        if verbose_level >= level:
-            rich.print(*args, **kwargs)
-
-    def warn(self, *args, **kwargs) -> None:
-        """Prints a warning message. This is a wrapper around vprint that
-        prints the message with a warning style.
-
-        Args:
-            *args: The arguments to pass to rich.print.
-            **kwargs: The keyword arguments to pass to rich.print.
-        """
-        # Pop the level keyword argument so it doesn't get passed to vprint
-        kwargs.pop("level", None)
-        self.vprint(s.WARNING_COLOR + "WARNING:[/]", *args, level=0, **kwargs)
-
-    def get_from_context(self, key: str) -> Any | None:
-        """Get a value from the context.
-
-        Args:
-            key (str): The key to get.
-
-        Returns:
-            Any | None: The value, or None if it doesn't exist.
-        """
-        try:
-            return click.get_current_context().obj[key]
-        except (KeyError, TypeError):
-            return None
-
-    def read_config(self) -> None:
-        """Reads the config file and saves it to the context. This will save the
-        config to the context under the key "config". If the config file does
-        not exist, this will print a message to the user suggesting that they
-        create a config file.
-        """
-        ctx = click.get_current_context()
-        config_path = ctx.params["config"]
-        # If the file doesn't exist, raise an error suggesting the user to
-        # create a config file
-        if not os.path.exists(config_path):
-            self.warn(
-                "Config file does not exist, please consider "
-                f"creating one via the {s.COMMAND_COLOR}config[/] command.",
-            )
-            return
-        config = configparser.ConfigParser()
-        config.read(config_path)
-        ctx.ensure_object(dict)
-
-        ctx.obj["config"] = config
-
-    def get_from_config(self, key: str) -> Any | None:
-        """Get a value from the config file. The list of valid keys is
-        determined by the importer's options.
-
-        Args:
-            key (str): The key to get.
-
-        Raises:
-            KeyError: If the key is not a valid option for this importer.
-
-        Returns:
-            Any | None: The value, or None if it doesn't exist.
-        """
-        ctx = click.get_current_context()
-        if key not in ctx.params.keys():
-            raise KeyError(
-                f"The key {key} is not a valid option for this importer. "
-                "Please check the --help for a list of valid options."
-            )
-        config = self.get_from_context("config")
-        try:
-            return config[key]  # type: ignore
-        except KeyError:
-            return None
-
     def set_options(self, kwargs: dict) -> None:
         """Set the options for this importer.
 
@@ -482,3 +474,5 @@ class BaseImporter(ABC):
                 "default values will be used for now.",
             )
         return None
+    
+    

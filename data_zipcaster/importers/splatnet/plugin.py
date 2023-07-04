@@ -1,4 +1,6 @@
+import logging
 import os
+from typing import Callable
 
 import rich_click as click
 from splatnet3_scraper.auth.exceptions import (
@@ -6,11 +8,12 @@ from splatnet3_scraper.auth.exceptions import (
     NintendoException,
     SplatNetException,
 )
-from splatnet3_scraper.constants import TOKENS
+from splatnet3_scraper.query import QueryHandler, QueryResponse
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
 from data_zipcaster.base_plugins import BaseImporter
 from data_zipcaster.cli import styles as s
+from data_zipcaster.cli.utils import ProgressBar
 
 
 class SplatNetImporter(BaseImporter):
@@ -98,6 +101,22 @@ class SplatNetImporter(BaseImporter):
                 default=os.path.join(os.getcwd(), "config.ini"),
             ),
             BaseImporter.Options(
+                option_name_1="--gtoken",
+                type_=str,
+                help=("Your Nintendo Switch Online G-token."),
+                default=None,
+                nargs=1,
+                envvar="GTOKEN",
+            ),
+            BaseImporter.Options(
+                option_name_1="--bullet-token",
+                type_=str,
+                help=("Your Splatnet bullet token."),
+                default=None,
+                nargs=1,
+                envvar="BULLET_TOKEN",
+            ),
+            BaseImporter.Options(
                 option_name_1="--session-token",
                 type_=str,
                 help=("Your Nintendo Switch Online session token."),
@@ -113,23 +132,87 @@ class SplatNetImporter(BaseImporter):
         **kwargs,
     ):
         session_token = kwargs.get("session_token", None)
+        gtoken = kwargs.get("gtoken", None)
+        bullet_token = kwargs.get("bullet_token", None)
+        scraper = self.get_scraper(session_token, gtoken, bullet_token)
+        self.parse_flags(kwargs)
+        outs = []
+        message = f"Importing data from SplatNet 3..."
+        with ProgressBar(message) as progress_callback:
+            outs.append(
+                self.get_vs_battles(
+                    scraper,
+                    "xbattle",
+                    limit=10,
+                    progress_callback=progress_callback,
+                )
+            )
+
+        return 6
+
+    def get_scraper(
+        self,
+        session_token: str,
+        gtoken: str | None = None,
+        bullet_token: str | None = None,
+    ) -> SplatNet_Scraper:
+        handler = QueryHandler.from_tokens(session_token, gtoken, bullet_token)
+        return SplatNet_Scraper(handler)
+
+    def get_vs_battles(
+        self,
+        scraper: SplatNet_Scraper,
+        mode: str,
+        limit: int | None = None,
+        progress_callback: Callable[[int, int], None] = None,
+    ) -> tuple[QueryResponse, list[QueryResponse]]:
         try:
-            scraper = SplatNet_Scraper.from_session_token(session_token)
+            overview, detailed = scraper.get_vs_battles(
+                mode, True, limit, progress_callback=progress_callback
+            )
         except NintendoException:
             raise click.ClickException(
                 "Failed to log in. This is likely due to an invalid "
                 "session token. Please check your session token and try "
                 "again."
             )
-        except FTokenException:
+        except FTokenException as e:
             raise click.ClickException(
                 "Failed to generate f-token. This is likely due to the f-token "
                 "server being down and is out of your control. Please try "
                 "again later."
             )
+        except SplatNetException as e:
+            # Check the error code within the exception message
+            message = e.args[0]
+            if "401" in message:
+                raise click.ClickException(
+                    "Failed to log in. This is a very very rare error that "
+                    "is resolved by simply trying again. Please try again."
+                )
+            elif "403" in message:
+                raise click.ClickException(
+                    "Obsolete version. Please update this program to the "
+                    "latest version and try again."
+                )
+            elif "204" in message:
+                raise click.ClickException(
+                    "Failed to log in. The account you are using has not "
+                    "played Splatoon 3 online. Please either log in with an "
+                    "account that has played at least one match of Splatoon 3 "
+                    "online, or use a session token from an account that has "
+                    "played at least one match of Splatoon 3 online."
+                )
 
-        self.parse_flags(kwargs)
-        return 6
+        tokens = scraper._query_handler.export_tokens()
+        for token_type, token in tokens:
+            if token_type == "session_token":
+                continue
+
+            if self.get_from_config(self.name, token_type) != token:
+                self.set_to_config(self.name, token_type, token)
+        self.save_config()
+        return overview, detailed
 
     def parse_flags(self, kwargs: dict) -> None:
         flag_all = kwargs.get("all", False)
