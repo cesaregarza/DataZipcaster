@@ -15,6 +15,7 @@ from splatnet3_scraper.scraper import SplatNet_Scraper
 from data_zipcaster.base_plugins import BaseImporter
 from data_zipcaster.cli import styles as s
 from data_zipcaster.cli.utils import ProgressBar
+from data_zipcaster.importers.splatnet.extractors import EXTRACT_MAP
 
 
 class SplatNetImporter(BaseImporter):
@@ -101,6 +102,15 @@ class SplatNetImporter(BaseImporter):
                 default=os.path.join(os.getcwd(), "config.ini"),
             ),
             BaseImporter.Options(
+                option_name_1="--limit",
+                type_=int,
+                help=(
+                    "The maximum number of battles to import. If not "
+                    "specified, all battles will be imported."
+                ),
+                default=-1,
+            ),
+            BaseImporter.Options(
                 option_name_1="--gtoken",
                 type_=str,
                 help=("Your Nintendo Switch Online G-token."),
@@ -162,7 +172,7 @@ class SplatNetImporter(BaseImporter):
 
         # Main loop
         outs = []
-        message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3..."
+        message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
         for flag in flags:
             if not kwargs.get(flag, False):
                 continue
@@ -172,12 +182,13 @@ class SplatNetImporter(BaseImporter):
             func = self.get_vs_battles if not coop else self.get_coop_battles
 
             with ProgressBar(message % flag) as progress_callback:
-                overview, result = func(
+                overview, detailed = func(
                     scraper,
                     flag,
                     limit=limit,
                     progress_callback=progress_callback,
                 )
+                outs.append(EXTRACT_MAP[flag](detailed, overview))
 
         return 6
 

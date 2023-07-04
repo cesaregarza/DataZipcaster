@@ -100,7 +100,8 @@ def build_vs_extract(
 
 
 def extract_anarchy(
-    overview: QueryResponse, detailed_battles: list[QueryResponse]
+    detailed_battles: list[QueryResponse],
+    overview: QueryResponse,
 ) -> list[VsExtractDict]:
     """Extracts the data from a list of detailed battles for the Anarchy mode.
 
@@ -124,7 +125,8 @@ def extract_anarchy(
 
 
 def extract_xbattle(
-    overview: QueryResponse, detailed_battles: list[QueryResponse]
+    detailed_battles: list[QueryResponse],
+    overview: QueryResponse,
 ) -> list[VsExtractDict]:
     """Extracts the data from a list of detailed battles for the X Battle mode.
 
