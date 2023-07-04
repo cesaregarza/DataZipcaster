@@ -64,7 +64,7 @@ class SplatNetImporter(BaseImporter):
                 default=False,
             ),
             BaseImporter.Options(
-                option_name_1="-n",
+                option_name_1="-a",
                 option_name_2="--anarchy",
                 is_flag=True,
                 help="Import Anarchy data.",
@@ -85,8 +85,7 @@ class SplatNetImporter(BaseImporter):
                 default=False,
             ),
             BaseImporter.Options(
-                option_name_1="-a",
-                option_name_2="--all",
+                option_name_1="--all",
                 is_flag=True,
                 help="Import all data.",
                 default=False,
@@ -132,31 +131,71 @@ class SplatNetImporter(BaseImporter):
         self,
         **kwargs,
     ):
+        # Get the tokens and create the scraper
         session_token = kwargs.get("session_token", None)
         gtoken = kwargs.get("gtoken", None)
         bullet_token = kwargs.get("bullet_token", None)
         scraper = self.get_scraper(session_token, gtoken, bullet_token)
 
+        # Test the tokens
         silent = kwargs.get("silent", False)
         self.test_tokens(scraper, silent)
         self.parse_flags(kwargs)
+
+        # Flag logic
+        flags = [
+            "salmon",
+            "xbattle",
+            "turf",
+            "anarchy",
+            "private",
+            "challenge",
+        ]
+        true_flags = [flag for flag in flags if kwargs.get(flag, False)]
+        join_str = f"[/], {s.OPTION_COLOR}"
+        self.vprint(
+            f"Importing {s.OPTION_COLOR}{join_str.join(true_flags)}[/] "
+            "data from SplatNet 3...",
+            level=0,
+        )
+        limit = kwargs.get("limit", None)
+
+        # Main loop
         outs = []
-        message = f"Importing data from SplatNet 3..."
-        with ProgressBar(message) as progress_callback:
-            outs.append(
-                self.get_vs_battles(
+        message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3..."
+        for flag in flags:
+            if not kwargs.get(flag, False):
+                continue
+
+            coop = flag == "salmon"
+
+            func = self.get_vs_battles if not coop else self.get_coop_battles
+
+            with ProgressBar(message % flag) as progress_callback:
+                overview, result = func(
                     scraper,
-                    "xbattle",
-                    limit=10,
+                    flag,
+                    limit=limit,
                     progress_callback=progress_callback,
                 )
-            )
 
         return 6
 
     def test_tokens(
         self, scraper: SplatNet_Scraper, silent: bool = False
     ) -> None:
+        """Tests the session token to make sure it is valid.
+
+        Tests the tokens loaded onto the scraper to make sure they are valid by
+        making a fast, simple query. If the query fails, the scraper will
+        automatically attempt to refresh the tokens. Also generates a progress
+        bar that will be overwritten once this function is done. If silent is
+        True, the progress bar will not be generated.
+
+        Args:
+            scraper (SplatNet_Scraper): The scraper to test the tokens on.
+            silent (bool): Whether or not to suppress the progress bar.
+        """
         handler = scraper._query_handler
 
         def fxn() -> None:
@@ -173,7 +212,7 @@ class SplatNetImporter(BaseImporter):
             return
 
         with Progress(transient=True) as progress:
-            task = progress.add_task("Testing session token...", total=None)
+            progress.add_task("Testing and refreshing tokens...", total=None)
             fxn()
 
     def get_scraper(
@@ -182,6 +221,18 @@ class SplatNetImporter(BaseImporter):
         gtoken: str | None = None,
         bullet_token: str | None = None,
     ) -> SplatNet_Scraper:
+        """Gets a scraper with the given tokens.
+
+        Args:
+            session_token (str): The session token to use. This is the only
+                required token.
+            gtoken (str | None): The gtoken to use. Defaults to None.
+            bullet_token (str | None): The bullet token to use. Defaults to
+                None.
+
+        Returns:
+            SplatNet_Scraper: The scraper with the given tokens.
+        """
         handler = QueryHandler.from_tokens(session_token, gtoken, bullet_token)
         return SplatNet_Scraper(handler)
 
@@ -192,6 +243,33 @@ class SplatNetImporter(BaseImporter):
         limit: int | None = None,
         progress_callback: Callable[[int, int], None] = None,
     ) -> tuple[QueryResponse, list[QueryResponse]]:
+        """Gets the vs battles from the scraper.
+
+        Gets the vs battles from the scraper. This will also update the tokens
+        in the config file if they have changed as a result of the query, which
+        automatically happens when the scraper refreshes the tokens on a failed
+        query. Additionally, this will convert exceptions into click exceptions
+        with helpful messages for the user.
+
+        Args:
+            scraper (SplatNet_Scraper): The scraper to get the vs battles from.
+            mode (str): The mode to get the vs battles from.
+            limit (int | None): The maximum number of battles to get. Defaults
+                to None.
+            progress_callback (Callable[[int, int], None]): A callback to
+                update the progress bar. Defaults to None.
+
+        Raises:
+            click.ClickException: When the session token is invalid.
+            click.ClickException: When the f-token server is down.
+            click.ClickException: Error 401
+            click.ClickException: Error 403
+            click.ClickException: Error 204
+
+        Returns:
+            tuple[QueryResponse, list[QueryResponse]]: The overview and
+                detailed vs battles.
+        """
         try:
             overview, detailed = scraper.get_vs_battles(
                 mode, True, limit, progress_callback=progress_callback
@@ -241,6 +319,16 @@ class SplatNetImporter(BaseImporter):
         return overview, detailed
 
     def parse_flags(self, kwargs: dict) -> None:
+        """Parses the flags to determine which modes to import.
+
+        Resolves logic between the flags to determine which modes to import. If
+        all is True, then all the flags are set to True. If all the flags are
+        True, then all is set to True. Mutates the kwargs dict.
+
+
+        Args:
+            kwargs (dict): The kwargs passed to the run function.
+        """
         flag_all = kwargs.get("all", False)
         flag_salmon = kwargs.get("salmon", False)
         flag_xbattle = kwargs.get("xbattle", False)

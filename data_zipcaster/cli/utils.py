@@ -7,7 +7,6 @@ from typing import Callable, ParamSpec, TypeVar
 
 import rich
 import rich_click as click
-import tqdm.rich as tqdm
 from rich.progress import Progress
 
 from data_zipcaster import __version__
@@ -79,6 +78,13 @@ def handle_exception(
 
 class ProgressBar:
     def __init__(self, task_message: str = ""):
+        """A context manager that creates a progress bar. If the silent option
+        is passed, the progress bar will not be created.
+
+        Args:
+            task_message (str): The message to display in the progress bar.
+                Defaults to "".
+        """
         self.progress: Progress | None = None
         self.task_id: str | None = None
         self.task_message = task_message
@@ -87,6 +93,16 @@ class ProgressBar:
 
     def __enter__(self) -> Callable[[int, int], None]:
         def progress_bar_callback(current: int, total: int) -> None:
+            """A callback function that updates the progress bar.
+
+            If the progress bar has not been created yet, it will create it.
+            This relies on the fact that the first time this function is called
+            the current value will be 0.
+
+            Args:
+                current (int): Current progress.
+                total (int): Total progress.
+            """
             if current == 0:
                 self.progress = Progress()
                 self.task_id = self.progress.add_task(
