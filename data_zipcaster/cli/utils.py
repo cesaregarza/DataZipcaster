@@ -104,23 +104,3 @@ class ProgressBar:
         if self.progress:
             self.progress.stop()
             self.progress = None
-
-
-class LogListener(logging.Handler):
-    def __init__(self):
-        super().__init__()
-        self.MATCHES = {
-            "token_regen": "regenerating tokens",
-        }
-        self.DISPATCH = {
-            "token_regen": self.handle_token_regen,
-        }
-    def emit(self, record: logging.LogRecord) -> None:
-        msg = self.format(record)
-        for key, match in self.MATCHES.items():
-            if match in msg:
-                self.DISPATCH[key]()
-                break
-    
-    def handle_token_regen(self) -> None:
-        pass

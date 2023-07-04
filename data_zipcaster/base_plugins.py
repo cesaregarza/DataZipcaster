@@ -1,4 +1,5 @@
 import configparser
+import logging
 import os
 from abc import ABC, abstractmethod, abstractproperty
 from typing import (
@@ -14,6 +15,7 @@ from typing import (
 
 import rich
 import rich_click as click
+from rich.progress import Progress
 from typing_extensions import NotRequired, TypedDict
 
 from data_zipcaster.cli import styles as s
@@ -474,5 +476,3 @@ class BaseImporter(BasePlugin):
                 "default values will be used for now.",
             )
         return None
-    
-    

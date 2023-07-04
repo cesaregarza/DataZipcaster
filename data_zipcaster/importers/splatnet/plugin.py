@@ -3,6 +3,7 @@ import os
 from typing import Callable
 
 import rich_click as click
+from rich.progress import Progress
 from splatnet3_scraper.auth.exceptions import (
     FTokenException,
     NintendoException,
@@ -135,6 +136,9 @@ class SplatNetImporter(BaseImporter):
         gtoken = kwargs.get("gtoken", None)
         bullet_token = kwargs.get("bullet_token", None)
         scraper = self.get_scraper(session_token, gtoken, bullet_token)
+
+        silent = kwargs.get("silent", False)
+        self.test_tokens(scraper, silent)
         self.parse_flags(kwargs)
         outs = []
         message = f"Importing data from SplatNet 3..."
@@ -149,6 +153,28 @@ class SplatNetImporter(BaseImporter):
             )
 
         return 6
+
+    def test_tokens(
+        self, scraper: SplatNet_Scraper, silent: bool = False
+    ) -> None:
+        handler = scraper._query_handler
+
+        def fxn() -> None:
+            handler.query(
+                "HomeQuery",
+                variables={
+                    "language": "en-US",
+                    "naCountry": "US",
+                },
+            )
+
+        if silent:
+            fxn()
+            return
+
+        with Progress(transient=True) as progress:
+            task = progress.add_task("Testing session token...", total=None)
+            fxn()
 
     def get_scraper(
         self,
