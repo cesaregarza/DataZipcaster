@@ -182,12 +182,10 @@ class SplatNetImporter(BaseImporter):
 
             coop = flag == "salmon"
 
-            func = self.get_vs_battles if not coop else self.get_coop_battles
-
             with ProgressBar(
                 message % consts.FLAG_MAP[flag]
             ) as progress_callback:
-                overview, detailed = func(
+                overview, detailed = self.get_matches(
                     scraper,
                     flag,
                     limit=limit,
@@ -222,6 +220,7 @@ class SplatNetImporter(BaseImporter):
                     "naCountry": "US",
                 },
             )
+            self.save_tokens(scraper)
 
         self.progress_bar(
             fxn,
@@ -262,14 +261,14 @@ class SplatNetImporter(BaseImporter):
         condition = ((gtoken is None) or (bullet_token is None)) and (
             not silent
         )
-        self.progress_bar(
+        return self.progress_bar(
             fxn,
             message="Generating missing tokens...",
             condition=condition,
             transient=True,
         )
 
-    def get_vs_battles(
+    def get_matches(
         self,
         scraper: SplatNet_Scraper,
         mode: str,
@@ -304,7 +303,7 @@ class SplatNetImporter(BaseImporter):
                 detailed vs battles.
         """
         try:
-            overview, detailed = scraper.get_vs_battles(
+            overview, detailed = scraper.get_matches(
                 mode, True, limit, progress_callback=progress_callback
             )
         except NintendoException:
@@ -432,6 +431,12 @@ class SplatNetImporter(BaseImporter):
             flag_anarchy = True
             flag_private = True
             flag_challenge = True
+        
+        if flag_salmon:
+            flag_salmon = False
+            self.warn(
+                "Salmon Run data is not yet supported. Skipping this mode."
+            )
 
         return (
             flag_all,

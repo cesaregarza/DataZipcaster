@@ -83,7 +83,7 @@ def build_vs_extract(
             subout["series_metadata"] = overview_data[battle_id]
 
         if (mode == "bankara_open") and (
-            (anarchy_power := battle[ANARCHY_POWER]) is not None
+            (anarchy_power := battle.get(ANARCHY_POWER)) is not None
         ):
             subout["match_power"] = anarchy_power
         elif (mode == "league") and (

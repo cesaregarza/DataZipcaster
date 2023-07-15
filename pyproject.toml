@@ -11,7 +11,7 @@ python = "^3.10"
 colorama = "^0.4.6"
 msgpack = "^1.0.5"
 rich-click = "^1.6.1"
-splatnet3-scraper = "^0.9.1"
+splatnet3-scraper = "^0.9.4"
 
 
 [tool.poetry.group.dev.dependencies]
