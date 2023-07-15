@@ -68,7 +68,7 @@ class JSONExporter(BaseExporter):
         ]
         return keys
 
-    def do_run(self, data: VsExtractDict, **kwargs) -> None:
+    def do_run(self, data: list[VsExtractDict], **kwargs) -> None:
         output_path = self.parse_output_path()
         gzip_output = self.get_from_config(self.name, "gzip_output")
         json_lines = self.get_from_config(self.name, "json_lines")
@@ -80,7 +80,7 @@ class JSONExporter(BaseExporter):
         if not json_lines:
             self.to_json(data, output_path, gzip_output=gzip_output)
         else:
-            self.to_json_lines([data], output_path, gzip_output=gzip_output)
+            self.to_json_lines(data, output_path, gzip_output=gzip_output)
 
     def parse_output_path(self) -> str:
         """Parses the output path from the config.
@@ -133,7 +133,7 @@ class JSONExporter(BaseExporter):
 
     def to_json(
         self,
-        vs_extract_dict: VsExtractDict,
+        vs_extract_dict: VsExtractDict | list[VsExtractDict],
         file_path: str,
         gzip_output: bool = False,
         **kwargs,
@@ -147,7 +147,7 @@ class JSONExporter(BaseExporter):
 
     def __to_json(
         self,
-        vs_extract_dict: VsExtractDict,
+        vs_extract_dict: VsExtractDict | list[VsExtractDict],
         file_path: str,
         **kwargs,
     ) -> None:
@@ -156,7 +156,7 @@ class JSONExporter(BaseExporter):
 
     def __to_json_gzip(
         self,
-        vs_extract_dict: VsExtractDict,
+        vs_extract_dict: VsExtractDict | list[VsExtractDict],
         file_path: str,
         **kwargs,
     ) -> None:

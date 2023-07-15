@@ -1,19 +1,20 @@
+import json
 import os
+import time
 from typing import Callable
 
 import rich_click as click
-from rich.progress import Progress
 from splatnet3_scraper.auth.exceptions import (
     FTokenException,
     NintendoException,
     SplatNetException,
 )
-from splatnet3_scraper.query import QueryHandler, QueryResponse
+from splatnet3_scraper.query import QueryResponse
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
 from data_zipcaster.base_plugins import BaseImporter
-from data_zipcaster.cli import styles as s
 from data_zipcaster.cli import constants as consts
+from data_zipcaster.cli import styles as s
 from data_zipcaster.cli.utils import ProgressBar
 from data_zipcaster.importers.splatnet.extractors import EXTRACT_MAP
 from data_zipcaster.schemas.vs_modes import VsExtractDict
@@ -112,6 +113,17 @@ class SplatNetImporter(BaseImporter):
                 default=-1,
             ),
             BaseImporter.Options(
+                option_name_1="--save-raw",
+                help=(
+                    "Save the raw data from the query. Takes one argument, "
+                    "which is the path to the directory to save the raw data "
+                    "to. If not specified, the raw data will not be saved."
+                ),
+                default=None,
+                nargs=1,
+                type_=click.Path(exists=False, file_okay=False),
+            ),
+            BaseImporter.Options(
                 option_name_1="--gtoken",
                 type_=str,
                 help=("Your Nintendo Switch Online G-token."),
@@ -174,13 +186,13 @@ class SplatNetImporter(BaseImporter):
         limit = kwargs.get("limit", None)
 
         # Main loop
-        outs = []
+        outs: list[VsExtractDict] = []
         message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
+        datetime_str = "%Y-%m-%d %H:%M:%S"
+        time_str = time.strftime(datetime_str, time.localtime())
         for flag in flags:
             if not kwargs.get(flag, False):
                 continue
-
-            coop = flag == "salmon"
 
             with ProgressBar(
                 message % consts.FLAG_MAP[flag]
@@ -191,7 +203,8 @@ class SplatNetImporter(BaseImporter):
                     limit=limit,
                     progress_callback=progress_callback,
                 )
-                outs.append(EXTRACT_MAP[flag](detailed, overview))
+                self.save_raw_data(overview, detailed, flag, time_str, kwargs)
+                outs.extend(EXTRACT_MAP[flag](detailed, overview))
 
         return outs
 
@@ -210,7 +223,7 @@ class SplatNetImporter(BaseImporter):
             scraper (SplatNet_Scraper): The scraper to test the tokens on.
             silent (bool): Whether or not to suppress the progress bar.
         """
-        handler = scraper._query_handler
+        handler = scraper.query_handler
 
         def fxn() -> None:
             handler.query(
@@ -251,10 +264,9 @@ class SplatNetImporter(BaseImporter):
         """
 
         def fxn() -> SplatNet_Scraper:
-            handler = QueryHandler.from_tokens(
+            scraper = SplatNet_Scraper.from_tokens(
                 session_token, gtoken, bullet_token
             )
-            scraper = SplatNet_Scraper(handler)
             self.save_tokens(scraper)
             return scraper
 
@@ -352,7 +364,7 @@ class SplatNetImporter(BaseImporter):
         Args:
             scraper (SplatNet_Scraper): The scraper to get the tokens from.
         """
-        tokens = scraper._query_handler.export_tokens()
+        tokens = scraper.query_handler.export_tokens()
         for token_type, token in tokens:
             if token_type == "session_token":
                 continue
@@ -431,7 +443,7 @@ class SplatNetImporter(BaseImporter):
             flag_anarchy = True
             flag_private = True
             flag_challenge = True
-        
+
         if flag_salmon:
             flag_salmon = False
             self.warn(
@@ -446,4 +458,74 @@ class SplatNetImporter(BaseImporter):
             flag_anarchy,
             flag_private,
             flag_challenge,
+        )
+
+    def save_raw_data(
+        self,
+        overview: QueryResponse,
+        detailed: list[QueryResponse],
+        flag: str,
+        time_str: str,
+        kwargs: dict,
+    ) -> None:
+        """Saves the raw data from the query.
+
+        Saves the raw data from the query. This will save the data to the
+        directory specified by the save_raw option.
+
+        Args:
+            overview (QueryResponse): The overview response from the query.
+            detailed (list[QueryResponse]): The detailed responses from the
+                query.
+            flag (str): The flag that was used to get the data.
+            time_str (str): The time string to use for the file names.
+            kwargs (dict): The kwargs passed to the run function.
+        """
+        save_raw = kwargs.get("save_raw", None)
+        if save_raw is None or len(detailed) == 0:
+            return
+
+        self.vprint(
+            f"Saving raw data to {s.EMPHASIZE}{save_raw}[/]...",
+            level=1,
+        )
+        # Check if the path given is absolute or relative
+        if not os.path.isabs(save_raw):
+            save_raw = os.path.join(os.getcwd(), save_raw)
+
+        base_path = os.path.join(save_raw, time_str, flag)
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
+
+        # Overview
+        overview_dict = overview.data
+        detailed_dicts = [detailed.data for detailed in detailed]
+        overview_path = os.path.join(base_path, "overview.json")
+        self.vprint(
+            f"Saving overview data to {s.EMPHASIZE}{overview_path}[/]...",
+            level=2,
+        )
+        with open(overview_path, "w") as f:
+            json.dump(overview_dict, f)
+        self.vprint(
+            "Saved overview data!",
+            level=3,
+        )
+
+        # Detailed
+        detailed_path = os.path.join(base_path, "detailed.json")
+        self.vprint(
+            f"Saving detailed data to {s.EMPHASIZE}{detailed_path}[/]...",
+            level=2,
+        )
+        with open(detailed_path, "w") as f:
+            json.dump(detailed_dicts, f)
+        self.vprint(
+            "Saved detailed data!",
+            level=3,
+        )
+
+        self.vprint(
+            f"Saved raw data to {s.EMPHASIZE}{save_raw}[/]!",
+            level=1,
         )

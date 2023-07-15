@@ -1,15 +1,7 @@
 import configparser
 import os
 from abc import ABC, abstractmethod, abstractproperty
-from typing import (
-    Any,
-    Callable,
-    ParamSpec,
-    Type,
-    TypeAlias,
-    TypeVar,
-    cast,
-)
+from typing import Any, Callable, ParamSpec, Type, TypeAlias, TypeVar, cast
 
 import rich
 import rich_click as click
@@ -212,7 +204,7 @@ class BasePlugin(ABC):
 
 class BaseExporter(BasePlugin):
     @abstractmethod
-    def do_run(self, data: VsExtractDict, **kwargs) -> None:
+    def do_run(self, data: list[VsExtractDict], **kwargs) -> None:
         pass
 
     class ConfigKeys(TypedDict):
@@ -351,7 +343,7 @@ class BaseImporter(BasePlugin):
             Callable[P, T]: The click command.
         """
         out_func = handle_exception(self.run)
-        out_func = click.pass_context(out_func)
+        out_func = click.pass_context(out_func)  # type: ignore
 
         # Add options if they exist
         if (options := self.get_options()) is not None:
