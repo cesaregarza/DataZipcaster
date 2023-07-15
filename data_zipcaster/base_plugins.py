@@ -407,16 +407,29 @@ class BaseImporter(BasePlugin):
             if exporter.name in exporters_string
         ]
 
+        splatnet_save_raw = (
+            self.name == "splatnet"
+            and ctx.get_parameter_source("save_raw") != "DEFAULT"
+        )
+
         if len(exporters) == 0:
-            raise click.ClickException(
-                "No exporters were specified. Please specify at least one "
-                + "exporter with the -e/--exporter flag. Available exporters "
-                + "are: "
-                + f"[/], {s.EXPORTER_COLOR}".join(
-                    [exporter.name for exporter in self.exporters]
+            if not splatnet_save_raw:
+                raise click.ClickException(
+                    "No exporters were specified. Please specify at least one "
+                    + "exporter with the -e/--exporter flag. Available "
+                    + "exporters are: "
+                    + f"[/], {s.EXPORTER_COLOR}".join(
+                        [exporter.name for exporter in self.exporters]
+                    )
+                    + ("[/]" if len(self.exporters) > 1 else "")
                 )
-                + ("[/]" if len(self.exporters) > 1 else "")
-            )
+            else:
+                self.vprint(
+                    f"No exporters were specified, but the {s.OPTION_COLOR}"
+                    "--save-raw[/] option was specified. This will save the "
+                    "raw data to the given path.",
+                    level=1
+                )
 
         self.read_config()
         self.set_options(kwargs)
