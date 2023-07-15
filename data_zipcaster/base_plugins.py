@@ -1,5 +1,4 @@
 import configparser
-import logging
 import os
 from abc import ABC, abstractmethod, abstractproperty
 from typing import (
@@ -10,7 +9,6 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
-    overload,
 )
 
 import rich
@@ -232,10 +230,27 @@ class BaseExporter(BasePlugin):
         """
         pass
 
+    def get_from_config(self, section: str, key: str) -> Any | None:
+        """Get a value from the config file. The list of valid keys is
+        determined by the importer's options.
+
+        Args:
+            section (str): The section to get the key from.
+            key (str): The key to get.
+
+        Returns:
+            Any | None: The value, or None if it doesn't exist.
+        """
+        config = self.get_from_context("config")
+        try:
+            return config[section][key]  # type: ignore
+        except KeyError:
+            return None
+
 
 class BaseImporter(BasePlugin):
     @abstractmethod
-    def do_run(self, **kwargs) -> VsExtractDict:
+    def do_run(self, **kwargs) -> list[VsExtractDict]:
         """The main function for the importer. This is where the importer should
         do its work. This function should return a dictionary of data that will
         be passed to the exporters.
@@ -244,8 +259,8 @@ class BaseImporter(BasePlugin):
             **kwargs: The keyword arguments passed to the command.
 
         Returns:
-            VsExtractDict: A dictionary of data that will be passed to the
-                exporters.
+            list[VsExtractDict]: A list of dictionaries containing the data to
+                pass to the exporters.
         """
         pass
 
@@ -476,3 +491,43 @@ class BaseImporter(BasePlugin):
                 "default values will be used for now.",
             )
         return None
+
+    def progress_bar(
+        self,
+        call_function: Callable[P, T],
+        *args,
+        message: str = "",
+        condition: bool = False,
+        transient: bool = True,
+        **kwargs,
+    ) -> T:
+        """Creates a progress bar if the condition is met.
+
+        This is a wrapper around the rich Progress class that creates a progress
+        bar if the condition is met. If the condition is not met, the function
+        will be called without a progress bar. This is useful for the silent
+        option, where the user does not want to see any dialog options such as
+        when running in a cron job or in a script.
+
+        Args:
+            call_function (Callable[P, T]): The function to call if the
+                condition is met.
+            *args: The arguments to pass to the function.
+            message (str): The message to display in the progress bar.
+                Defaults to "".
+            condition (bool): Whether or not to display the progress bar.
+                Defaults to False.
+            transient (bool): Whether or not the progress bar should be
+                transient. If this is True, the progress bar will be removed
+                after it is finished. Defaults to True.
+            **kwargs: The keyword arguments to pass to the function.
+
+        Returns:
+            T: The return value of the function.
+        """
+        if condition:
+            return call_function(*args, **kwargs)
+
+        with Progress(transient=transient) as progress:
+            progress.add_task(message, total=None)
+            return call_function(*args, **kwargs)

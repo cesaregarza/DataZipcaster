@@ -116,7 +116,9 @@ class JSONExporter(BaseExporter):
 
         # If the output directory was specified in the config, check if it is
         # a full path or a relative path
-        if output_directory := self.get_from_config("output_directory"):
+        if output_directory := self.get_from_config(
+            self.name, "output_directory"
+        ):
             if pathlib.Path(output_directory).is_absolute():
                 path = pathlib.Path(output_directory)
             else:
@@ -125,7 +127,7 @@ class JSONExporter(BaseExporter):
             path = pathlib.Path.cwd()
 
         output_path_format = cast(
-            str, self.get_from_config("output_path_format")
+            str, self.get_from_config(self.name, "output_path_format")
         )
         return (path / output_path_format).as_posix()
 
@@ -141,7 +143,7 @@ class JSONExporter(BaseExporter):
         else:
             self.__to_json(vs_extract_dict, file_path, **kwargs)
 
-        self.vprint(f"Exported JSON file to {file_path}", level=2)
+        self.vprint(f"Exported JSON file to {file_path}", level=1)
 
     def __to_json(
         self,
@@ -173,7 +175,7 @@ class JSONExporter(BaseExporter):
         else:
             self.__to_json_lines(vs_extract_dicts, file_path, **kwargs)
 
-        self.vprint(f"Exported JSON Lines file to {file_path}", level=2)
+        self.vprint(f"Exported JSON Lines file to {file_path}", level=1)
 
     def __to_json_lines(
         self,

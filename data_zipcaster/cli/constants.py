@@ -1,6 +1,8 @@
-class FLAGS:
-    SALMON = "salmon"
-    XBATTLE = "xbattle"
-    TURF = "turf"
-    ANARCHY = "anarchy"
-    PRIVATE = "private"
+FLAG_MAP = {
+    "xbattle": "Xbattle",
+    "anarchy": "Anarchy",
+    "turf": "Turf War",
+    "private": "Private Battle",
+    "challenge": "Challenge",
+    "salmon": "Salmon Run",
+}

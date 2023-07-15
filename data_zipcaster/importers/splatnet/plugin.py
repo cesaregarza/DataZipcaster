@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import Callable
 
@@ -14,8 +13,10 @@ from splatnet3_scraper.scraper import SplatNet_Scraper
 
 from data_zipcaster.base_plugins import BaseImporter
 from data_zipcaster.cli import styles as s
+from data_zipcaster.cli import constants as consts
 from data_zipcaster.cli.utils import ProgressBar
 from data_zipcaster.importers.splatnet.extractors import EXTRACT_MAP
+from data_zipcaster.schemas.vs_modes import VsExtractDict
 
 
 class SplatNetImporter(BaseImporter):
@@ -140,15 +141,15 @@ class SplatNetImporter(BaseImporter):
     def do_run(
         self,
         **kwargs,
-    ):
+    ) -> list[VsExtractDict]:
         # Get the tokens and create the scraper
         session_token = kwargs.get("session_token", None)
         gtoken = kwargs.get("gtoken", None)
         bullet_token = kwargs.get("bullet_token", None)
-        scraper = self.get_scraper(session_token, gtoken, bullet_token)
+        silent = kwargs.get("silent", False)
+        scraper = self.get_scraper(session_token, gtoken, bullet_token, silent)
 
         # Test the tokens
-        silent = kwargs.get("silent", False)
         self.test_tokens(scraper, silent)
         self.parse_flags(kwargs)
 
@@ -161,7 +162,9 @@ class SplatNetImporter(BaseImporter):
             "private",
             "challenge",
         ]
-        true_flags = [flag for flag in flags if kwargs.get(flag, False)]
+        true_flags = [
+            consts.FLAG_MAP[flag] for flag in flags if kwargs.get(flag, False)
+        ]
         join_str = f"[/], {s.OPTION_COLOR}"
         self.vprint(
             f"Importing {s.OPTION_COLOR}{join_str.join(true_flags)}[/] "
@@ -181,7 +184,9 @@ class SplatNetImporter(BaseImporter):
 
             func = self.get_vs_battles if not coop else self.get_coop_battles
 
-            with ProgressBar(message % flag) as progress_callback:
+            with ProgressBar(
+                message % consts.FLAG_MAP[flag]
+            ) as progress_callback:
                 overview, detailed = func(
                     scraper,
                     flag,
@@ -190,7 +195,7 @@ class SplatNetImporter(BaseImporter):
                 )
                 outs.append(EXTRACT_MAP[flag](detailed, overview))
 
-        return 6
+        return outs
 
     def test_tokens(
         self, scraper: SplatNet_Scraper, silent: bool = False
@@ -218,19 +223,19 @@ class SplatNetImporter(BaseImporter):
                 },
             )
 
-        if silent:
-            fxn()
-            return
-
-        with Progress(transient=True) as progress:
-            progress.add_task("Testing and refreshing tokens...", total=None)
-            fxn()
+        self.progress_bar(
+            fxn,
+            message="Testing and refreshing tokens...",
+            condition=silent,
+            transient=True,
+        )
 
     def get_scraper(
         self,
         session_token: str,
         gtoken: str | None = None,
         bullet_token: str | None = None,
+        silent: bool = False,
     ) -> SplatNet_Scraper:
         """Gets a scraper with the given tokens.
 
@@ -240,19 +245,36 @@ class SplatNetImporter(BaseImporter):
             gtoken (str | None): The gtoken to use. Defaults to None.
             bullet_token (str | None): The bullet token to use. Defaults to
                 None.
+            silent (bool): Whether or not to suppress the progress bar.
 
         Returns:
             SplatNet_Scraper: The scraper with the given tokens.
         """
-        handler = QueryHandler.from_tokens(session_token, gtoken, bullet_token)
-        return SplatNet_Scraper(handler)
+
+        def fxn() -> SplatNet_Scraper:
+            handler = QueryHandler.from_tokens(
+                session_token, gtoken, bullet_token
+            )
+            scraper = SplatNet_Scraper(handler)
+            self.save_tokens(scraper)
+            return scraper
+
+        condition = ((gtoken is None) or (bullet_token is None)) and (
+            not silent
+        )
+        self.progress_bar(
+            fxn,
+            message="Generating missing tokens...",
+            condition=condition,
+            transient=True,
+        )
 
     def get_vs_battles(
         self,
         scraper: SplatNet_Scraper,
         mode: str,
         limit: int | None = None,
-        progress_callback: Callable[[int, int], None] = None,
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> tuple[QueryResponse, list[QueryResponse]]:
         """Gets the vs battles from the scraper.
 
@@ -271,11 +293,11 @@ class SplatNetImporter(BaseImporter):
                 update the progress bar. Defaults to None.
 
         Raises:
-            click.ClickException: When the session token is invalid.
-            click.ClickException: When the f-token server is down.
-            click.ClickException: Error 401
-            click.ClickException: Error 403
-            click.ClickException: Error 204
+            ClickException: When the session token is invalid.
+            ClickException: When the f-token server is down.
+            ClickException: Error 401
+            ClickException: Error 403
+            ClickException: Error 204
 
         Returns:
             tuple[QueryResponse, list[QueryResponse]]: The overview and
@@ -291,7 +313,7 @@ class SplatNetImporter(BaseImporter):
                 "session token. Please check your session token and try "
                 "again."
             )
-        except FTokenException as e:
+        except FTokenException:
             raise click.ClickException(
                 "Failed to generate f-token. This is likely due to the f-token "
                 "server being down and is out of your control. Please try "
@@ -319,6 +341,18 @@ class SplatNetImporter(BaseImporter):
                     "played at least one match of Splatoon 3 online."
                 )
 
+        self.save_tokens(scraper)
+        return overview, detailed
+
+    def save_tokens(self, scraper: SplatNet_Scraper) -> None:
+        """Saves the tokens to the config file.
+
+        Saves the tokens to the config file. This will only save the tokens
+        that have changed since the last time the tokens were saved.
+
+        Args:
+            scraper (SplatNet_Scraper): The scraper to get the tokens from.
+        """
         tokens = scraper._query_handler.export_tokens()
         for token_type, token in tokens:
             if token_type == "session_token":
@@ -327,7 +361,6 @@ class SplatNetImporter(BaseImporter):
             if self.get_from_config(self.name, token_type) != token:
                 self.set_to_config(self.name, token_type, token)
         self.save_config()
-        return overview, detailed
 
     def parse_flags(self, kwargs: dict) -> None:
         """Parses the flags to determine which modes to import.
