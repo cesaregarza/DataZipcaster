@@ -428,7 +428,7 @@ class BaseImporter(BasePlugin):
                     f"No exporters were specified, but the {s.OPTION_COLOR}"
                     "--save-raw[/] option was specified. This will save the "
                     "raw data to the given path.",
-                    level=1
+                    level=1,
                 )
 
         self.read_config()

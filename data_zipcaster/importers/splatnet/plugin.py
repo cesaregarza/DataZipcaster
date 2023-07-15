@@ -117,7 +117,9 @@ class SplatNetImporter(BaseImporter):
                 help=(
                     "Save the raw data from the query. Takes one argument, "
                     "which is the path to the directory to save the raw data "
-                    "to. If not specified, the raw data will not be saved."
+                    "to. If not specified, the raw data will not be saved. This"
+                    " is the only option that can be used without specifying "
+                    "an exporter."
                 ),
                 default=None,
                 nargs=1,
