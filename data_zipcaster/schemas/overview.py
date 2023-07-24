@@ -24,6 +24,7 @@ class AnarchyOpenOverviewDict(TypedDict):
 
 class XOverviewDict(TypedDict):
     x_power_after: NotRequired[float]
+    rank_estimate: int
     series_win_count: int
     series_lose_count: int
 

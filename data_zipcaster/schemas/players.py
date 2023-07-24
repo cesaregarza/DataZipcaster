@@ -26,6 +26,7 @@ class NamePlateDict(TypedDict):
 
 class PlayerDict(TypedDict):
     name: str
+    npln_id: str
     me: bool
     player_number: NotRequired[str]
     splashtag: str

@@ -41,6 +41,28 @@ def color_from_percent_to_str(color_dict: dict | QueryResponse) -> str:
     return "".join([color_to_str(color_dict[color]) for color in "rgba"])
 
 
+def color_from_str_to_percent(color_str: str) -> dict[str, float]:
+    """Converts a color from a string to a percent.
+
+    Args:
+        color_str (str): The color string. This should be a string in the format
+            ``#RRGGBB``.
+
+    Returns:
+        dict[str, float]: The color as a dictionary. This will have the keys
+            ``r``, ``g``, and ``b``. The values of these keys will be floats
+            from 0 to 1.
+    """
+    if color_str.startswith("#"):
+        color_str = color_str[1:]
+    return {
+        "r": int(color_str[0:2], 16) / 255,
+        "g": int(color_str[2:4], 16) / 255,
+        "b": int(color_str[4:6], 16) / 255,
+        "a": int(color_str[6:8], 16) / 255 if len(color_str) > 6 else 1.0,
+    }
+
+
 def parse_rank(rank: str) -> tuple[str, int | None]:
     """Parses a rank string.
 

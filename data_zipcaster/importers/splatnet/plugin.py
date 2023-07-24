@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Callable
+from typing import Callable, ParamSpec, TypeVar
 
 import rich_click as click
 from splatnet3_scraper.auth.exceptions import (
@@ -18,6 +18,9 @@ from data_zipcaster.cli import styles as s
 from data_zipcaster.cli.utils import ProgressBar
 from data_zipcaster.importers.splatnet.extractors import EXTRACT_MAP
 from data_zipcaster.schemas.vs_modes import VsExtractDict
+
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class SplatNetImporter(BaseImporter):
@@ -117,13 +120,28 @@ class SplatNetImporter(BaseImporter):
                 help=(
                     "Save the raw data from the query. Takes one argument, "
                     "which is the path to the directory to save the raw data "
-                    "to. If not specified, the raw data will not be saved. This"
-                    " is the only option that can be used without specifying "
-                    "an exporter."
+                    "to. If the path is relative, it will be relative to the "
+                    "current working directory. It will be saved to a "
+                    "directory with the current time as the name, and then "
+                    "subdirectories for each mode. The raw data will be saved "
+                    "as JSON files. If not specified, the raw data will not "
+                    "be saved. Having this option enabled is the only way to "
+                    "import from splatnet without specifying an "
+                    f"{s.EXPORTER_COLOR}exporter[/]."
                 ),
                 default=None,
                 nargs=1,
                 type_=click.Path(exists=False, file_okay=False),
+            ),
+            BaseImporter.Options(
+                option_name_1="--f-token-url",
+                type_=str,
+                help=(
+                    "The URL to the f-token server. If not specified, the "
+                    "default URL is "
+                    f"{s.EMPHASIZE}https://api.imink.app/f[/]."
+                ),
+                default="https://api.imink.app/f",
             ),
             BaseImporter.Options(
                 option_name_1="--gtoken",
@@ -228,7 +246,8 @@ class SplatNetImporter(BaseImporter):
         handler = scraper.query_handler
 
         def fxn() -> None:
-            handler.query(
+            self.handle_scraper_errors(
+                handler.query,
                 "HomeQuery",
                 variables={
                     "language": "en-US",
@@ -316,10 +335,22 @@ class SplatNetImporter(BaseImporter):
             tuple[QueryResponse, list[QueryResponse]]: The overview and
                 detailed vs battles.
         """
+        overview, detailed = self.handle_scraper_errors(
+            scraper.get_matches,
+            mode,
+            True,
+            limit,
+            progress_callback=progress_callback,
+        )
+
+        self.save_tokens(scraper)
+        return overview, detailed
+
+    def handle_scraper_errors(
+        self, fxn: Callable[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> T:
         try:
-            overview, detailed = scraper.get_matches(
-                mode, True, limit, progress_callback=progress_callback
-            )
+            return fxn(*args, **kwargs)
         except NintendoException:
             raise click.ClickException(
                 "Failed to log in. This is likely due to an invalid "
@@ -353,9 +384,6 @@ class SplatNetImporter(BaseImporter):
                     "online, or use a session token from an account that has "
                     "played at least one match of Splatoon 3 online."
                 )
-
-        self.save_tokens(scraper)
-        return overview, detailed
 
     def save_tokens(self, scraper: SplatNet_Scraper) -> None:
         """Saves the tokens to the config file.

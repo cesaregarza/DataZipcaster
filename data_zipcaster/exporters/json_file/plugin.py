@@ -31,6 +31,7 @@ class JSONExporter(BaseExporter):
                     "all other output path keys."
                 ),
                 type_=str,
+                required=False,
             ),
             BaseExporter.ConfigKeys(
                 key_name="output_path_format",
@@ -40,6 +41,7 @@ class JSONExporter(BaseExporter):
                     "[bold yellow]output_path[/] is specified."
                 ),
                 type_=str,
+                required=False,
             ),
             BaseExporter.ConfigKeys(
                 key_name="output_directory",
@@ -48,6 +50,7 @@ class JSONExporter(BaseExporter):
                     "specified, the current directory is used."
                 ),
                 type_=str,
+                required=False,
             ),
             BaseExporter.ConfigKeys(
                 key_name="gzip_output",
@@ -56,6 +59,7 @@ class JSONExporter(BaseExporter):
                     "specified, the default is [bold yellow]False[/]."
                 ),
                 type_=bool,
+                required=False,
             ),
             BaseExporter.ConfigKeys(
                 key_name="json_lines",
@@ -64,6 +68,7 @@ class JSONExporter(BaseExporter):
                     "is not specified, the default is [bold yellow]False[/]."
                 ),
                 type_=bool,
+                required=False,
             ),
         ]
         return keys

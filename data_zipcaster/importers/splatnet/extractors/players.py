@@ -202,8 +202,10 @@ def extract_player_data(
     disconnected = player.get(player_paths.RESULT) is None
 
     # Mandatory fields
+    player_id = base64_decode(cast(str, player[player_paths.ID])).split(":")[-1]
     out = PlayerDict(
         name=player[player_paths.NAME],
+        npln_id=player_id,
         me=player[player_paths.IS_MYSELF],
         splashtag=player[player_paths.SPLASHTAG],
         nameplate=extract_nameplate(player),

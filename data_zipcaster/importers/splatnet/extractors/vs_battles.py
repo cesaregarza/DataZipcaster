@@ -24,6 +24,7 @@ from data_zipcaster.importers.splatnet.paths.vs_modes import (
     CHALLENGE_ID,
     CHALLENGE_POWER,
     FEST_POWER,
+    XBATTLE_POWER,
 )
 from data_zipcaster.schemas.overview import VsOverviewOut
 from data_zipcaster.schemas.vs_modes import VsExtractDict
@@ -94,6 +95,8 @@ def build_vs_extract(
         elif mode == "splatfest_challenge":
             subout["splatfest_metadata"] = extract_splatfest_data(battle)
             subout["match_power"] = battle[FEST_POWER]
+        elif mode == "xbattle":
+            subout["match_power"] = battle[XBATTLE_POWER]
         out.append(subout)
 
     return out

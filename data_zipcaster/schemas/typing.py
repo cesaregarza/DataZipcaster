@@ -7,7 +7,7 @@ ModeType: TypeAlias = Literal[
     "xbattle",
     "league",
     "private",
-    "bankara-open",
+    "bankara_open",
     "splatfest_open",
     "splatfest_challenge",
     "splatfest_open",

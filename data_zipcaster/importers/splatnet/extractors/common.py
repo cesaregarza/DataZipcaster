@@ -318,11 +318,13 @@ def extract_team_data(
             paint_ratio = cast(float | None, team[team_paths.PAINT_RATIO])
             score = cast(int | None, team[team_paths.SCORE])
             noroshi = cast(int | None, team[team_paths.NOROSHI])
+            team_result = cast(str, team[team_paths.TEAM_RESULT])
 
             sub_out["result"] = TeamResult(
                 paint_ratio=paint_ratio,
                 score=score,
                 noroshi=noroshi,
+                team_result=team_result,
             )
         except (AttributeError, TypeError):
             pass

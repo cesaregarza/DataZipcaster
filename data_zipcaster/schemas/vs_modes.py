@@ -21,6 +21,7 @@ class TeamResult(TypedDict):
     paint_ratio: float | None
     score: int | None
     noroshi: int | None
+    team_result: ResultType
 
 
 class SplatfestTeamDict(TypedDict):
@@ -55,6 +56,7 @@ class VsExtractDict(TypedDict):
     teams: list[TeamDict]
     medals: list[MedalDict]
     id: str
+    # judgement:
     series_metadata: NotRequired[VsOverviewDict]
     match_power: NotRequired[float]
     challenge_id: NotRequired[str]

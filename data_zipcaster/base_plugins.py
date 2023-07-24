@@ -204,13 +204,14 @@ class BasePlugin(ABC):
 
 class BaseExporter(BasePlugin):
     @abstractmethod
-    def do_run(self, data: list[VsExtractDict], **kwargs) -> None:
+    def do_run(self, data: list[VsExtractDict]) -> None:
         pass
 
     class ConfigKeys(TypedDict):
         key_name: str
         type_: Type[str] | Type[int] | Type[float] | Type[bool]
         help: str
+        required: bool
 
     @abstractmethod
     def get_config_keys(self) -> list[ConfigKeys]:
@@ -221,6 +222,38 @@ class BaseExporter(BasePlugin):
             list[str]: A list of keys that will be read from the config file.
         """
         pass
+
+    def assert_valid_config(self) -> None:
+        """Asserts that the config file is valid. If the config file is not
+        valid, this function should raise an error. This is run before the
+        importer is run to avoid having to wait for the importer to run before
+        finding out that the config file is invalid.
+
+        Raises:
+            ClickException: If the config file is not valid.
+        """
+        invalid_keys: list[tuple[dict, str]] = []
+        for key in self.get_config_keys():
+            loaded_key = self.get_from_config(self.name, key["key_name"])
+            if loaded_key is None:
+                if key["required"]:
+                    invalid_keys.append((key, "required"))
+                continue
+            if not isinstance(loaded_key, key["type_"]):
+                invalid_keys.append((key, "type"))
+                continue
+
+        if len(invalid_keys) > 0:
+            raise click.ClickException(
+                "The config file is not valid. Please check the config file "
+                "and correct the following errors:\n"
+                + "\n".join(
+                    [
+                        f"{key['key_name']}: {error}"
+                        for key, error in invalid_keys
+                    ]
+                )
+            )
 
     def get_from_config(self, section: str, key: str) -> Any | None:
         """Get a value from the config file. The list of valid keys is
@@ -236,8 +269,25 @@ class BaseExporter(BasePlugin):
         config = self.get_from_context("config")
         try:
             return config[section][key]  # type: ignore
-        except KeyError:
+        except (KeyError, TypeError):
+            pass
+
+        # Try replacing underscores with dashes
+        try:
+            return config[section][key.replace("_", "-")]  # type: ignore
+        except (KeyError, TypeError):
             return None
+
+    def run(self, data: list[VsExtractDict]) -> None:
+        """The main function for the exporter. This is what's called when the
+        command is run. This function will call the do_run function and pass the
+        data to the exporters.
+
+        Args:
+            data (list[VsExtractDict]): The data to export.
+        """
+        self.assert_valid_config()
+        self.do_run(data)
 
 
 class BaseImporter(BasePlugin):
@@ -433,10 +483,19 @@ class BaseImporter(BasePlugin):
 
         self.read_config()
         self.set_options(kwargs)
+
+        for exporter in exporters:
+            self.vprint(
+                "Asserting that the config file is valid for "
+                f"{s.EXPORTER_COLOR}{exporter.name}[/].",
+                level=3,
+            )
+            exporter.assert_valid_config()
+
         internal_data = self.do_run(**kwargs)
 
         for exporter in exporters:
-            exporter.do_run(internal_data)
+            exporter.run(internal_data)
 
     def set_options(self, kwargs: dict) -> None:
         """Set the options for this importer.
