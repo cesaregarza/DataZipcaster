@@ -1,6 +1,6 @@
 from pydantic import BaseModel, validator
 
-from data_zipcaster.models.typing import (
+from data_zipcaster.models.main.typing import (
     AbilityType,
     BadgeType,
     CrownType,
