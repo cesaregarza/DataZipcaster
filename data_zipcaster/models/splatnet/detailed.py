@@ -7,7 +7,7 @@ from data_zipcaster.models.splatnet.typing.mode_specific import (
     XMatch,
 )
 from data_zipcaster.models.splatnet.typing.player import PlayerRoot, Team
-from data_zipcaster.models.splatnet.typing.rules import vsMode, vsRule, vsStage
+from data_zipcaster.models.splatnet.typing.rules import VsMode, VsRule, VsStage
 
 
 class Award(BaseModel):
@@ -18,12 +18,12 @@ class Award(BaseModel):
 class VsHistoryDetail(BaseModel):
     typename: str
     id: str
-    vsRule: vsRule
-    vsMode: vsMode
+    vsRule: VsRule
+    vsMode: VsMode
     player: PlayerRoot
     judgement: str
     myTeam: Team
-    vsStage: vsStage
+    vsStage: VsStage
     festMatch: SplatfestMatch
     knockout: str | None = None
     otherTeams: list[Team]

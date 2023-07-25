@@ -3,18 +3,18 @@ from pydantic import BaseModel
 from data_zipcaster.models.splatnet.typing.common import Url
 
 
-class vsRule(BaseModel):
+class VsRule(BaseModel):
     name: str
     id: str
     rule: str
 
 
-class vsMode(BaseModel):
+class VsMode(BaseModel):
     mode: str
     id: str
 
 
-class vsStage(BaseModel):
+class VsStage(BaseModel):
     name: str
     image: Url
     id: str
