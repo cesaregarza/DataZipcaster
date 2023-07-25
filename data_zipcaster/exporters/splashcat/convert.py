@@ -203,7 +203,8 @@ def convert_gear(gear: GearItemDict) -> dict:
         ],
     }
     out["secondaryAbilities"] = [
-        ability if ability else "Unknown" for ability in out["secondaryAbilities"]
+        ability if ability else "Unknown"
+        for ability in out["secondaryAbilities"]
     ]
 
     return out

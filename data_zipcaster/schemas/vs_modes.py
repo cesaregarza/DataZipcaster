@@ -56,7 +56,6 @@ class VsExtractDict(TypedDict):
     teams: list[TeamDict]
     medals: list[MedalDict]
     id: str
-    # judgement:
     series_metadata: NotRequired[VsOverviewDict]
     match_power: NotRequired[float]
     challenge_id: NotRequired[str]

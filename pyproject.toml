@@ -12,6 +12,7 @@ colorama = "^0.4.6"
 msgpack = "^1.0.5"
 rich-click = "^1.6.1"
 splatnet3-scraper = "^0.9.4"
+pydantic = "^2.0.3"
 
 
 [tool.poetry.group.dev.dependencies]
