@@ -1,5 +1,9 @@
 from pydantic import BaseModel
 
+from data_zipcaster.models.splatnet.typing.history_groups import HistoryGroups
+from data_zipcaster.models.splatnet.typing.history_groups_first import (
+    HistoryGroupOnlyFirst,
+)
 from data_zipcaster.models.splatnet.typing.mode_specific import (
     BankaraMatch,
     LeagueMatch,
@@ -8,6 +12,7 @@ from data_zipcaster.models.splatnet.typing.mode_specific import (
 )
 from data_zipcaster.models.splatnet.typing.player import PlayerRoot, Team
 from data_zipcaster.models.splatnet.typing.rules import VsMode, VsRule, VsStage
+from data_zipcaster.models.splatnet.typing.summary import Summary
 
 
 class Award(BaseModel):
@@ -39,3 +44,9 @@ class VsHistoryDetail(BaseModel):
 
 class VsDetail(BaseModel):
     vsHistoryDetail: VsHistoryDetail
+
+
+class MetaData(BaseModel):
+    summary: Summary
+    historyGroups: HistoryGroups
+    historyGroupOnlyFirst: HistoryGroupOnlyFirst
