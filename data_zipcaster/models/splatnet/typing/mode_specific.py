@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -5,13 +7,13 @@ class SplatfestMatch(BaseModel):
     dragonMatchType: str
     contribution: int
     jewel: int
-    myFestPower: float | None = None
+    myFestPower: Optional[float] = None
 
 
 class BankaraMatch(BaseModel):
-    earnedUdemaePoint: int | None = None
+    earnedUdemaePoint: Optional[int] = None
     mode: str
-    bankaraPower: float | None = None
+    bankaraPower: Optional[float] = None
 
 
 class LeagueMatchEvent(BaseModel):
@@ -21,8 +23,8 @@ class LeagueMatchEvent(BaseModel):
 
 class LeagueMatch(BaseModel):
     leagueMatchEvent: LeagueMatchEvent
-    myLeaguePower: float | None = None
+    myLeaguePower: Optional[float] = None
 
 
 class XMatch(BaseModel):
-    lastXPower: float | None = None
+    lastXPower: Optional[float] = None

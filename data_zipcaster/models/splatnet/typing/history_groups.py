@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from data_zipcaster.models.splatnet.typing.common import Url
@@ -7,7 +9,7 @@ from data_zipcaster.models.splatnet.typing.rules import VsMode, VsRule, VsStage
 
 class XMatchMeasurement(BaseModel):
     state: str
-    xPowerAfter: float | None = None
+    xPowerAfter: Optional[float] = None
     isInitial: bool
     winCount: int
     loseCount: int
@@ -24,16 +26,16 @@ class BankaraMatchChallenge(BaseModel):
     maxLoseCount: int
     state: str
     isPromo: bool
-    isUdemaeUp: bool | None = None
-    udemaeAfter: str | None = None
-    earnedUdemaePoint: int | None = None
+    isUdemaeUp: Optional[bool] = None
+    udemaeAfter: Optional[str] = None
+    earnedUdemaePoint: Optional[int] = None
 
 
 class LeagueMatchHistoryGroup(BaseModel):
     leagueMatchEvent: LeagueMatchEvent
     vsRule: VsRule
     teamComposition: str
-    myLeaguePower: float | None = None
+    myLeaguePower: Optional[float] = None
 
 
 class Weapon(BaseModel):
@@ -45,16 +47,16 @@ class Weapon(BaseModel):
 class Player(BaseModel):
     weapon: Weapon
     id: str
-    festGrade: str | None = None
+    festGrade: Optional[str] = None
 
 
 class MyTeamResult(BaseModel):
-    paintPoint: int | None = None
-    score: int | None = None
+    paintPoint: Optional[int] = None
+    score: Optional[int] = None
 
 
 class MyTeam(BaseModel):
-    result: list[MyTeamResult] | None = None
+    result: Optional[MyTeamResult] = None
 
 
 class OneHistoryDetail(BaseModel):
@@ -62,7 +64,7 @@ class OneHistoryDetail(BaseModel):
 
 
 class BankaraMatch(BaseModel):
-    earnedUdemaePoint: int | None = None
+    earnedUdemaePoint: Optional[int] = None
 
 
 class NodeItems(BaseModel):
@@ -72,13 +74,13 @@ class NodeItems(BaseModel):
     vsStage: VsStage
     judgement: str
     player: Player
-    knockout: str | None = None
+    knockout: Optional[str] = None
     myTeam: MyTeam
-    nextHistoryDetail: OneHistoryDetail | None = None
-    previousHistoryDetail: OneHistoryDetail | None = None
-    udemae: str | None = None
-    bankaraMatch: BankaraMatch | None = None
-    playedTime: str | None = None
+    nextHistoryDetail: Optional[OneHistoryDetail] = None
+    previousHistoryDetail: Optional[OneHistoryDetail] = None
+    udemae: Optional[str] = None
+    bankaraMatch: Optional[BankaraMatch] = None
+    playedTime: Optional[str] = None
 
 
 class HistoryDetails(BaseModel):
@@ -86,10 +88,10 @@ class HistoryDetails(BaseModel):
 
 
 class GroupNodeItems(BaseModel):
-    XMatchMeasurement: XMatchMeasurement | None = None
+    XMatchMeasurement: Optional[XMatchMeasurement] = None
     historyDetails: HistoryDetails
-    bankaraMatchChallenge: BankaraMatchChallenge | None = None
-    leagueMatchHistoryGroup: LeagueMatchHistoryGroup | None = None
+    bankaraMatchChallenge: Optional[BankaraMatchChallenge] = None
+    leagueMatchHistoryGroup: Optional[LeagueMatchHistoryGroup] = None
 
 
 class HistoryGroups(BaseModel):

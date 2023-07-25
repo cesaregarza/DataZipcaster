@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -11,9 +13,9 @@ class Summary(BaseModel):
     killAverage: float
     perUnitTimeMinute: int
     specialAverage: float
-    xPowerAr: XPower
-    xPowerCl: XPower
-    xPowerGl: XPower
-    xPowerLf: XPower
+    xPowerAr: Optional[XPower] = None
+    xPowerCl: Optional[XPower] = None
+    xPowerGl: Optional[XPower] = None
+    xPowerLf: Optional[XPower] = None
     win: int
     lose: int

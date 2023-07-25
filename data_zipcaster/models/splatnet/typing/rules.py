@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from data_zipcaster.models.splatnet.typing.common import Url
@@ -6,7 +8,7 @@ from data_zipcaster.models.splatnet.typing.common import Url
 class VsRule(BaseModel):
     name: str
     id: str
-    rule: str
+    rule: Optional[str] = None
 
 
 class VsMode(BaseModel):

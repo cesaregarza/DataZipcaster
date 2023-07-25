@@ -1,6 +1,11 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
-from data_zipcaster.models.splatnet.typing.history_groups import HistoryGroups
+from data_zipcaster.models.splatnet.typing.history_groups import (
+    HistoryGroups,
+    OneHistoryDetail,
+)
 from data_zipcaster.models.splatnet.typing.history_groups_first import (
     HistoryGroupOnlyFirst,
 )
@@ -29,24 +34,31 @@ class VsHistoryDetail(BaseModel):
     judgement: str
     myTeam: Team
     vsStage: VsStage
-    festMatch: SplatfestMatch
-    knockout: str | None = None
+    festMatch: Optional[SplatfestMatch] = None
+    knockout: Optional[str] = None
     otherTeams: list[Team]
-    bankaraMatch: BankaraMatch
-    leagueMatch: LeagueMatch
-    xMatch: XMatch
+    bankaraMatch: Optional[BankaraMatch] = None
+    leagueMatch: Optional[LeagueMatch] = None
+    xMatch: Optional[XMatch] = None
     duration: int
     playedTime: str
     awards: list[Award]
-    nextHistoryDetail: str | None = None
-    previousHistoryDetail: str | None = None
+    nextHistoryDetail: Optional[OneHistoryDetail] = None
+    previousHistoryDetail: Optional[OneHistoryDetail] = None
 
 
 class VsDetail(BaseModel):
     vsHistoryDetail: VsHistoryDetail
 
 
-class MetaData(BaseModel):
+class MetaDataHistories(BaseModel):
     summary: Summary
     historyGroups: HistoryGroups
-    historyGroupOnlyFirst: HistoryGroupOnlyFirst
+    historyGroupOnlyFirst: Optional[HistoryGroupOnlyFirst] = None
+
+
+class MetaData(BaseModel):
+    xBattleHistories: Optional[MetaDataHistories] = None
+    bankaraBattleHistories: Optional[MetaDataHistories] = None
+    regularBattleHistories: Optional[MetaDataHistories] = None
+    eventBattleHistories: Optional[MetaDataHistories] = None
