@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -72,7 +72,7 @@ class NodeItems(BaseModel):
     vsMode: VsMode
     vsRule: VsRule
     vsStage: VsStage
-    judgement: str
+    judgement: Literal["WIN", "LOSE", "EXEMPTED_LOSE", "DEEMED_LOSE", "DRAW"]
     player: Player
     knockout: Optional[str] = None
     myTeam: MyTeam

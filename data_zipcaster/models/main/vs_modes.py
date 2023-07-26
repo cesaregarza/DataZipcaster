@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, validator
 
@@ -16,16 +16,16 @@ class Medals(BaseModel):
 
 
 class TeamResult(BaseModel):
-    paint_ratio: float | None
-    score: int | None
-    noroshi: int | None
+    paint_ratio: Optional[float] = None
+    score: Optional[int] = None
+    noroshi: Optional[int] = None
     team_result: ResultType
 
 
 class SplatfestTeam(BaseModel):
     team_name: str
-    synergy_bonus: float | None = None
-    synergy_name: str | None = None
+    synergy_bonus: Optional[float] = None
+    synergy_name: Optional[str] = None
     tricolor_role: Literal["defense", "attack1", "attack2"] | None = None
 
 
@@ -33,8 +33,8 @@ class TeamDict(BaseModel):
     players: list[dict]
     color: str
     order: int
-    result: TeamResult | None = None
-    splatfest: SplatfestTeam | None = None
+    result: Optional[TeamResult] = None
+    splatfest: Optional[SplatfestTeam] = None
 
 
 class SplatfestMetadata(BaseModel):
@@ -54,7 +54,7 @@ class VsExtract(BaseModel):
     teams: list[TeamDict]
     medals: list[Medals]
     id: str
-    series_metadata: dict | None = None
+    series_metadata: Optional[dict] = None
 
     @validator("teams")
     def validate_teams(cls, v):

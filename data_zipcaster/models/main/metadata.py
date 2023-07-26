@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, validator
 
 from data_zipcaster.constants import RANKS
@@ -6,10 +8,10 @@ from data_zipcaster.constants import RANKS
 class AnarchyMetadata(BaseModel):
     rank_before: str
     rank_after: str
-    rank_before_s_plus: int | None = None
-    rank_after_s_plus: int | None = None
+    rank_before_s_plus: Optional[int] = None
+    rank_after_s_plus: Optional[int] = None
     rank_exp_change: int
-    is_rank_up: bool | None = None
+    is_rank_up: Optional[bool] = None
 
     @validator("rank_before", "rank_after")
     def validate_rank(cls, v: str) -> str:
@@ -34,7 +36,7 @@ class AnarchyOpenMetadata(AnarchyMetadata):
 
 
 class XMetadata(BaseModel):
-    x_power_after: float | None = None
-    rank_estimate: int | None = None
+    x_power_after: Optional[float] = None
+    rank_estimate: Optional[int] = None
     series_win_count: int
     series_lose_count: int

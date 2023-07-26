@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, validator
 
 from data_zipcaster.models.main.typing import (
@@ -52,7 +54,7 @@ class Player(BaseModel):
     name: str
     npln_id: str
     me: bool
-    player_number: str | None = None
+    player_number: Optional[str] = None
     splashtag: str
     nameplate: NamePlate
     weapon_name: str
@@ -64,11 +66,11 @@ class Player(BaseModel):
     scoreboard_position: int
     gear: Gear
     disconnected: bool
-    kills_or_assists: int | None = None
-    assists: int | None = None
-    kills: int | None = None
-    deaths: int | None = None
-    specials: int | None = None
-    signals: int | None = None
-    crown: bool | None = None
-    crown_type: CrownType | None = None
+    kills_or_assists: Optional[int] = None
+    assists: Optional[int] = None
+    kills: Optional[int] = None
+    deaths: Optional[int] = None
+    specials: Optional[int] = None
+    signals: Optional[int] = None
+    crown: Optional[int] = None
+    crown_type: Optional[CrownType] = None

@@ -18,6 +18,7 @@ from data_zipcaster.models.splatnet.typing.mode_specific import (
 from data_zipcaster.models.splatnet.typing.player import PlayerRoot, Team
 from data_zipcaster.models.splatnet.typing.rules import VsMode, VsRule, VsStage
 from data_zipcaster.models.splatnet.typing.summary import Summary
+from data_zipcaster.models.utils import strip_prefix_keys
 
 
 class Award(BaseModel):
@@ -62,3 +63,11 @@ class MetaData(BaseModel):
     bankaraBattleHistories: Optional[MetaDataHistories] = None
     regularBattleHistories: Optional[MetaDataHistories] = None
     eventBattleHistories: Optional[MetaDataHistories] = None
+
+
+def generate_metadata(input_dict: dict) -> MetaData:
+    return MetaData(**strip_prefix_keys(input_dict))
+
+
+def generate_vs_detail(input_dict: dict) -> VsDetail:
+    return VsDetail(**strip_prefix_keys(input_dict))
