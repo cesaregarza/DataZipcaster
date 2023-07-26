@@ -1,4 +1,4 @@
-from typing import TypeAlias
+from typing import TypeAlias, cast, Union
 
 from data_zipcaster.models.main import (
     AnarchyOpenMetadata,
@@ -27,12 +27,13 @@ def convert_anarchy_metadata(
 ) -> dict[str, AnarchyMetadata]:
     out: dict[str, AnarchyMetadata] = {}
     for group in metadata.bankaraBattleHistories.historyGroups.nodes:
-        # Check if the group is a series by checking if it has bankaraMatchChallenge
+        # Check if the group is a series by checking if it has
+        # bankaraMatchChallenge
         if group.bankaraMatchChallenge is not None:
-            group_out = convert_anarchy_series_metadata(group)
+            # This *must* be unpacked
+            out = {**out, **convert_anarchy_series_metadata(group)}
         else:
-            group_out = convert_anarchy_open_metadata(group)
-        out.update(group_out)
+            out = {**out, **convert_anarchy_open_metadata(group)}
     return out
 
 
@@ -40,14 +41,15 @@ def convert_anarchy_series_metadata(
     group: GroupNodeItems,
 ) -> dict[str, AnarchySeriesMetadata]:
     out: dict[str, AnarchySeriesMetadata] = {}
-    try:
+    assert group.bankaraMatchChallenge is not None
+
+    if group.bankaraMatchChallenge.udemaeAfter is None:
+        rank_after, s_rank_after = None, None
+    else:
         rank_after, s_rank_after = parse_rank(
             group.bankaraMatchChallenge.udemaeAfter
         )
-    except AttributeError:
-        rank_after, s_rank_after = None, None
 
-    # This is ugly but it's for mypy
     assert group.bankaraMatchChallenge is not None
 
     # Metadata
@@ -55,6 +57,9 @@ def convert_anarchy_series_metadata(
     lose_count = group.bankaraMatchChallenge.loseCount
     rank_points = group.bankaraMatchChallenge.earnedUdemaePoint
     is_rank_up = group.bankaraMatchChallenge.isUdemaeUp
+
+    assert rank_points is not None
+    assert is_rank_up is not None
 
     for idx, match in enumerate(group.historyDetails.nodes):
         battle_id = base64_decode(match.id)
@@ -89,7 +94,7 @@ def convert_anarchy_series_metadata(
 def parse_last_anarchy_series_match(
     match: NodeItems,
     rank_after: str,
-    s_rank_after: int,
+    s_rank_after: int | None,
     win_count: int,
     lose_count: int,
     rank_points: int,
