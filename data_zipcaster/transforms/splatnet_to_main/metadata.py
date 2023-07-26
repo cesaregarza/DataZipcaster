@@ -1,25 +1,39 @@
+from typing import TypeAlias
+
 from data_zipcaster.models.main import (
     AnarchyOpenMetadata,
     AnarchySeriesMetadata,
     XMetadata,
 )
-from data_zipcaster.models.splatnet import MetaData
+from data_zipcaster.models.splatnet import (
+    AnarchyMetaData as splatnet_AnarchyMetaData,
+)
+from data_zipcaster.models.splatnet import (
+    ChallengeMetaData as splatnet_ChallengeMetaData,
+)
+from data_zipcaster.models.splatnet import TurfMetaData as splatnet_TurfMetaData
+from data_zipcaster.models.splatnet import XMetaData as splatnet_XMetaData
 from data_zipcaster.models.splatnet.typing.history_groups import (
     GroupNodeItems,
     NodeItems,
 )
-from data_zipcaster.transforms.splatnet_to_main.typing import AnarchyMetadata
 from data_zipcaster.utils import base64_decode, parse_rank
 
+AnarchyMetadata: TypeAlias = AnarchyOpenMetadata | AnarchySeriesMetadata
 
-def convert_anarchy_metadata(metadata: MetaData) -> AnarchyMetadata:
-    out = {}
+
+def convert_anarchy_metadata(
+    metadata: splatnet_AnarchyMetaData,
+) -> dict[str, AnarchyMetadata]:
+    out: dict[str, AnarchyMetadata] = {}
     for group in metadata.bankaraBattleHistories.historyGroups.nodes:
         # Check if the group is a series by checking if it has bankaraMatchChallenge
         if group.bankaraMatchChallenge is not None:
             group_out = convert_anarchy_series_metadata(group)
         else:
             group_out = convert_anarchy_open_metadata(group)
+        out.update(group_out)
+    return out
 
 
 def convert_anarchy_series_metadata(
@@ -32,6 +46,9 @@ def convert_anarchy_series_metadata(
         )
     except AttributeError:
         rank_after, s_rank_after = None, None
+
+    # This is ugly but it's for mypy
+    assert group.bankaraMatchChallenge is not None
 
     # Metadata
     win_count = group.bankaraMatchChallenge.winCount
@@ -78,6 +95,10 @@ def parse_last_anarchy_series_match(
     rank_points: int,
     is_rank_up: bool,
 ) -> AnarchySeriesMetadata:
+    assert match.udemae is not None
+    assert match.bankaraMatch is not None
+    assert match.bankaraMatch.earnedUdemaePoint is not None
+
     rank_before, s_rank_before = parse_rank(match.udemae.lower())
     rank_points = match.bankaraMatch.earnedUdemaePoint
     out = AnarchySeriesMetadata(
@@ -100,10 +121,12 @@ def parse_anarchy_series_match(
     win_count: int,
     lose_count: int,
 ) -> AnarchySeriesMetadata:
+    assert match.udemae is not None
     rank_before, s_rank_before = parse_rank(match.udemae.lower())
     out = AnarchySeriesMetadata(
         rank_before=rank_before,
         rank_after=rank_before,
+        rank_exp_change=0,
         series_win_count=win_count,
         series_lose_count=lose_count,
     )
@@ -119,6 +142,9 @@ def convert_anarchy_open_metadata(
     out: dict[str, AnarchyOpenMetadata] = {}
 
     for match in group.historyDetails.nodes:
+        assert match.bankaraMatch is not None
+        assert match.udemae is not None
+        assert match.bankaraMatch.earnedUdemaePoint is not None
         battle_id = base64_decode(match.id)
         rank_before, s_rank_before = parse_rank(match.udemae.lower())
         rank_points = match.bankaraMatch.earnedUdemaePoint

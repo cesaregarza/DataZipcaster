@@ -58,16 +58,17 @@ class MetaDataHistories(BaseModel):
     historyGroupOnlyFirst: Optional[HistoryGroupOnlyFirst] = None
 
 
-class MetaData(BaseModel):
-    xBattleHistories: Optional[MetaDataHistories] = None
-    bankaraBattleHistories: Optional[MetaDataHistories] = None
-    regularBattleHistories: Optional[MetaDataHistories] = None
-    eventBattleHistories: Optional[MetaDataHistories] = None
+class AnarchyMetaData(BaseModel):
+    bankaraBattleHistories: MetaDataHistories
 
 
-def generate_metadata(input_dict: dict) -> MetaData:
-    return MetaData(**strip_prefix_keys(input_dict))
+class XMetaData(BaseModel):
+    xBattleHistories: MetaDataHistories
 
 
-def generate_vs_detail(input_dict: dict) -> VsDetail:
-    return VsDetail(**strip_prefix_keys(input_dict))
+class TurfMetaData(BaseModel):
+    regularBattleHistories: MetaDataHistories
+
+
+class ChallengeMetaData(BaseModel):
+    eventBattleHistories: MetaDataHistories
