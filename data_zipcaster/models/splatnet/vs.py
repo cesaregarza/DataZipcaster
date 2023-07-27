@@ -1,29 +1,37 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from data_zipcaster.models.splatnet.typing.history_groups import (
+from data_zipcaster.models.splatnet.submodels.history_groups import (
     HistoryGroups,
     OneHistoryDetail,
 )
-from data_zipcaster.models.splatnet.typing.history_groups_first import (
+from data_zipcaster.models.splatnet.submodels.history_groups_first import (
     HistoryGroupOnlyFirst,
 )
-from data_zipcaster.models.splatnet.typing.mode_specific import (
+from data_zipcaster.models.splatnet.submodels.mode_specific import (
     BankaraMatch,
     LeagueMatch,
     SplatfestMatch,
     XMatch,
 )
-from data_zipcaster.models.splatnet.typing.player import PlayerRoot, Team
-from data_zipcaster.models.splatnet.typing.rules import VsMode, VsRule, VsStage
-from data_zipcaster.models.splatnet.typing.summary import Summary
-from data_zipcaster.models.utils import strip_prefix_keys
+from data_zipcaster.models.splatnet.submodels.players import PlayerRoot, Team
+from data_zipcaster.models.splatnet.submodels.rules import (
+    VsMode,
+    VsRule,
+    VsStage,
+)
+from data_zipcaster.models.splatnet.submodels.summary import Summary
+from data_zipcaster.models.splatnet.submodels.typing import (
+    AwardRankType,
+    KnockoutType,
+    ResultType,
+)
 
 
 class Award(BaseModel):
     name: str
-    rank: str
+    rank: AwardRankType
 
 
 class VsHistoryDetail(BaseModel):
@@ -32,11 +40,11 @@ class VsHistoryDetail(BaseModel):
     vsRule: VsRule
     vsMode: VsMode
     player: PlayerRoot
-    judgement: str
+    judgement: ResultType
     myTeam: Team
     vsStage: VsStage
     festMatch: Optional[SplatfestMatch] = None
-    knockout: Optional[str] = None
+    knockout: Optional[KnockoutType] = None
     otherTeams: list[Team]
     bankaraMatch: Optional[BankaraMatch] = None
     leagueMatch: Optional[LeagueMatch] = None

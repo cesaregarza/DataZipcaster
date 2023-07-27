@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from data_zipcaster.models.splatnet.typing.player import MaskingImage
+from data_zipcaster.models.splatnet.submodels.players import MaskingImage
 
 
 class SpecialWeapon(BaseModel):

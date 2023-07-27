@@ -2,9 +2,19 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from data_zipcaster.models.splatnet.typing.common import Url
-from data_zipcaster.models.splatnet.typing.mode_specific import LeagueMatchEvent
-from data_zipcaster.models.splatnet.typing.rules import VsMode, VsRule, VsStage
+from data_zipcaster.models.splatnet.submodels.common import Url
+from data_zipcaster.models.splatnet.submodels.mode_specific import (
+    LeagueMatchEvent,
+)
+from data_zipcaster.models.splatnet.submodels.rules import (
+    VsMode,
+    VsRule,
+    VsStage,
+)
+from data_zipcaster.models.splatnet.submodels.typing import (
+    KnockoutType,
+    ResultType,
+)
 
 
 class XMatchMeasurement(BaseModel):
@@ -72,9 +82,9 @@ class NodeItems(BaseModel):
     vsMode: VsMode
     vsRule: VsRule
     vsStage: VsStage
-    judgement: Literal["WIN", "LOSE", "EXEMPTED_LOSE", "DEEMED_LOSE", "DRAW"]
+    judgement: ResultType
     player: Player
-    knockout: Optional[str] = None
+    knockout: Optional[KnockoutType] = None
     myTeam: MyTeam
     nextHistoryDetail: Optional[OneHistoryDetail] = None
     previousHistoryDetail: Optional[OneHistoryDetail] = None

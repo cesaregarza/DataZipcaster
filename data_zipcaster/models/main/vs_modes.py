@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Literal, Optional
 
 from pydantic import BaseModel, validator
@@ -29,7 +30,7 @@ class SplatfestTeam(BaseModel):
     tricolor_role: Literal["defense", "attack1", "attack2"] | None = None
 
 
-class TeamDict(BaseModel):
+class Team(BaseModel):
     players: list[dict]
     color: str
     order: int
@@ -49,9 +50,9 @@ class VsExtract(BaseModel):
     result: ResultType
     rule: RuleType
     stage: str
-    start_time: float
-    duration: int
-    teams: list[TeamDict]
+    start_time: dt.datetime
+    duration: dt.timedelta
+    teams: list[Team]
     medals: list[Medals]
     id: str
     series_metadata: Optional[dict] = None

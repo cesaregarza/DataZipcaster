@@ -2,9 +2,11 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from data_zipcaster.models.splatnet.submodels.typing import MatchMultiplierType
+
 
 class SplatfestMatch(BaseModel):
-    dragonMatchType: str
+    dragonMatchType: MatchMultiplierType
     contribution: int
     jewel: int
     myFestPower: Optional[float] = None

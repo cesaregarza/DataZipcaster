@@ -2,7 +2,12 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from data_zipcaster.models.splatnet.typing.common import Color, Url
+from data_zipcaster.models.splatnet.submodels.common import Color, Url
+from data_zipcaster.models.splatnet.submodels.typing import (
+    ResultType,
+    SpeciesType,
+    TricolorRoleType,
+)
 
 
 class Badge(BaseModel):
@@ -106,7 +111,7 @@ class PlayerRoot(BaseModel):
 class Player(PlayerRoot):
     isMyself: bool
     weapon: Weapon
-    species: str
+    species: SpeciesType
     result: Optional[PlayerResult] = None
     crown: bool
     festDragonCert: str
@@ -121,10 +126,10 @@ class TeamResult(BaseModel):
 class Team(BaseModel):
     color: Color
     result: Optional[TeamResult] = None
-    tricolorRole: Optional[str] = None
+    tricolorRole: Optional[TricolorRoleType] = None
     festTeamName: Optional[str] = None
     festUniformBonusRate: Optional[float] = None
-    judgement: Optional[str] = None
+    judgement: Optional[ResultType] = None
     players: list[Player]
     order: int
     festStreakWinCount: Optional[int] = None

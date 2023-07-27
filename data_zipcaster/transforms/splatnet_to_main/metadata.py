@@ -9,7 +9,7 @@ from data_zipcaster.models.splatnet import (
     AnarchyMetadata as splatnet_AnarchyMetadata,
 )
 from data_zipcaster.models.splatnet import XMetadata as splatnet_XMetadata
-from data_zipcaster.models.splatnet.typing.history_groups import (
+from data_zipcaster.models.splatnet.submodels.history_groups import (
     GroupNodeItems,
     NodeItems,
 )

@@ -2,13 +2,14 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from data_zipcaster.models.splatnet.typing.common import Url
+from data_zipcaster.models.splatnet.submodels.common import Url
+from data_zipcaster.models.splatnet.submodels.typing import RuleType
 
 
 class VsRule(BaseModel):
     name: str
     id: str
-    rule: Optional[str] = None
+    rule: Optional[RuleType] = None
 
 
 class VsMode(BaseModel):
