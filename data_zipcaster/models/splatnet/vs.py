@@ -52,23 +52,23 @@ class VsDetail(BaseModel):
     vsHistoryDetail: VsHistoryDetail
 
 
-class MetaDataHistories(BaseModel):
+class MetadataHistories(BaseModel):
     summary: Summary
     historyGroups: HistoryGroups
     historyGroupOnlyFirst: Optional[HistoryGroupOnlyFirst] = None
 
 
-class AnarchyMetaData(BaseModel):
-    bankaraBattleHistories: MetaDataHistories
+class AnarchyMetadata(BaseModel):
+    bankaraBattleHistories: MetadataHistories
 
 
-class XMetaData(BaseModel):
-    xBattleHistories: MetaDataHistories
+class XMetadata(BaseModel):
+    xBattleHistories: MetadataHistories
 
 
-class TurfMetaData(BaseModel):
-    regularBattleHistories: MetaDataHistories
+class TurfMetadata(BaseModel):
+    regularBattleHistories: MetadataHistories
 
 
-class ChallengeMetaData(BaseModel):
-    eventBattleHistories: MetaDataHistories
+class ChallengeMetadata(BaseModel):
+    eventBattleHistories: MetadataHistories

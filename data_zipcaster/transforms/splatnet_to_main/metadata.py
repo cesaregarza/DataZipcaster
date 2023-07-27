@@ -6,9 +6,9 @@ from data_zipcaster.models.main import (
     XMetadata,
 )
 from data_zipcaster.models.splatnet import (
-    AnarchyMetaData as splatnet_AnarchyMetaData,
+    AnarchyMetadata as splatnet_AnarchyMetadata,
 )
-from data_zipcaster.models.splatnet import XMetaData as splatnet_XMetaData
+from data_zipcaster.models.splatnet import XMetadata as splatnet_XMetadata
 from data_zipcaster.models.splatnet.typing.history_groups import (
     GroupNodeItems,
     NodeItems,
@@ -19,7 +19,7 @@ AnarchyMetadata: TypeAlias = AnarchyOpenMetadata | AnarchySeriesMetadata
 
 
 def convert_anarchy_metadata(
-    metadata: splatnet_AnarchyMetaData,
+    metadata: splatnet_AnarchyMetadata,
 ) -> dict[str, AnarchyMetadata]:
     out: dict[str, AnarchyMetadata] = {}
     for group in metadata.bankaraBattleHistories.historyGroups.nodes:
@@ -167,7 +167,7 @@ def convert_anarchy_open_metadata(
 
 
 def convert_xbattle_metadata(
-    metadata: splatnet_XMetaData,
+    metadata: splatnet_XMetadata,
 ) -> dict[str, XMetadata]:
     out: dict[str, XMetadata] = {}
     for group in metadata.xBattleHistories.historyGroups.nodes:

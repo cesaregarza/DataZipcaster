@@ -1,27 +1,27 @@
 from typing import TypeAlias
 
 from data_zipcaster.models.splatnet.vs import (
-    AnarchyMetaData,
-    ChallengeMetaData,
-    TurfMetaData,
+    AnarchyMetadata,
+    ChallengeMetadata,
+    TurfMetadata,
     VsDetail,
-    XMetaData,
+    XMetadata,
 )
 from data_zipcaster.models.utils import strip_prefix_keys
 
-MetaData: TypeAlias = (
-    AnarchyMetaData | XMetaData | TurfMetaData | ChallengeMetaData
+Metadata: TypeAlias = (
+    AnarchyMetadata | XMetadata | TurfMetadata | ChallengeMetadata
 )
 
 
-def generate_metadata(input_dict: dict) -> MetaData:
-    # Iterate through each MetaData type and try to generate it
+def generate_metadata(input_dict: dict) -> Metadata:
+    # Iterate through each Metadata type and try to generate it
     input_dict = strip_prefix_keys(input_dict)
     for metadata_type in [
-        AnarchyMetaData,
-        XMetaData,
-        TurfMetaData,
-        ChallengeMetaData,
+        AnarchyMetadata,
+        XMetadata,
+        TurfMetadata,
+        ChallengeMetadata,
     ]:
         try:
             return metadata_type(**input_dict)
