@@ -1,9 +1,10 @@
+from typing import cast
 from urllib.parse import urlparse
 
 from data_zipcaster.assets import GEAR_HASHES
 from data_zipcaster.models.main import players as main
 from data_zipcaster.models.splatnet.submodels import players as splatnet
-from data_zipcaster.utils import base64_decode
+from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
 
 def convert_weapon_id(player: splatnet.Player) -> int:
@@ -39,4 +40,31 @@ def convert_gear(player: splatnet.Player) -> main.Gear:
         headgear=headgear,
         clothing=clothing,
         shoes=shoes,
+    )
+
+
+def convert_species(species: splatnet.SpeciesType) -> main.SpeciesType:
+    species_remap: dict[splatnet.SpeciesType, main.SpeciesType] = {
+        "INKLING": "inkling",
+        "OCTOLING": "octoling",
+    }
+    return species_remap[species]
+
+
+def convert_nameplate(player: splatnet.Player) -> main.NamePlate:
+    badges: list[str | None] = [None, None, None]
+    for i, badge in enumerate(player.nameplate.badges):
+        if badge is None:
+            continue
+        badges[i] = base64_decode(badge.id)[len("Badge-") :]
+
+    badges_out = cast(main.BadgeType, badges)
+    text_color = color_from_percent_to_str(
+        player.nameplate.background.textColor.model_dump()
+    )
+    background_id = base64_decode(player.nameplate.background.id)
+    return main.NamePlate(
+        badges=badges_out,
+        text_color=text_color,
+        background_id=background_id,
     )
