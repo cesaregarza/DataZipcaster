@@ -88,7 +88,7 @@ class HistoryDetails(BaseModel):
 
 
 class GroupNodeItems(BaseModel):
-    XMatchMeasurement: Optional[XMatchMeasurement] = None
+    xMatchMeasurement: Optional[XMatchMeasurement] = None
     historyDetails: HistoryDetails
     bankaraMatchChallenge: Optional[BankaraMatchChallenge] = None
     leagueMatchHistoryGroup: Optional[LeagueMatchHistoryGroup] = None

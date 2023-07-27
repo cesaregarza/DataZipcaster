@@ -1,4 +1,4 @@
-from typing import TypeAlias, cast, Union
+from typing import TypeAlias
 
 from data_zipcaster.models.main import (
     AnarchyOpenMetadata,
@@ -8,10 +8,6 @@ from data_zipcaster.models.main import (
 from data_zipcaster.models.splatnet import (
     AnarchyMetaData as splatnet_AnarchyMetaData,
 )
-from data_zipcaster.models.splatnet import (
-    ChallengeMetaData as splatnet_ChallengeMetaData,
-)
-from data_zipcaster.models.splatnet import TurfMetaData as splatnet_TurfMetaData
 from data_zipcaster.models.splatnet import XMetaData as splatnet_XMetaData
 from data_zipcaster.models.splatnet.typing.history_groups import (
     GroupNodeItems,
@@ -30,7 +26,11 @@ def convert_anarchy_metadata(
         # Check if the group is a series by checking if it has
         # bankaraMatchChallenge
         if group.bankaraMatchChallenge is not None:
-            # This *must* be unpacked
+            # This *must* be unpacked, mypy does not recognize that
+            # dict[str, A] | dict[str, B] is dict[str, A | B] with the update
+            # method, so we must unpack both dicts into a new dict to get the
+            # correct type. This is not a mypy bug but a limitation of the
+            # type system when dealing with mutable types.
             out = {**out, **convert_anarchy_series_metadata(group)}
         else:
             out = {**out, **convert_anarchy_open_metadata(group)}
@@ -163,4 +163,34 @@ def convert_anarchy_open_metadata(
             subout.rank_before_s_plus = s_rank_before
             subout.rank_after_s_plus = s_rank_before
         out[battle_id] = subout
+    return out
+
+
+def convert_xbattle_metadata(
+    metadata: splatnet_XMetaData,
+) -> dict[str, XMetadata]:
+    out: dict[str, XMetadata] = {}
+    for group in metadata.xBattleHistories.historyGroups.nodes:
+        assert group.xMatchMeasurement is not None
+
+        group_matches = group.historyDetails.nodes
+        win_count = group.xMatchMeasurement.winCount
+        lose_count = group.xMatchMeasurement.loseCount
+        x_power_after = group.xMatchMeasurement.xPowerAfter
+
+        for idx, match in enumerate(group_matches):
+            battle_id = base64_decode(match.id)
+            sub_out = XMetadata(
+                series_win_count=win_count,
+                series_lose_count=lose_count,
+            )
+            if (idx == 0) and (x_power_after is not None):
+                sub_out.x_power_after = x_power_after
+
+            if match.judgement == "WIN":
+                win_count -= 1
+            elif match.judgement in ("LOSE", "DEEMED_LOSE"):
+                lose_count -= 1
+
+            out[battle_id] = sub_out
     return out
