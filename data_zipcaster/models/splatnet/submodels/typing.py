@@ -17,5 +17,6 @@ AwardRankType: TypeAlias = Literal["GOLD", "SILVER"]
 MatchMultiplierType: TypeAlias = Literal[
     "NORMAL", "DECUPLE", "DRAGON", "DOUBLE_DRAGON"
 ]
+CrownType: TypeAlias = Literal["DRAGON", "DOUBLE_DRAGON", "NONE"]
 TricolorRoleType: TypeAlias = Literal["DEFENSE", "ATTACK1", "ATTACK2"]
 SpeciesType: TypeAlias = Literal["INKLING", "OCTOLING"]

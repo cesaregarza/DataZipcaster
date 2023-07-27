@@ -21,8 +21,9 @@ def convert_gear_stats(gear: splatnet.Gear) -> main.GearItem:
     gear_name = gear.name
     brand_name = gear.brand.name
     main_stat = extract_stat(gear.primaryGearPower.image.url)
-    sub_stats: list[main.AbilityType] = [
-        extract_stat(ability.image.url) for ability in gear.additionalGearPowers
+    sub_stats: list[main.StackableAbilityType] = [
+        cast(main.StackableAbilityType, extract_stat(ability.image.url))
+        for ability in gear.additionalGearPowers
     ]
     return main.GearItem(
         name=gear_name,
@@ -66,5 +67,48 @@ def convert_nameplate(player: splatnet.Player) -> main.NamePlate:
     return main.NamePlate(
         badges=badges_out,
         text_color=text_color,
-        background_id=background_id,
+        background_id=background_id[len("NameplateBackground-") :],
     )
+
+
+def convert_player(
+    player: splatnet.Player, scoreboard_position: int
+) -> main.Player:
+    player_id = base64_decode(player.id).split(":")[-1]
+    out = main.Player(
+        name=player.name,
+        npln_id=player_id,
+        me=player.isMyself,
+        splashtag=player.byname,
+        nameplate=convert_nameplate(player),
+        weapon_name=player.weapon.name,
+        weapon_id=convert_weapon_id(player),
+        sub_name=player.weapon.subWeapon.name,
+        special_name=player.weapon.specialWeapon.name,
+        inked=player.paint,
+        species=convert_species(player.species),
+        scoreboard_position=scoreboard_position,
+        gear=convert_gear(player),
+        disconnected=(player.result is None),
+    )
+
+    # First vs game will not have a player number
+    if number := player.nameId:
+        out.player_number = str(number)
+
+    if player.result is not None:
+        out.kills_or_assists = player.result.kill
+        out.assists = player.result.assist
+        out.kills = player.result.kill - player.result.assist
+        out.deaths = player.result.death
+        out.specials = player.result.special
+        out.signals = player.result.noroshiTry
+        out.crown = player.crown
+
+    if (crown_type := player.festDragonCert) is not None and (
+        crown_type != "NONE"
+    ):
+        out.crown_type = crown_type
+        out.crown = True
+
+    return out

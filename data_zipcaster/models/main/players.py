@@ -72,5 +72,5 @@ class Player(BaseModel):
     deaths: Optional[int] = None
     specials: Optional[int] = None
     signals: Optional[int] = None
-    crown: Optional[int] = None
+    crown: Optional[bool] = None
     crown_type: Optional[CrownType] = None

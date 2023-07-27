@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from data_zipcaster.models.splatnet.submodels.common import Color, Url
 from data_zipcaster.models.splatnet.submodels.typing import (
+    CrownType,
     ResultType,
     SpeciesType,
     TricolorRoleType,
@@ -114,7 +115,7 @@ class Player(PlayerRoot):
     species: SpeciesType
     result: Optional[PlayerResult] = None
     crown: bool
-    festDragonCert: str
+    festDragonCert: Optional[CrownType] = None
 
 
 class TeamResult(BaseModel):

@@ -40,6 +40,7 @@ StackableAbilityType: TypeAlias = Literal[
     "ink_resistance_up",
     "sub_resistance_up",
     "intensify_action",
+    None,
 ]
 MainSlotOnlyAbilityType: TypeAlias = Literal[
     "opening_gambit",
