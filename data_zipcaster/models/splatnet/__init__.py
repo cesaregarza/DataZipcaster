@@ -1,6 +1,65 @@
 from typing import TypeAlias
 
-from data_zipcaster.models.splatnet.submodels import *
+from pydantic import ValidationError
+
+from data_zipcaster.models.splatnet.submodels import (
+    AwardRankType,
+    Background,
+    Badge,
+    BankaraMatch,
+    BankaraMatchChallenge,
+    Brand,
+    Color,
+    CrownType,
+    Gear,
+    GearPower,
+    GroupNodeItems,
+    HGBankaraMatch,
+    HGFGroupNodeItem,
+    HGFHistoryDetails,
+    HGFNodeItem,
+    HGFPlayer,
+    HGFSpecialWeapon,
+    HGFWeapon,
+    HistoryDetails,
+    HistoryGroupOnlyFirst,
+    HistoryGroups,
+    KnockoutType,
+    LeagueMatch,
+    LeagueMatchEvent,
+    LeagueMatchHistoryGroup,
+    MaskingImage,
+    MatchMultiplierType,
+    MyTeam,
+    MyTeamResult,
+    Nameplate,
+    NodeItems,
+    OneHistoryDetail,
+    Player,
+    PlayerHistoryGroup,
+    PlayerResult,
+    PlayerRoot,
+    ResultType,
+    RuleType,
+    SpecialWeapon,
+    SpeciesType,
+    SplatfestMatch,
+    SubWeapon,
+    Summary,
+    Team,
+    TeamResult,
+    TricolorRoleType,
+    Url,
+    UsualGearPower,
+    VsMode,
+    VsRule,
+    VsStage,
+    Weapon,
+    WeaponHistoryGroup,
+    XMatch,
+    XMatchMeasurement,
+    XPower,
+)
 from data_zipcaster.models.splatnet.vs import (
     AnarchyMetadata,
     ChallengeMetadata,
@@ -26,7 +85,7 @@ def generate_metadata(input_dict: dict) -> Metadata:
     ]:
         try:
             return metadata_type(**input_dict)
-        except:
+        except ValidationError:
             pass
     raise ValueError("Could not generate metadata")
 

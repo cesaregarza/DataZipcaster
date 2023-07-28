@@ -8,7 +8,7 @@ from data_zipcaster.importers.splatnet.paths import gear_paths, player_paths
 from data_zipcaster.schemas.players import (
     GearDict,
     GearItemDict,
-    NamePlateDict,
+    NameplateDict,
     PlayerDict,
 )
 from data_zipcaster.schemas.typing import BadgeType
@@ -117,14 +117,14 @@ def extract_species(player: QueryResponse) -> Literal["inkling", "octoling"]:
     return cast(Literal["inkling", "octoling"], species.lower())
 
 
-def extract_nameplate(player: QueryResponse) -> NamePlateDict:
+def extract_nameplate(player: QueryResponse) -> NameplateDict:
     """Extracts the player's nameplate from a player's data.
 
     Args:
         player (QueryResponse): The player's data.
 
     Returns:
-        NamePlateDict: The player's nameplate. The keys are as follows:
+        NameplateDict: The player's nameplate. The keys are as follows:
 
         - ``badges``: A tuple of the player's badges. Each badge is a base64
             encoded string, or ``None`` if the player has no badge at that slot.
@@ -147,7 +147,7 @@ def extract_nameplate(player: QueryResponse) -> NamePlateDict:
     background_id = base64_decode(
         cast(str, player[player_paths.NAMEPLATE_BACKGROUND_ID])
     )
-    return NamePlateDict(
+    return NameplateDict(
         badges=badges_out,
         text_color=text_color,
         background_id=background_id[len("NameplateBackground-") :],

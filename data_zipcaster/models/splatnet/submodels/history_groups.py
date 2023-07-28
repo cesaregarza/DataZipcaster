@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -15,6 +15,22 @@ from data_zipcaster.models.splatnet.submodels.typing import (
     KnockoutType,
     ResultType,
 )
+
+__all__ = [
+    "XMatchMeasurement",
+    "BankaraMatchChallenge",
+    "LeagueMatchHistoryGroup",
+    "WeaponHistoryGroup",
+    "PlayerHistoryGroup",
+    "MyTeamResult",
+    "MyTeam",
+    "OneHistoryDetail",
+    "HGBankaraMatch",
+    "NodeItems",
+    "HistoryDetails",
+    "GroupNodeItems",
+    "HistoryGroups",
+]
 
 
 class XMatchMeasurement(BaseModel):
@@ -48,14 +64,14 @@ class LeagueMatchHistoryGroup(BaseModel):
     myLeaguePower: Optional[float] = None
 
 
-class Weapon(BaseModel):
+class WeaponHistoryGroup(BaseModel):
     name: str
     image: Url
     id: str
 
 
-class Player(BaseModel):
-    weapon: Weapon
+class PlayerHistoryGroup(BaseModel):
+    weapon: WeaponHistoryGroup
     id: str
     festGrade: Optional[str] = None
 
@@ -73,7 +89,7 @@ class OneHistoryDetail(BaseModel):
     id: str
 
 
-class BankaraMatch(BaseModel):
+class HGBankaraMatch(BaseModel):
     earnedUdemaePoint: Optional[int] = None
 
 
@@ -83,13 +99,13 @@ class NodeItems(BaseModel):
     vsRule: VsRule
     vsStage: VsStage
     judgement: ResultType
-    player: Player
+    player: PlayerHistoryGroup
     knockout: Optional[KnockoutType] = None
     myTeam: MyTeam
     nextHistoryDetail: Optional[OneHistoryDetail] = None
     previousHistoryDetail: Optional[OneHistoryDetail] = None
     udemae: Optional[str] = None
-    bankaraMatch: Optional[BankaraMatch] = None
+    bankaraMatch: Optional[HGBankaraMatch] = None
     playedTime: Optional[str] = None
 
 

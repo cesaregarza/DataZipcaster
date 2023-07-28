@@ -4,6 +4,13 @@ from pydantic import BaseModel, validator
 
 from data_zipcaster.constants import RANKS
 
+__all__ = [
+    "AnarchyMetadata",
+    "AnarchySeriesMetadata",
+    "AnarchyOpenMetadata",
+    "XMetadata",
+]
+
 
 class AnarchyMetadata(BaseModel):
     rank_before: str

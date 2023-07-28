@@ -4,6 +4,14 @@ from pydantic import BaseModel
 
 from data_zipcaster.models.splatnet.submodels.typing import MatchMultiplierType
 
+__all__ = [
+    "SplatfestMatch",
+    "BankaraMatch",
+    "LeagueMatch",
+    "LeagueMatchEvent",
+    "XMatch",
+]
+
 
 class SplatfestMatch(BaseModel):
     dragonMatchType: MatchMultiplierType

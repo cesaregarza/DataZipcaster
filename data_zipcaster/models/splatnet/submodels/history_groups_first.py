@@ -2,34 +2,45 @@ from pydantic import BaseModel
 
 from data_zipcaster.models.splatnet.submodels.players import MaskingImage
 
+__all__ = [
+    "HistoryGroupOnlyFirst",
+    "HGFGroupNodeItem",
+    "HGFNodeItem",
+    "HGFHistoryDetails",
+    "HGFPlayer",
+    "HGFWeapon",
+    "HGFSpecialWeapon",
+    "MaskingImage",
+]
 
-class SpecialWeapon(BaseModel):
+
+class HGFSpecialWeapon(BaseModel):
     maskingImage: MaskingImage
     id: str
 
 
-class Weapon(BaseModel):
-    specialWeapon: SpecialWeapon
+class HGFWeapon(BaseModel):
+    specialWeapon: HGFSpecialWeapon
     id: str
 
 
-class Player(BaseModel):
-    weapon: Weapon
+class HGFPlayer(BaseModel):
+    weapon: HGFWeapon
     id: str
 
 
-class NodeItem(BaseModel):
-    player: Player
+class HGFNodeItem(BaseModel):
+    player: HGFPlayer
     id: str
 
 
-class HistoryDetails(BaseModel):
-    nodes: list[NodeItem]
+class HGFHistoryDetails(BaseModel):
+    nodes: list[HGFNodeItem]
 
 
-class GroupNodeItem(BaseModel):
-    historyDetails: HistoryDetails
+class HGFGroupNodeItem(BaseModel):
+    historyDetails: HGFHistoryDetails
 
 
 class HistoryGroupOnlyFirst(BaseModel):
-    nodes: list[GroupNodeItem]
+    nodes: list[HGFGroupNodeItem]

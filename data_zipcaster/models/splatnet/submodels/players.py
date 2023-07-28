@@ -10,6 +10,25 @@ from data_zipcaster.models.splatnet.submodels.typing import (
     TricolorRoleType,
 )
 
+__all__ = [
+    "Badge",
+    "Background",
+    "Nameplate",
+    "MaskingImage",
+    "SpecialWeapon",
+    "SubWeapon",
+    "Weapon",
+    "GearPower",
+    "UsualGearPower",
+    "Brand",
+    "Gear",
+    "PlayerResult",
+    "PlayerRoot",
+    "Player",
+    "TeamResult",
+    "Team",
+]
+
 
 class Badge(BaseModel):
     image: Url
@@ -22,7 +41,7 @@ class Background(BaseModel):
     id: str
 
 
-class NamePlate(BaseModel):
+class Nameplate(BaseModel):
     badges: list[Badge | None]
     background: Background
 
@@ -101,7 +120,7 @@ class PlayerRoot(BaseModel):
     byname: str
     name: str
     nameId: str
-    nameplate: NamePlate
+    nameplate: Nameplate
     id: str
     headGear: Gear
     clothingGear: Gear

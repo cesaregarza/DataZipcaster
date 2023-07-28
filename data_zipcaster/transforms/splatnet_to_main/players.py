@@ -52,7 +52,7 @@ def convert_species(species: splatnet.SpeciesType) -> main.SpeciesType:
     return species_remap[species]
 
 
-def convert_nameplate(player: splatnet.Player) -> main.NamePlate:
+def convert_nameplate(player: splatnet.Player) -> main.Nameplate:
     badges: list[str | None] = [None, None, None]
     for i, badge in enumerate(player.nameplate.badges):
         if badge is None:
@@ -64,7 +64,7 @@ def convert_nameplate(player: splatnet.Player) -> main.NamePlate:
         player.nameplate.background.textColor.model_dump()
     )
     background_id = base64_decode(player.nameplate.background.id)
-    return main.NamePlate(
+    return main.Nameplate(
         badges=badges_out,
         text_color=text_color,
         background_id=background_id[len("NameplateBackground-") :],

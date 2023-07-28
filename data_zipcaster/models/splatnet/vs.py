@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -20,6 +20,17 @@ from data_zipcaster.models.splatnet.submodels import (
     VsStage,
     XMatch,
 )
+
+__all__ = [
+    "Award",
+    "VsHistoryDetail",
+    "VsDetail",
+    "MetadataHistories",
+    "AnarchyMetadata",
+    "XMetadata",
+    "TurfMetadata",
+    "ChallengeMetadata",
+]
 
 
 class Award(BaseModel):

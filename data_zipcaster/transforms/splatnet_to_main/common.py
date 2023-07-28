@@ -133,3 +133,12 @@ def convert_team_data(vs_detail: splatnet.VsDetail) -> list[main.Team]:
 
         out.append(sub_out)
     return out
+
+
+def convert_knockout(knockout: splatnet.KnockoutType) -> main.KnockoutType:
+    knockout_remap: dict[splatnet.KnockoutType, main.KnockoutType] = {
+        "WIN": "win",
+        "LOSE": "lose",
+        "NEITHER": "neither",
+    }
+    return knockout_remap[knockout]

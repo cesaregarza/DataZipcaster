@@ -10,6 +10,13 @@ from data_zipcaster.models.main.typing import (
     StackableAbilityType,
 )
 
+__all__ = [
+    "GearItem",
+    "Gear",
+    "Nameplate",
+    "Player",
+]
+
 
 class GearItem(BaseModel):
     name: str
@@ -31,7 +38,7 @@ class Gear(BaseModel):
     shoes: GearItem
 
 
-class NamePlate(BaseModel):
+class Nameplate(BaseModel):
     badges: BadgeType
     text_color: str
     background_id: str
@@ -56,7 +63,7 @@ class Player(BaseModel):
     me: bool
     player_number: Optional[str] = None
     splashtag: str
-    nameplate: NamePlate
+    nameplate: Nameplate
     weapon_name: str
     weapon_id: int
     sub_name: str

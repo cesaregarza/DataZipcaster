@@ -18,7 +18,7 @@ class GearDict(TypedDict):
     shoes: GearItemDict
 
 
-class NamePlateDict(TypedDict):
+class NameplateDict(TypedDict):
     badges: BadgeType
     text_color: str
     background_id: str
@@ -30,7 +30,7 @@ class PlayerDict(TypedDict):
     me: bool
     player_number: NotRequired[str]
     splashtag: str
-    nameplate: NamePlateDict
+    nameplate: NameplateDict
     weapon_name: str
     weapon_id: int
     sub_name: str

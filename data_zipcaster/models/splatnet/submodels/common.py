@@ -1,5 +1,10 @@
 from pydantic import BaseModel
 
+__all__ = [
+    "Url",
+    "Color",
+]
+
 
 class Url(BaseModel):
     url: str

@@ -13,6 +13,15 @@ from data_zipcaster.models.main.typing import (
     TricolorRoleType,
 )
 
+__all__ = [
+    "Medals",
+    "TeamResult",
+    "SplatfestTeam",
+    "Team",
+    "SplatfestMetadata",
+    "VsExtract",
+]
+
 
 class Medals(BaseModel):
     name: str

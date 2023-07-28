@@ -2,6 +2,11 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+__all__ = [
+    "XPower",
+    "Summary",
+]
+
 
 class XPower(BaseModel):
     lastXPower: float
