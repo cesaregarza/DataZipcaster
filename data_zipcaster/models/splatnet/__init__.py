@@ -1,5 +1,6 @@
 from typing import TypeAlias
 
+from data_zipcaster.models.splatnet.submodels import *
 from data_zipcaster.models.splatnet.vs import (
     AnarchyMetadata,
     ChallengeMetadata,

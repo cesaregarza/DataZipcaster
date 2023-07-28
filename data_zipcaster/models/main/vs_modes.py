@@ -3,11 +3,14 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, validator
 
+from data_zipcaster.models.main.metadata import AnarchySeriesMetadata, XMetadata
+from data_zipcaster.models.main.players import Player
 from data_zipcaster.models.main.typing import (
     KnockoutType,
     ModeType,
     ResultType,
     RuleType,
+    TricolorRoleType,
 )
 
 
@@ -27,11 +30,11 @@ class SplatfestTeam(BaseModel):
     team_name: str
     synergy_bonus: Optional[float] = None
     synergy_name: Optional[str] = None
-    tricolor_role: Literal["defense", "attack1", "attack2"] | None = None
+    tricolor_role: TricolorRoleType | None = None
 
 
 class Team(BaseModel):
-    players: list[dict]
+    players: list[Player]
     color: str
     order: int
     result: Optional[TeamResult] = None
@@ -55,7 +58,7 @@ class VsExtract(BaseModel):
     teams: list[Team]
     medals: list[Medals]
     id: str
-    series_metadata: Optional[dict] = None
+    series_metadata: Optional[AnarchySeriesMetadata | XMetadata] = None
 
     @validator("teams")
     def validate_teams(cls, v):

@@ -1,6 +1,4 @@
-from data_zipcaster.models.main.metadata import (
-    AnarchyOpenMetadata,
-    AnarchySeriesMetadata,
-    XMetadata,
-)
-from data_zipcaster.models.main.vs_modes import VsExtract
+from data_zipcaster.models.main.metadata import *
+from data_zipcaster.models.main.players import *
+from data_zipcaster.models.main.typing import *
+from data_zipcaster.models.main.vs_modes import *

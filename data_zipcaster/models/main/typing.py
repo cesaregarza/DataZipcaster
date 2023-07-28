@@ -20,11 +20,14 @@ RuleType: TypeAlias = Literal[
     "clam_blitz",
     "tricolor",
 ]
-ResultType: TypeAlias = Literal["win", "lose", "draw", "exempted_lose"]
+ResultType: TypeAlias = Literal[
+    "win", "lose", "draw", "exempted_lose", "deemed_lose"
+]
 BadgeType: TypeAlias = tuple[str | None, str | None, str | None]
 MatchMultiplierType: TypeAlias = Literal[
     "NORMAL", "DECUPLE", "DRAGON", "DOUBLE_DRAGON"
 ]
+TricolorRoleType: TypeAlias = Literal["defense", "attack1", "attack2"]
 StackableAbilityType: TypeAlias = Literal[
     "ink_saver_main",
     "ink_saver_sub",

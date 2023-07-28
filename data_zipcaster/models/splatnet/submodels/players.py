@@ -119,7 +119,7 @@ class Player(PlayerRoot):
 
 
 class TeamResult(BaseModel):
-    paint_ratio: Optional[float] = None
+    paintRatio: Optional[float] = None
     score: Optional[int] = None
     noroshi: Optional[int] = None
 

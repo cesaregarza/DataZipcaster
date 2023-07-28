@@ -3,16 +3,8 @@ import uuid
 from typing import cast
 
 from data_zipcaster.constants import MODES
-from data_zipcaster.models.main import typing as main_typing
-from data_zipcaster.models.main.players import Player as main_Player
-from data_zipcaster.models.main.vs_modes import Team as main_Team
-from data_zipcaster.models.splatnet import VsDetail
-from data_zipcaster.models.splatnet.submodels import typing as splatnet_typing
-from data_zipcaster.models.splatnet.submodels.players import (
-    Player,
-    PlayerRoot,
-    Team,
-)
+from data_zipcaster.models import main, splatnet
+from data_zipcaster.transforms.splatnet_to_main.players import convert_player
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
 
@@ -43,13 +35,13 @@ def generate_match_uuid(battle_id: str, namespace: uuid.UUID) -> str:
     return str(uuid.uuid5(namespace, battle_id[-52:]))
 
 
-def convert_mode(battle_id: str) -> main_typing.ModeType:
+def convert_mode(battle_id: str) -> main.ModeType:
     mode_idx = base64_decode(battle_id)[len("VsMode-") :]
-    return cast(main_typing.ModeType, MODES.get_mode_by_id(mode_idx)["key"])
+    return cast(main.ModeType, MODES.get_mode_by_id(mode_idx)["key"])
 
 
-def convert_rule(rule: splatnet_typing.RuleType) -> main_typing.RuleType:
-    rule_remap: dict[splatnet_typing.RuleType, main_typing.RuleType] = {
+def convert_rule(rule: splatnet.RuleType) -> main.RuleType:
+    rule_remap: dict[splatnet.RuleType, main.RuleType] = {
         "TURF_WAR": "turf_war",
         "AREA": "splat_zones",
         "LOFT": "tower_control",
@@ -65,9 +57,9 @@ def convert_stage(stage_id: str) -> str:
 
 
 def convert_result(
-    judgement: splatnet_typing.ResultType,
-) -> main_typing.ResultType:
-    result_remap: dict[splatnet_typing.ResultType, main_typing.ResultType] = {
+    judgement: splatnet.ResultType,
+) -> main.ResultType:
+    result_remap: dict[splatnet.ResultType, main.ResultType] = {
         "WIN": "win",
         "LOSE": "lose",
         "DRAW": "draw",
@@ -86,20 +78,58 @@ def convert_duration(duration: int) -> dt.timedelta:
 
 
 def get_teams_data(
-    vs_detail: VsDetail,
-) -> list[Team]:
+    vs_detail: splatnet.VsDetail,
+) -> list[splatnet.Team]:
     return [
         vs_detail.vsHistoryDetail.myTeam,
         *vs_detail.vsHistoryDetail.otherTeams,
     ]
 
 
-def convert_team_data(vs_detail: VsDetail) -> list[main_Team]:
+def convert_tricolor_role(
+    role: splatnet.TricolorRoleType | None,
+) -> main.TricolorRoleType | None:
+    if role is None:
+        return None
+
+    remap: dict[splatnet.TricolorRoleType, main.TricolorRoleType] = {
+        "DEFENSE": "defense",
+        "ATTACK1": "attack1",
+        "ATTACK2": "attack2",
+    }
+    return remap[role]
+
+
+def convert_team_data(vs_detail: splatnet.VsDetail) -> list[main.Team]:
     teams = get_teams_data(vs_detail)
-    out: list[main_Team] = []
+    out: list[main.Team] = []
 
     for team in teams:
-        players: list[main_Player] = []
-        for idx, player in enumerate(team.players):
-            # players.append(convert_player_data(player, idx))
-            pass
+        sub_out = main.Team(
+            players=[
+                convert_player(player, idx)
+                for idx, player in enumerate(team.players)
+            ],
+            color=color_from_percent_to_str(team.color.model_dump()),
+            order=team.order,
+        )
+
+        if team.result is not None:
+            assert team.judgement is not None
+            sub_out.result = main.TeamResult(
+                paint_ratio=team.result.paintRatio,
+                score=team.result.score,
+                noroshi=team.result.noroshi,
+                team_result=convert_result(team.judgement),
+            )
+
+        if team.festTeamName is not None:
+            sub_out.splatfest = main.SplatfestTeam(
+                team_name=team.festTeamName,
+                synergy_bonus=team.festUniformBonusRate,
+                synergy_name=team.festUniformName,
+                tricolor_role=convert_tricolor_role(team.tricolorRole),
+            )
+
+        out.append(sub_out)
+    return out

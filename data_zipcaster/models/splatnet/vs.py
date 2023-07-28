@@ -2,30 +2,23 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from data_zipcaster.models.splatnet.submodels.history_groups import (
-    HistoryGroups,
-    OneHistoryDetail,
-)
-from data_zipcaster.models.splatnet.submodels.history_groups_first import (
-    HistoryGroupOnlyFirst,
-)
-from data_zipcaster.models.splatnet.submodels.mode_specific import (
+from data_zipcaster.models.splatnet.submodels import (
+    AwardRankType,
     BankaraMatch,
+    HistoryGroupOnlyFirst,
+    HistoryGroups,
+    KnockoutType,
     LeagueMatch,
+    OneHistoryDetail,
+    PlayerRoot,
+    ResultType,
     SplatfestMatch,
-    XMatch,
-)
-from data_zipcaster.models.splatnet.submodels.players import PlayerRoot, Team
-from data_zipcaster.models.splatnet.submodels.rules import (
+    Summary,
+    Team,
     VsMode,
     VsRule,
     VsStage,
-)
-from data_zipcaster.models.splatnet.submodels.summary import Summary
-from data_zipcaster.models.splatnet.submodels.typing import (
-    AwardRankType,
-    KnockoutType,
-    ResultType,
+    XMatch,
 )
 
 
