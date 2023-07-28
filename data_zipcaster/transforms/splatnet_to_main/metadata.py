@@ -1,25 +1,15 @@
 from typing import TypeAlias
 
-from data_zipcaster.models.main import (
-    AnarchyOpenMetadata,
-    AnarchySeriesMetadata,
-    XMetadata,
-)
-from data_zipcaster.models.splatnet import (
-    AnarchyMetadata as splatnet_AnarchyMetadata,
-)
-from data_zipcaster.models.splatnet import XMetadata as splatnet_XMetadata
-from data_zipcaster.models.splatnet.submodels.history_groups import (
-    GroupNodeItems,
-    NodeItems,
-)
+from data_zipcaster.models import main, splatnet
 from data_zipcaster.utils import base64_decode, parse_rank
 
-AnarchyMetadata: TypeAlias = AnarchyOpenMetadata | AnarchySeriesMetadata
+AnarchyMetadata: TypeAlias = (
+    main.AnarchyOpenMetadata | main.AnarchySeriesMetadata
+)
 
 
 def convert_anarchy_metadata(
-    metadata: splatnet_AnarchyMetadata,
+    metadata: splatnet.AnarchyMetadata,
 ) -> dict[str, AnarchyMetadata]:
     out: dict[str, AnarchyMetadata] = {}
     for group in metadata.bankaraBattleHistories.historyGroups.nodes:
@@ -38,9 +28,9 @@ def convert_anarchy_metadata(
 
 
 def convert_anarchy_series_metadata(
-    group: GroupNodeItems,
-) -> dict[str, AnarchySeriesMetadata]:
-    out: dict[str, AnarchySeriesMetadata] = {}
+    group: splatnet.GroupNodeItems,
+) -> dict[str, main.AnarchySeriesMetadata]:
+    out: dict[str, main.AnarchySeriesMetadata] = {}
     assert group.bankaraMatchChallenge is not None
 
     if group.bankaraMatchChallenge.udemaeAfter is None:
@@ -92,21 +82,21 @@ def convert_anarchy_series_metadata(
 
 
 def parse_last_anarchy_series_match(
-    match: NodeItems,
+    match: splatnet.NodeItems,
     rank_after: str,
     s_rank_after: int | None,
     win_count: int,
     lose_count: int,
     rank_points: int,
     is_rank_up: bool,
-) -> AnarchySeriesMetadata:
+) -> main.AnarchySeriesMetadata:
     assert match.udemae is not None
     assert match.bankaraMatch is not None
     assert match.bankaraMatch.earnedUdemaePoint is not None
 
     rank_before, s_rank_before = parse_rank(match.udemae.lower())
     rank_points = match.bankaraMatch.earnedUdemaePoint
-    out = AnarchySeriesMetadata(
+    out = main.AnarchySeriesMetadata(
         rank_before=rank_before,
         rank_after=rank_after,
         rank_exp_change=rank_points,
@@ -122,13 +112,13 @@ def parse_last_anarchy_series_match(
 
 
 def parse_anarchy_series_match(
-    match: NodeItems,
+    match: splatnet.NodeItems,
     win_count: int,
     lose_count: int,
-) -> AnarchySeriesMetadata:
+) -> main.AnarchySeriesMetadata:
     assert match.udemae is not None
     rank_before, s_rank_before = parse_rank(match.udemae.lower())
-    out = AnarchySeriesMetadata(
+    out = main.AnarchySeriesMetadata(
         rank_before=rank_before,
         rank_after=rank_before,
         rank_exp_change=0,
@@ -142,9 +132,9 @@ def parse_anarchy_series_match(
 
 
 def convert_anarchy_open_metadata(
-    group: GroupNodeItems,
-) -> dict[str, AnarchyOpenMetadata]:
-    out: dict[str, AnarchyOpenMetadata] = {}
+    group: splatnet.GroupNodeItems,
+) -> dict[str, main.AnarchyOpenMetadata]:
+    out: dict[str, main.AnarchyOpenMetadata] = {}
 
     for match in group.historyDetails.nodes:
         assert match.bankaraMatch is not None
@@ -154,7 +144,7 @@ def convert_anarchy_open_metadata(
         rank_before, s_rank_before = parse_rank(match.udemae.lower())
         rank_points = match.bankaraMatch.earnedUdemaePoint
 
-        subout = AnarchyOpenMetadata(
+        subout = main.AnarchyOpenMetadata(
             rank_before=rank_before,
             rank_after=rank_before,
             rank_exp_change=rank_points,
@@ -167,9 +157,9 @@ def convert_anarchy_open_metadata(
 
 
 def convert_xbattle_metadata(
-    metadata: splatnet_XMetadata,
-) -> dict[str, XMetadata]:
-    out: dict[str, XMetadata] = {}
+    metadata: splatnet.XMetadata,
+) -> dict[str, main.XMetadata]:
+    out: dict[str, main.XMetadata] = {}
     for group in metadata.xBattleHistories.historyGroups.nodes:
         assert group.xMatchMeasurement is not None
 
@@ -180,7 +170,7 @@ def convert_xbattle_metadata(
 
         for idx, match in enumerate(group_matches):
             battle_id = base64_decode(match.id)
-            sub_out = XMetadata(
+            sub_out = main.XMetadata(
                 series_win_count=win_count,
                 series_lose_count=lose_count,
             )
