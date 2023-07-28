@@ -142,3 +142,28 @@ def convert_knockout(knockout: splatnet.KnockoutType) -> main.KnockoutType:
         "NEITHER": "neither",
     }
     return knockout_remap[knockout]
+
+
+def convert_award(award: splatnet.Award) -> main.Awards:
+    rank_remap: dict[splatnet.AwardRankType, main.AwardRankType] = {
+        "GOLD": "gold",
+        "SILVER": "silver",
+    }
+    return main.Awards(
+        name=award.name,
+        rank=rank_remap[award.rank],
+    )
+
+
+def convert_match_multiplier(
+    match_multiplier: splatnet.MatchMultiplierType,
+) -> main.MatchMultiplierType:
+    match_multiplier_remap: dict[
+        splatnet.MatchMultiplierType, main.MatchMultiplierType
+    ] = {
+        "NORMAL": 1,
+        "DECUPLE": 10,
+        "DRAGON": 100,
+        "DOUBLE_DRAGON": 333,
+    }
+    return match_multiplier_remap[match_multiplier]

@@ -13,6 +13,7 @@ __all__ = [
     "AbilityType",
     "SpeciesType",
     "CrownType",
+    "AwardRankType",
 ]
 
 KnockoutType: TypeAlias = Literal["win", "lose", "neither"] | None
@@ -40,7 +41,10 @@ ResultType: TypeAlias = Literal[
 ]
 BadgeType: TypeAlias = tuple[str | None, str | None, str | None]
 MatchMultiplierType: TypeAlias = Literal[
-    "NORMAL", "DECUPLE", "DRAGON", "DOUBLE_DRAGON"
+    1,
+    10,
+    100,
+    333,
 ]
 TricolorRoleType: TypeAlias = Literal["defense", "attack1", "attack2"]
 StackableAbilityType: TypeAlias = Literal[
@@ -76,4 +80,5 @@ MainSlotOnlyAbilityType: TypeAlias = Literal[
 ]
 AbilityType: TypeAlias = MainSlotOnlyAbilityType | StackableAbilityType
 SpeciesType: TypeAlias = Literal["inkling", "octoling"]
-CrownType: TypeAlias = Literal["DRAGON", "DOUBLE_DRAGON"]
+CrownType: TypeAlias = Literal["dragon", "double_dragon"]
+AwardRankType: TypeAlias = Literal["gold", "silver"]

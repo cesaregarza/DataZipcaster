@@ -62,9 +62,12 @@ from data_zipcaster.models.splatnet.submodels import (
 )
 from data_zipcaster.models.splatnet.vs import (
     AnarchyMetadata,
+    Award,
     ChallengeMetadata,
+    MetadataHistories,
     TurfMetadata,
     VsDetail,
+    VsHistoryDetail,
     XMetadata,
 )
 from data_zipcaster.models.utils import strip_prefix_keys

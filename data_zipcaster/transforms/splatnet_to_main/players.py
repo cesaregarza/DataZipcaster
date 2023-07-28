@@ -71,6 +71,16 @@ def convert_nameplate(player: splatnet.Player) -> main.Nameplate:
     )
 
 
+def convert_crown_type(crown_type: splatnet.CrownType) -> main.CrownType | None:
+    if crown_type == "NONE":
+        return None
+    crown_remap: dict[splatnet.CrownType, main.CrownType] = {
+        "DRAGON": "dragon",
+        "DOUBLE_DRAGON": "double_dragon",
+    }
+    return crown_remap[crown_type]
+
+
 def convert_player(
     player: splatnet.Player, scoreboard_position: int
 ) -> main.Player:
@@ -108,7 +118,7 @@ def convert_player(
     if (crown_type := player.festDragonCert) is not None and (
         crown_type != "NONE"
     ):
-        out.crown_type = crown_type
+        out.crown_type = convert_crown_type(crown_type)
         out.crown = True
 
     return out

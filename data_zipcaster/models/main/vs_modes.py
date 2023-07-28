@@ -6,6 +6,7 @@ from pydantic import BaseModel, validator
 from data_zipcaster.models.main.metadata import AnarchySeriesMetadata, XMetadata
 from data_zipcaster.models.main.players import Player
 from data_zipcaster.models.main.typing import (
+    AwardRankType,
     KnockoutType,
     ModeType,
     ResultType,
@@ -14,7 +15,7 @@ from data_zipcaster.models.main.typing import (
 )
 
 __all__ = [
-    "Medals",
+    "Awards",
     "TeamResult",
     "SplatfestTeam",
     "Team",
@@ -23,9 +24,9 @@ __all__ = [
 ]
 
 
-class Medals(BaseModel):
+class Awards(BaseModel):
     name: str
-    rank: Literal["GOLD", "SILVER"]
+    rank: AwardRankType
 
 
 class TeamResult(BaseModel):
@@ -65,7 +66,7 @@ class VsExtract(BaseModel):
     start_time: dt.datetime
     duration: dt.timedelta
     teams: list[Team]
-    medals: list[Medals]
+    awards: list[Awards]
     id: str
     series_metadata: Optional[AnarchySeriesMetadata | XMetadata] = None
 
@@ -73,10 +74,4 @@ class VsExtract(BaseModel):
     def validate_teams(cls, v):
         if len(v) <= 2:
             raise ValueError("teams must have at least 2 elements")
-        return v
-
-    @validator("medals")
-    def validate_medals(cls, v):
-        if len(v) != 3:
-            raise ValueError("medals must have 3 elements")
         return v

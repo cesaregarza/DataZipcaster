@@ -7,6 +7,7 @@ from data_zipcaster.models.main.metadata import (
 from data_zipcaster.models.main.players import Gear, GearItem, Nameplate, Player
 from data_zipcaster.models.main.typing import (
     AbilityType,
+    AwardRankType,
     BadgeType,
     CrownType,
     KnockoutType,
@@ -20,7 +21,7 @@ from data_zipcaster.models.main.typing import (
     TricolorRoleType,
 )
 from data_zipcaster.models.main.vs_modes import (
-    Medals,
+    Awards,
     SplatfestMetadata,
     SplatfestTeam,
     Team,
