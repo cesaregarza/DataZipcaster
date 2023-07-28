@@ -53,7 +53,7 @@ def convert_rule(rule: splatnet.RuleType) -> main.RuleType:
 
 
 def convert_stage(stage_id: str) -> str:
-    return base64_decode(stage_id)[len("Stage-") :]
+    return base64_decode(stage_id)[len("VsStage-") :]
 
 
 def convert_result(
@@ -135,7 +135,9 @@ def convert_team_data(vs_detail: splatnet.VsDetail) -> list[main.Team]:
     return out
 
 
-def convert_knockout(knockout: splatnet.KnockoutType) -> main.KnockoutType:
+def convert_knockout(knockout: splatnet.KnockoutType | None) -> main.KnockoutType:
+    if knockout is None:
+        return None
     knockout_remap: dict[splatnet.KnockoutType, main.KnockoutType] = {
         "WIN": "win",
         "LOSE": "lose",

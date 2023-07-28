@@ -34,7 +34,6 @@ def convert_vs_data(vs_detail: splatnet.VsDetail) -> main.VsExtract:
     teams = convert_team_data(vs_detail)
     match_id = base64_decode(vs_detail.vsHistoryDetail.id)
     mode = convert_mode(vs_detail.vsHistoryDetail.vsMode.id)
-    assert vs_detail.vsHistoryDetail.knockout is not None
     assert vs_detail.vsHistoryDetail.vsRule.rule is not None
     out = main.VsExtract(
         knockout=convert_knockout(vs_detail.vsHistoryDetail.knockout),

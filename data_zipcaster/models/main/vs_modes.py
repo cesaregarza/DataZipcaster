@@ -75,6 +75,6 @@ class VsExtract(BaseModel):
 
     @validator("teams")
     def validate_teams(cls, v):
-        if len(v) <= 2:
+        if len(v) < 2:
             raise ValueError("teams must have at least 2 elements")
         return v

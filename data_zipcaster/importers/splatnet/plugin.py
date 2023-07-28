@@ -16,7 +16,7 @@ from data_zipcaster.base_plugins import BaseImporter
 from data_zipcaster.cli import constants as consts
 from data_zipcaster.cli import styles as s
 from data_zipcaster.cli.utils import ProgressBar
-from data_zipcaster.models.splatnet import VsDetail
+from data_zipcaster.models import main, splatnet
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -172,7 +172,7 @@ class SplatNetImporter(BaseImporter):
     def do_run(
         self,
         **kwargs,
-    ) -> list[VsExtractDict]:
+    ) -> list[main.VsExtract]:
         # Get the tokens and create the scraper
         session_token = kwargs.get("session_token", None)
         gtoken = kwargs.get("gtoken", None)
@@ -205,7 +205,7 @@ class SplatNetImporter(BaseImporter):
         limit = kwargs.get("limit", None)
 
         # Main loop
-        outs: list[VsExtractDict] = []
+        outs: list[main.VsExtract] = []
         message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
         datetime_str = "%Y-%m-%d %H:%M:%S"
         time_str = time.strftime(datetime_str, time.localtime())

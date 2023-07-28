@@ -24,6 +24,7 @@ def convert_gear_stats(gear: splatnet.Gear) -> main.GearItem:
         cast(main.StackableAbilityType, extract_stat(ability.image.url))
         for ability in gear.additionalGearPowers
     ]
+    sub_stats = (sub_stats + [None] * 3)[:3]
     return main.GearItem(
         name=gear_name,
         brand=brand_name,
