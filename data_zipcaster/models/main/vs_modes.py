@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel, validator
 
@@ -69,6 +69,9 @@ class VsExtract(BaseModel):
     awards: list[Awards]
     id: str
     series_metadata: Optional[AnarchySeriesMetadata | XMetadata] = None
+    match_power: Optional[float] = None
+    challenge_id: Optional[str] = None
+    splatfest_metadata: Optional[SplatfestMetadata] = None
 
     @validator("teams")
     def validate_teams(cls, v):
