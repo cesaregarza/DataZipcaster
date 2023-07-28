@@ -2,8 +2,7 @@ from typing import cast
 from urllib.parse import urlparse
 
 from data_zipcaster.assets import GEAR_HASHES
-from data_zipcaster.models.main import players as main
-from data_zipcaster.models.splatnet.submodels import players as splatnet
+from data_zipcaster.models import main, splatnet
 from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
 
