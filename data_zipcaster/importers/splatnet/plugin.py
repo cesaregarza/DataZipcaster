@@ -16,8 +16,7 @@ from data_zipcaster.base_plugins import BaseImporter
 from data_zipcaster.cli import constants as consts
 from data_zipcaster.cli import styles as s
 from data_zipcaster.cli.utils import ProgressBar
-from data_zipcaster.importers.splatnet.extractors import EXTRACT_MAP
-from data_zipcaster.schemas.vs_modes import VsExtractDict
+from data_zipcaster.models.splatnet import VsDetail
 
 T = TypeVar("T")
 P = ParamSpec("P")
