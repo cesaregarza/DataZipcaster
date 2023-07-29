@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable, ParamSpec, TypeVar, cast, overload
 
 import rich_click as click
 from splatnet3_scraper.auth.exceptions import (
@@ -17,12 +17,21 @@ from data_zipcaster.cli import constants as consts
 from data_zipcaster.cli import styles as s
 from data_zipcaster.cli.utils import ProgressBar
 from data_zipcaster.models import main, splatnet
+from data_zipcaster.transforms import splatnet_to_main as transforms
 
 T = TypeVar("T")
 P = ParamSpec("P")
 
 
 class SplatNetImporter(BaseImporter):
+    def __init__(self) -> None:
+        super().__init__()
+        self.session_token: str = ""
+        self.gtoken: str | None = None
+        self.bullet_token: str | None = None
+        self.silent: bool = False
+        self.limit: int = -1
+
     @property
     def name(self) -> str:
         return "splatnet"
@@ -174,42 +183,22 @@ class SplatNetImporter(BaseImporter):
         **kwargs,
     ) -> list[main.VsExtract]:
         # Get the tokens and create the scraper
-        session_token = kwargs.get("session_token", None)
-        gtoken = kwargs.get("gtoken", None)
-        bullet_token = kwargs.get("bullet_token", None)
-        silent = kwargs.get("silent", False)
-        scraper = self.get_scraper(session_token, gtoken, bullet_token, silent)
+
+        scraper = self.get_scraper()
 
         # Test the tokens
-        self.test_tokens(scraper, silent)
+        self.test_tokens(scraper)
         self.parse_flags(kwargs)
+        self.print_importing_flags(kwargs)
 
-        # Flag logic
-        flags = [
-            "salmon",
-            "xbattle",
-            "turf",
-            "anarchy",
-            "private",
-            "challenge",
-        ]
-        true_flags = [
-            consts.FLAG_MAP[flag] for flag in flags if kwargs.get(flag, False)
-        ]
-        join_str = f"[/], {s.OPTION_COLOR}"
-        self.vprint(
-            f"Importing {s.OPTION_COLOR}{join_str.join(true_flags)}[/] "
-            "data from SplatNet 3...",
-            level=0,
-        )
-        limit = kwargs.get("limit", None)
+        return self.process_data(scraper, kwargs)
 
         # Main loop
         outs: list[main.VsExtract] = []
         message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
         datetime_str = "%Y-%m-%d %H:%M:%S"
         time_str = time.strftime(datetime_str, time.localtime())
-        for flag in flags:
+        for flag in consts.FLAG_LIST:
             if not kwargs.get(flag, False):
                 continue
 
@@ -223,24 +212,55 @@ class SplatNetImporter(BaseImporter):
                     progress_callback=progress_callback,
                 )
                 self.save_raw_data(overview, detailed, flag, time_str, kwargs)
-                outs.extend(EXTRACT_MAP[flag](detailed, overview))
+                raw_metadata = splatnet.generate_metadata(overview.data)
+                metadata: dict[
+                    str, main.AnarchyMetadata | main.XMetadata
+                ] | None = None
+                if isinstance(
+                    raw_metadata, (splatnet.AnarchyMetadata, splatnet.XMetadata)
+                ):
+                    metadata = transforms.convert_metadata(raw_metadata)
+
+                for match in detailed:
+                    vs_detailed = splatnet.generate_vs_detail(match.data)
+                    converted_vs = transforms.convert_vs_data(vs_detailed)
+                    if isinstance(
+                        metadata,
+                        dict[str, main.AnarchySeriesMetadata | main.XMetadata],
+                    ):
+                        converted_vs = transforms.append_metadata(
+                            converted_vs, metadata
+                        )
+                    outs.append(converted_vs)
 
         return outs
 
-    def test_tokens(
-        self, scraper: SplatNet_Scraper, silent: bool = False
-    ) -> None:
+    def parse_kwargs(self, kwargs: dict) -> tuple[str, str, str, bool, int]:
+        session_token = kwargs.get("session_token", None)
+        gtoken = kwargs.get("gtoken", None)
+        bullet_token = kwargs.get("bullet_token", None)
+        silent = kwargs.get("silent", False)
+        limit = kwargs.get("limit", None)
+
+        # Set as self attributes
+        self.session_token = cast(str, session_token)
+        self.gtoken = cast(str | None, gtoken)
+        self.bullet_token = cast(str | None, bullet_token)
+        self.silent = cast(bool, silent)
+        self.limit = cast(int, limit)
+
+    def test_tokens(self, scraper: SplatNet_Scraper) -> None:
         """Tests the session token to make sure it is valid.
 
         Tests the tokens loaded onto the scraper to make sure they are valid by
         making a fast, simple query. If the query fails, the scraper will
         automatically attempt to refresh the tokens. Also generates a progress
         bar that will be overwritten once this function is done. If silent is
-        True, the progress bar will not be generated.
+        True, the progress bar will not be generated. Silent is set by the
+        parse_kwargs function.
 
         Args:
             scraper (SplatNet_Scraper): The scraper to test the tokens on.
-            silent (bool): Whether or not to suppress the progress bar.
         """
         handler = scraper.query_handler
 
@@ -258,26 +278,27 @@ class SplatNetImporter(BaseImporter):
         self.progress_bar(
             fxn,
             message="Testing and refreshing tokens...",
-            condition=silent,
+            condition=self.silent,
             transient=True,
         )
 
     def get_scraper(
         self,
-        session_token: str,
-        gtoken: str | None = None,
-        bullet_token: str | None = None,
-        silent: bool = False,
     ) -> SplatNet_Scraper:
         """Gets a scraper with the given tokens.
 
-        Args:
-            session_token (str): The session token to use. This is the only
-                required token.
-            gtoken (str | None): The gtoken to use. Defaults to None.
-            bullet_token (str | None): The bullet token to use. Defaults to
-                None.
-            silent (bool): Whether or not to suppress the progress bar.
+        Calls on the following attributes set by the parse_kwargs function:
+
+        - session_token (str): The session token to use. This is the only
+            required token.
+        - gtoken (str | None): The gtoken to use. Defaults to None.
+        - bullet_token (str | None): The bullet token to use. Defaults to None.
+        - silent (bool): Whether or not to suppress the progress bar. Defaults
+            to False.
+
+        Any missing tokens will be generated by the scraper. The tokens will
+        also be saved to the config file. All output will be suppressed if
+        silent is True.
 
         Returns:
             SplatNet_Scraper: The scraper with the given tokens.
@@ -285,13 +306,13 @@ class SplatNetImporter(BaseImporter):
 
         def fxn() -> SplatNet_Scraper:
             scraper = SplatNet_Scraper.from_tokens(
-                session_token, gtoken, bullet_token
+                self.session_token, self.gtoken, self.bullet_token
             )
             self.save_tokens(scraper)
             return scraper
 
-        condition = ((gtoken is None) or (bullet_token is None)) and (
-            not silent
+        condition = ((self.gtoken is None) or (self.bullet_token is None)) and (
+            not self.silent
         )
         return self.progress_bar(
             fxn,
@@ -439,6 +460,18 @@ class SplatNetImporter(BaseImporter):
         kwargs["private"] = flags[5]
         kwargs["challenge"] = flags[6]
 
+    def print_importing_flags(self, kwargs: dict) -> None:
+        # Print the flags that are being imported
+        true_flags = [
+            consts.FLAG_MAP[flag] for flag in consts.FLAG_LIST if kwargs[flag]
+        ]
+        join_str = f"[/], {s.OPTION_COLOR}"
+        self.vprint(
+            f"Importing {s.OPTION_COLOR}{join_str.join(true_flags)}[/] "
+            "data from SplatNet 3...",
+            level=0,
+        )
+
     def manage_flags(
         self,
         flag_all: bool,
@@ -488,6 +521,66 @@ class SplatNetImporter(BaseImporter):
             flag_private,
             flag_challenge,
         )
+
+    def process_data(
+        self,
+        scraper: SplatNet_Scraper,
+        kwargs: dict,
+    ) -> list[main.VsExtract]:
+        outs: list[main.VsExtract] = []
+        datetime_str = "%Y-%m-%d %H:%M:%S"
+        time_str = time.strftime(datetime_str, time.localtime())
+        for flag in consts.FLAG_LIST:
+            overview, detailed = self.get_matches(
+                scraper, time_str, flag, kwargs
+            )
+            if len(detailed) == 0:
+                continue
+            out = self.process_matches(overview, detailed, flag)
+            outs.append(out)
+
+        return outs
+
+    def get_matches(
+        self,
+        scraper: SplatNet_Scraper,
+        time_str: str,
+        flag: str,
+        kwargs: dict,
+    ) -> tuple[QueryResponse, list[QueryResponse]]:
+        if not kwargs.get(flag, False):
+            return []
+
+        message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
+
+        with ProgressBar(
+            message % consts.FLAG_MAP[flag],
+        ) as progress_callback:
+            overview, detailed = self.get_matches(
+                scraper,
+                flag,
+                limit=self.limit,
+                progress_callback=progress_callback,
+            )
+        self.vprint("Processing data...", level=1)
+        self.save_raw_data(overview, detailed, flag, time_str, kwargs)
+        return overview, detailed
+
+    def process_matches(
+        self,
+        overview: QueryResponse,
+        detailed: list[QueryResponse],
+        flag: str,
+        kwargs: dict,
+    ) -> list[main.VsExtract]:
+        if len(detailed) == 0:
+            return []
+
+    def convert_metadata(
+        overview: QueryResponse,
+        flag: str,
+    ):
+        pass
 
     def save_raw_data(
         self,

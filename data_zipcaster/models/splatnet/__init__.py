@@ -80,14 +80,14 @@ Metadata: TypeAlias = (
 def generate_metadata(input_dict: dict) -> Metadata:
     # Iterate through each Metadata type and try to generate it
     input_dict = strip_prefix_keys(input_dict)
-    for metadata_type in [
+    for metadata_type in (
         AnarchyMetadata,
         XMetadata,
         TurfMetadata,
         ChallengeMetadata,
-    ]:
+    ):
         try:
-            return metadata_type(**input_dict)
+            return metadata_type(**input_dict)  # type: ignore
         except ValidationError:
             pass
     raise ValueError("Could not generate metadata")

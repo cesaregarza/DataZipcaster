@@ -232,7 +232,7 @@ class BaseExporter(BasePlugin):
         Raises:
             ClickException: If the config file is not valid.
         """
-        invalid_keys: list[tuple[dict, str]] = []
+        invalid_keys: list[tuple[BaseExporter.ConfigKeys, str]] = []
         for key in self.get_config_keys():
             loaded_key = self.get_from_config(self.name, key["key_name"])
             if loaded_key is None:

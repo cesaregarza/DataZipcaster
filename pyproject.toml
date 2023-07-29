@@ -33,6 +33,7 @@ flake8-print = "^5.0.0"
 flake8-expression-complexity = "^0.0.11"
 genson = "^1.2.2"
 pyperclip = "^1.8.2"
+types-requests = "^2.31.0.2"
 
 [build-system]
 requires = ["poetry-core"]
