@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Callable, ParamSpec, TypeVar, cast, overload
+from typing import Callable, Literal, ParamSpec, TypeVar, cast, overload
 
 import rich_click as click
 from splatnet3_scraper.auth.exceptions import (
@@ -576,11 +576,59 @@ class SplatNetImporter(BaseImporter):
         if len(detailed) == 0:
             return []
 
+    @overload
     def convert_metadata(
         overview: QueryResponse,
-        flag: str,
-    ):
-        pass
+        flag: Literal["xbattle"],
+    ) -> main.XMetadata:
+        ...
+
+    @overload
+    def convert_metadata(
+        overview: QueryResponse,
+        flag: Literal["turf"],
+    ) -> None:
+        ...
+
+    @overload
+    def convert_metadata(
+        overview: QueryResponse,
+        flag: Literal["anarchy"],
+    ) -> main.AnarchyMetadata:
+        ...
+
+    @overload
+    def convert_metadata(
+        overview: QueryResponse,
+        flag: Literal["private"],
+    ) -> None:
+        ...
+
+    @overload
+    def convert_metadata(
+        overview: QueryResponse,
+        flag: Literal["challenge"],
+    ) -> None:
+        ...
+
+    @overload
+    def convert_metadata(
+        overview: QueryResponse,
+        flag: Literal["salmon"],
+    ) -> None:
+        ...
+
+    def convert_metadata(
+        overview: QueryResponse,
+        flag: consts.FlagType,
+    ) -> dict[str, main.AnarchyMetadata | main.XMetadata] | None:
+        raw_metadata = splatnet.generate_metadata(overview.data)
+        if flag in ("private", "turf", "challenge", "salmon"):
+            return None
+        assert isinstance(
+            raw_metadata, (splatnet.AnarchyMetadata, splatnet.XMetadata)
+        )
+        return transforms.convert_metadata(raw_metadata)
 
     def save_raw_data(
         self,
