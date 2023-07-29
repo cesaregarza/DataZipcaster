@@ -135,7 +135,9 @@ def convert_team_data(vs_detail: splatnet.VsDetail) -> list[main.Team]:
     return out
 
 
-def convert_knockout(knockout: splatnet.KnockoutType | None) -> main.KnockoutType:
+def convert_knockout(
+    knockout: splatnet.KnockoutType | None,
+) -> main.KnockoutType:
     if knockout is None:
         return None
     knockout_remap: dict[splatnet.KnockoutType, main.KnockoutType] = {

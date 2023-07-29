@@ -7,6 +7,8 @@ AnarchyMetadata: TypeAlias = (
     main.AnarchyOpenMetadata | main.AnarchySeriesMetadata
 )
 
+Metadata: TypeAlias = main.AnarchyMetadata | main.XMetadata
+
 
 def convert_anarchy_metadata(
     metadata: splatnet.AnarchyMetadata,
@@ -45,11 +47,10 @@ def convert_anarchy_series_metadata(
     # Metadata
     win_count = group.bankaraMatchChallenge.winCount
     lose_count = group.bankaraMatchChallenge.loseCount
-    rank_points = group.bankaraMatchChallenge.earnedUdemaePoint
     is_rank_up = group.bankaraMatchChallenge.isUdemaeUp
 
-    assert rank_points is not None
-    assert is_rank_up is not None
+    if is_rank_up is None:
+        is_rank_up = False
 
     for idx, match in enumerate(group.historyDetails.nodes):
         battle_id = base64_decode(match.id)
@@ -62,7 +63,6 @@ def convert_anarchy_series_metadata(
                 s_rank_after=s_rank_after,
                 win_count=win_count,
                 lose_count=lose_count,
-                rank_points=rank_points,
                 is_rank_up=is_rank_up,
             )
         else:
@@ -87,19 +87,15 @@ def parse_last_anarchy_series_match(
     s_rank_after: int | None,
     win_count: int,
     lose_count: int,
-    rank_points: int,
     is_rank_up: bool,
 ) -> main.AnarchySeriesMetadata:
     assert match.udemae is not None
     assert match.bankaraMatch is not None
-    assert match.bankaraMatch.earnedUdemaePoint is not None
 
     rank_before, s_rank_before = parse_rank(match.udemae.lower())
-    rank_points = match.bankaraMatch.earnedUdemaePoint
     out = main.AnarchySeriesMetadata(
         rank_before=rank_before,
         rank_after=rank_after,
-        rank_exp_change=rank_points,
         is_rank_up=is_rank_up,
         series_win_count=win_count,
         series_lose_count=lose_count,
@@ -108,6 +104,9 @@ def parse_last_anarchy_series_match(
         out.rank_before_s_plus = s_rank_before
     if s_rank_after is not None:
         out.rank_after_s_plus = s_rank_after
+    if match.bankaraMatch.earnedUdemaePoint is not None:
+        out.rank_exp_change = match.bankaraMatch.earnedUdemaePoint
+
     return out
 
 
@@ -183,4 +182,14 @@ def convert_xbattle_metadata(
                 lose_count -= 1
 
             out[battle_id] = sub_out
+    return out
+
+
+def convert_metadata(raw_metadata: Metadata) -> dict[str, Metadata]:
+    out: dict[str, Metadata] = {}
+    if isinstance(raw_metadata, splatnet.AnarchyMetadata):
+        out = {**out, **convert_anarchy_metadata(raw_metadata)}
+    elif isinstance(raw_metadata, splatnet.XMetadata):
+        out = {**out, **convert_xbattle_metadata(raw_metadata)}
+
     return out

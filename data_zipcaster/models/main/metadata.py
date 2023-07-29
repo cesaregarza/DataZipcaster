@@ -17,7 +17,7 @@ class AnarchyMetadata(BaseModel):
     rank_after: str
     rank_before_s_plus: Optional[int] = None
     rank_after_s_plus: Optional[int] = None
-    rank_exp_change: int
+    rank_exp_change: Optional[int] = None
     is_rank_up: Optional[bool] = None
 
     @validator("rank_before", "rank_after")

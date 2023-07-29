@@ -12,6 +12,7 @@ class Url(BaseModel):
     Fields:
         - url (str) - The URL.
     """
+
     url: str
 
 
@@ -24,6 +25,7 @@ class Color(BaseModel):
         - g (float) - The green value.
         - r (float) - The red value.
     """
+
     a: float
     b: float
     g: float
