@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Callable, Literal, ParamSpec, TypeVar, cast, overload
+from typing import Callable, ParamSpec, TypeVar, cast
 
 import rich_click as click
 from splatnet3_scraper.auth.exceptions import (
@@ -182,6 +182,19 @@ class SplatNetImporter(BaseImporter):
         self,
         **kwargs,
     ) -> list[main.VsExtract]:
+        """Runs the importer. This is the main function of the importer, it is
+        called automatically by ``BaseImporter.run``.
+
+        This function will parse the kwargs, get a scraper, test the tokens,
+        parse the flags, print the flags that are being imported, and then
+        process the data.
+
+        Args:
+            **kwargs: The kwargs passed to the run function.
+
+        Returns:
+            list[main.VsExtract]: The imported data.
+        """
         self.parse_kwargs(kwargs)
         scraper = self.get_scraper()
         self.test_tokens(scraper)
@@ -299,13 +312,6 @@ class SplatNetImporter(BaseImporter):
             progress_callback (Callable[[int, int], None]): A callback to
                 update the progress bar. Defaults to None.
 
-        Raises:
-            ClickException: When the session token is invalid.
-            ClickException: When the f-token server is down.
-            ClickException: Error 401
-            ClickException: Error 403
-            ClickException: Error 204
-
         Returns:
             tuple[QueryResponse, list[QueryResponse]]: The overview and
                 detailed vs battles.
@@ -324,6 +330,24 @@ class SplatNetImporter(BaseImporter):
     def handle_scraper_errors(
         self, fxn: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> T:
+        """Wraps a function to handle scraper errors.
+
+        Args:
+            fxn (Callable[P, T]): The function to wrap.
+            *args (P.args): The positional arguments to pass to the function.
+            **kwargs (P.kwargs): The keyword arguments to pass to the function.
+
+        Raises:
+            ClickException: When the session token is invalid.
+            ClickException: When the f-token server is down.
+            ClickException: Error 401
+            ClickException: Error 403
+            ClickException: Error 204
+            Exception: Any other exception.
+
+        Returns:
+            T: The return value of the function.
+        """
         try:
             return fxn(*args, **kwargs)
         except NintendoException:
@@ -421,6 +445,11 @@ class SplatNetImporter(BaseImporter):
         kwargs["challenge"] = flags[6]
 
     def print_importing_flags(self, kwargs: dict) -> None:
+        """Prints the flags that are being imported.
+
+        Args:
+            kwargs (dict): The kwargs passed to the run function.
+        """
         # Print the flags that are being imported
         true_flags = [
             consts.FLAG_MAP[flag] for flag in consts.FLAG_LIST if kwargs[flag]
@@ -442,6 +471,25 @@ class SplatNetImporter(BaseImporter):
         flag_private: bool,
         flag_challenge: bool,
     ) -> tuple[bool, bool, bool, bool, bool, bool, bool]:
+        """Manages the flags to determine which modes to import.
+
+        Contains the logic to determine which modes to import. If all is True,
+        then all the flags are set to True. If all the flags are True, then all
+        is set to True.
+
+        Args:
+            flag_all (bool): The value of the all flag.
+            flag_salmon (bool): The value of the salmon flag.
+            flag_xbattle (bool): The value of the xbattle flag.
+            flag_turf (bool): The value of the turf flag.
+            flag_anarchy (bool): The value of the anarchy flag.
+            flag_private (bool): The value of the private flag.
+            flag_challenge (bool): The value of the challenge flag.
+
+        Returns:
+            tuple[bool, bool, bool, bool, bool, bool, bool]: The values of the
+                flags after the logic has been resolved.
+        """
         non_all_flags = [
             flag_salmon,
             flag_xbattle,
@@ -487,6 +535,15 @@ class SplatNetImporter(BaseImporter):
         scraper: SplatNet_Scraper,
         kwargs: dict,
     ) -> list[main.VsExtract]:
+        """Retrieves and processes the data from the scraper.
+
+        Args:
+            scraper (SplatNet_Scraper): The scraper to get the data from.
+            kwargs (dict): The kwargs passed to the run function.
+
+        Returns:
+            list[main.VsExtract]: The processed data.
+        """
         outs: list[main.VsExtract] = []
         datetime_str = "%Y-%m-%d %H:%M:%S"
         time_str = time.strftime(datetime_str, time.localtime())
@@ -517,6 +574,19 @@ class SplatNetImporter(BaseImporter):
         flag: consts.FlagType,
         kwargs: dict,
     ) -> tuple[QueryResponse | None, list[QueryResponse]]:
+        """Gets the matches from the scraper.
+
+        Args:
+            scraper (SplatNet_Scraper): The scraper to get the data from.
+            time_str (str): The time string to use for the file names.
+            flag (consts.FlagType): The flag to get the data for.
+            kwargs (dict): The kwargs passed to the run function.
+
+        Returns:
+            tuple[QueryResponse | None, list[QueryResponse]]: The overview and
+                detailed data. If the overview is None, then the detailed data
+                will be empty. This is intentional.
+        """
         if not kwargs.get(flag, False):
             return (None, [])
 
@@ -540,6 +610,21 @@ class SplatNetImporter(BaseImporter):
         detailed: list[QueryResponse],
         flag: consts.FlagType,
     ) -> list[main.VsExtract]:
+        """Processes the matches from the scraper.
+
+        Converts the data from the scraper into the data format used by
+        data-zipcaster. This will convert the metadata and the matches. If the
+        detailed data is empty, then this will return an empty list.
+
+        Args:
+            overview (QueryResponse): The overview response from the query.
+            detailed (list[QueryResponse]): The detailed responses from the
+                query.
+            flag (consts.FlagType): The flag that was used to get the data.
+
+        Returns:
+            list[main.VsExtract]: The processed data.
+        """
         if len(detailed) == 0:
             return []
         out: list[main.VsExtract] = []
@@ -555,6 +640,18 @@ class SplatNetImporter(BaseImporter):
         overview: QueryResponse,
         flag: consts.FlagType,
     ) -> dict[str, main.AnarchyMetadata | main.XMetadata]:
+        """Converts the metadata from the scraper.
+
+        Args:
+            overview (QueryResponse): The overview response from the query.
+            flag (consts.FlagType): The flag that was used to get the data.
+
+        Returns:
+            dict[str, main.AnarchyMetadata | main.XMetadata]: The converted
+                metadata. This will be empty if the flag is private, turf,
+                challenge, or salmon. The key will be the battle ID, and the
+                value will be the metadata.
+        """
         raw_metadata = splatnet.generate_metadata(overview.data)
         if flag in ("private", "turf", "challenge", "salmon"):
             return {}
@@ -568,6 +665,18 @@ class SplatNetImporter(BaseImporter):
         vs_detail: QueryResponse,
         metadata: dict[str, main.AnarchyMetadata | main.XMetadata],
     ) -> main.VsExtract:
+        """Converts the vs data from the scraper.
+
+        Args:
+            vs_detail (QueryResponse): The detailed response from the query.
+            metadata (dict[str, main.AnarchyMetadata  |  main.XMetadata]): The
+                metadata for the battle. This will be empty if the flag is
+                private, turf, challenge, or salmon. The key will be the battle
+                ID, and the value will be the metadata.
+
+        Returns:
+            main.VsExtract: The converted vs data.
+        """
         vs_detailed = splatnet.generate_vs_detail(vs_detail.data)
         converted_vs = transforms.convert_vs_data(vs_detailed)
         return transforms.append_metadata(converted_vs, metadata)

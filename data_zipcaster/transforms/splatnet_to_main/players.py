@@ -7,11 +7,37 @@ from data_zipcaster.utils import base64_decode, color_from_percent_to_str
 
 
 def convert_weapon_id(player: splatnet.Player) -> int:
+    """Given a player, extracts and converts the weapon ID.
+
+    This function extracts the weapon ID from the player's weapon ID, which is
+    encoded in base64. The weapon ID is then decoded from base64 and the prefix
+    ``Weapon-`` is removed. The weapon ID is then converted to an integer and
+    returned.
+
+    Args:
+        player (splatnet.Player): The player whose weapon ID to convert.
+
+    Returns:
+        int: The weapon ID.
+    """
     weapon_id = base64_decode(player.weapon.id)[len("Weapon-") :]
     return int(weapon_id)
 
 
 def convert_gear_stats(gear: splatnet.Gear) -> main.GearItem:
+    """Converts a ``Gear`` object to a ``GearItem`` object.
+
+    This function converts a ``Gear`` object from the SplatNet 3 API to a
+    ``GearItem`` object, which is the internal representation of gear data that
+    importers convert to and exporters convert from.
+
+    Args:
+        gear (splatnet.Gear): The ``Gear`` object to convert.
+
+    Returns:
+        main.GearItem: The converted ``GearItem`` object.
+    """
+
     def extract_stat(url: str) -> main.AbilityType:
         path = urlparse(url).path
         hash = path.split("/")[-1][:64]
@@ -34,6 +60,14 @@ def convert_gear_stats(gear: splatnet.Gear) -> main.GearItem:
 
 
 def convert_gear(player: splatnet.Player) -> main.Gear:
+    """Converts all of a player's gear to a ``Gear`` object.
+
+    Args:
+        player (splatnet.Player): The player whose gear to convert.
+
+    Returns:
+        main.Gear: The converted ``Gear`` object.
+    """
     headgear = convert_gear_stats(player.headGear)
     clothing = convert_gear_stats(player.clothingGear)
     shoes = convert_gear_stats(player.shoesGear)
@@ -45,6 +79,18 @@ def convert_gear(player: splatnet.Player) -> main.Gear:
 
 
 def convert_species(species: splatnet.SpeciesType) -> main.SpeciesType:
+    """Converts the species string to a species type.
+
+    Simply converts the species string to lowercase, but this is done in a
+    function for typing purposes.
+
+    Args:
+        species (splatnet.SpeciesType): The raw, unprocessed species string.
+
+    Returns:
+        main.SpeciesType: The species of the player. One of ``inkling`` or
+            ``octoling``.
+    """
     species_remap: dict[splatnet.SpeciesType, main.SpeciesType] = {
         "INKLING": "inkling",
         "OCTOLING": "octoling",
@@ -53,6 +99,14 @@ def convert_species(species: splatnet.SpeciesType) -> main.SpeciesType:
 
 
 def convert_nameplate(player: splatnet.Player) -> main.Nameplate:
+    """Converts a player's nameplate to a ``Nameplate`` object.
+
+    Args:
+        player (splatnet.Player): The player whose nameplate to convert.
+
+    Returns:
+        main.Nameplate: The converted ``Nameplate`` object.
+    """
     badges: list[str | None] = [None, None, None]
     for i, badge in enumerate(player.nameplate.badges):
         if badge is None:
@@ -72,6 +126,15 @@ def convert_nameplate(player: splatnet.Player) -> main.Nameplate:
 
 
 def convert_crown_type(crown_type: splatnet.CrownType) -> main.CrownType | None:
+    """Converts the crown type to a crown type.
+
+    Args:
+        crown_type (splatnet.CrownType): The raw, unprocessed crown type.
+
+    Returns:
+        main.CrownType | None: The crown type. One of ``dragon`` or
+            ``double_dragon``.
+    """
     if crown_type == "NONE":
         return None
     crown_remap: dict[splatnet.CrownType, main.CrownType] = {
@@ -84,6 +147,19 @@ def convert_crown_type(crown_type: splatnet.CrownType) -> main.CrownType | None:
 def convert_player(
     player: splatnet.Player, scoreboard_position: int
 ) -> main.Player:
+    """Converts a player to a ``Player`` object.
+
+    This function converts a ``Player`` object from the SplatNet 3 API to a
+    ``Player`` object, which is the internal representation of player data that
+    importers convert to and exporters convert from.
+
+    Args:
+        player (splatnet.Player): The ``Player`` object to convert.
+        scoreboard_position (int): The position of the player on the scoreboard.
+
+    Returns:
+        main.Player: The converted ``Player`` object.
+    """
     player_id = base64_decode(player.id).split(":")[-1]
     out = main.Player(
         name=player.name,

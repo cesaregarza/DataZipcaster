@@ -13,6 +13,16 @@ Metadata: TypeAlias = main.AnarchyMetadata | main.XMetadata
 def convert_anarchy_metadata(
     metadata: splatnet.AnarchyMetadata,
 ) -> dict[str, AnarchyMetadata]:
+    """Converts the splatnet Anarchy metadata to a dict from battle id to
+    metadata.
+
+    Args:
+        metadata (splatnet.AnarchyMetadata): The raw, unprocessed metadata.
+
+    Returns:
+        dict[str, AnarchyMetadata]: A dictionary where the keys are the battle
+            IDs and the values are the converted metadata for that battle.
+    """
     out: dict[str, AnarchyMetadata] = {}
     for group in metadata.bankaraBattleHistories.historyGroups.nodes:
         # Check if the group is a series by checking if it has
@@ -32,6 +42,17 @@ def convert_anarchy_metadata(
 def convert_anarchy_series_metadata(
     group: splatnet.GroupNodeItems,
 ) -> dict[str, main.AnarchySeriesMetadata]:
+    """Converts a group containing a series of Anarchy matches to a dict from
+    battle id to metadata.
+
+    Args:
+        group (splatnet.GroupNodeItems): The group containing the series.
+
+    Returns:
+        dict[str, main.AnarchySeriesMetadata]: A dictionary where the keys are
+            the battle IDs and the values are the converted metadata for that
+            battle.
+    """
     out: dict[str, main.AnarchySeriesMetadata] = {}
     assert group.bankaraMatchChallenge is not None
 
@@ -89,6 +110,22 @@ def parse_last_anarchy_series_match(
     lose_count: int,
     is_rank_up: bool,
 ) -> main.AnarchySeriesMetadata:
+    """Parses the last match in an Anarchy series. This match has the rank after
+    the series, so we need to pass it in.
+
+    Args:
+        match (splatnet.NodeItems): The model of the match.
+        rank_after (str): The rank after the series is over.
+        s_rank_after (int | None): The S+ rank after the series is over. Only
+            used if the rank is S+.
+        win_count (int): The number of wins in the series so far.
+        lose_count (int): The number of losses in the series so far.
+        is_rank_up (bool): Whether the series was a rank up series. Does not
+            indicate the player ranked up after the match.
+
+    Returns:
+        main.AnarchySeriesMetadata: The metadata for the match.
+    """
     assert match.udemae is not None
     assert match.bankaraMatch is not None
 
@@ -115,6 +152,16 @@ def parse_anarchy_series_match(
     win_count: int,
     lose_count: int,
 ) -> main.AnarchySeriesMetadata:
+    """Parses a match in an Anarchy series.
+
+    Args:
+        match (splatnet.NodeItems): The model of the match.
+        win_count (int): The number of wins in the series so far.
+        lose_count (int): The number of losses in the series so far.
+
+    Returns:
+        main.AnarchySeriesMetadata: The metadata for the match.
+    """
     assert match.udemae is not None
     rank_before, s_rank_before = parse_rank(match.udemae.lower())
     out = main.AnarchySeriesMetadata(
@@ -133,6 +180,17 @@ def parse_anarchy_series_match(
 def convert_anarchy_open_metadata(
     group: splatnet.GroupNodeItems,
 ) -> dict[str, main.AnarchyOpenMetadata]:
+    """Converts a group containing open Anarchy matches to a dict from battle id
+    to metadata.
+
+    Args:
+        group (splatnet.GroupNodeItems): The group containing the matches.
+
+    Returns:
+        dict[str, main.AnarchyOpenMetadata]: A dictionary where the keys are the
+            battle IDs and the values are the converted metadata for that
+            battle.
+    """
     out: dict[str, main.AnarchyOpenMetadata] = {}
 
     for match in group.historyDetails.nodes:
@@ -158,6 +216,15 @@ def convert_anarchy_open_metadata(
 def convert_xbattle_metadata(
     metadata: splatnet.XMetadata,
 ) -> dict[str, main.XMetadata]:
+    """Converts the splatnet X metadata to a dict from battle id to metadata.
+
+    Args:
+        metadata (splatnet.XMetadata): The raw, unprocessed metadata.
+
+    Returns:
+        dict[str, main.XMetadata]: A dictionary where the keys are the battle
+            IDs and the values are the converted metadata for that battle.
+    """
     out: dict[str, main.XMetadata] = {}
     for group in metadata.xBattleHistories.historyGroups.nodes:
         assert group.xMatchMeasurement is not None
@@ -188,6 +255,16 @@ def convert_xbattle_metadata(
 def convert_metadata(
     raw_metadata: splatnet.AnarchyMetadata | splatnet.XMetadata,
 ) -> dict[str, Metadata]:
+    """Converts the splatnet metadata to a dict from battle id to metadata.
+
+    Args:
+        raw_metadata (splatnet.AnarchyMetadata | splatnet.XMetadata): The raw,
+            unprocessed metadata.
+
+    Returns:
+        dict[str, Metadata]: A dictionary where the keys are the battle IDs and
+            the values are the converted metadata for that battle.
+    """
     out: dict[str, Metadata] = {}
     if isinstance(raw_metadata, splatnet.AnarchyMetadata):
         out = {**out, **convert_anarchy_metadata(raw_metadata)}
