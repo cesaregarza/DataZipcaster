@@ -182,60 +182,15 @@ class SplatNetImporter(BaseImporter):
         self,
         **kwargs,
     ) -> list[main.VsExtract]:
-        # Get the tokens and create the scraper
-
+        self.parse_kwargs(kwargs)
         scraper = self.get_scraper()
-
-        # Test the tokens
         self.test_tokens(scraper)
         self.parse_flags(kwargs)
         self.print_importing_flags(kwargs)
 
         return self.process_data(scraper, kwargs)
 
-        # Main loop
-        outs: list[main.VsExtract] = []
-        message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
-        datetime_str = "%Y-%m-%d %H:%M:%S"
-        time_str = time.strftime(datetime_str, time.localtime())
-        for flag in consts.FLAG_LIST:
-            if not kwargs.get(flag, False):
-                continue
-
-            with ProgressBar(
-                message % consts.FLAG_MAP[flag]
-            ) as progress_callback:
-                overview, detailed = self.get_matches(
-                    scraper,
-                    flag,
-                    limit=limit,
-                    progress_callback=progress_callback,
-                )
-                self.save_raw_data(overview, detailed, flag, time_str, kwargs)
-                raw_metadata = splatnet.generate_metadata(overview.data)
-                metadata: dict[
-                    str, main.AnarchyMetadata | main.XMetadata
-                ] | None = None
-                if isinstance(
-                    raw_metadata, (splatnet.AnarchyMetadata, splatnet.XMetadata)
-                ):
-                    metadata = transforms.convert_metadata(raw_metadata)
-
-                for match in detailed:
-                    vs_detailed = splatnet.generate_vs_detail(match.data)
-                    converted_vs = transforms.convert_vs_data(vs_detailed)
-                    if isinstance(
-                        metadata,
-                        dict[str, main.AnarchySeriesMetadata | main.XMetadata],
-                    ):
-                        converted_vs = transforms.append_metadata(
-                            converted_vs, metadata
-                        )
-                    outs.append(converted_vs)
-
-        return outs
-
-    def parse_kwargs(self, kwargs: dict) -> tuple[str, str, str, bool, int]:
+    def parse_kwargs(self, kwargs: dict) -> None:
         session_token = kwargs.get("session_token", None)
         gtoken = kwargs.get("gtoken", None)
         bullet_token = kwargs.get("bullet_token", None)
@@ -321,7 +276,7 @@ class SplatNetImporter(BaseImporter):
             transient=True,
         )
 
-    def get_matches(
+    def __get_matches(
         self,
         scraper: SplatNet_Scraper,
         mode: str,
@@ -404,6 +359,11 @@ class SplatNetImporter(BaseImporter):
                     "online, or use a session token from an account that has "
                     "played at least one match of Splatoon 3 online."
                 )
+        except Exception as e:
+            raise e
+
+        # It should never reach this point, but mypy doesn't know that
+        return cast(T, None)
 
     def save_tokens(self, scraper: SplatNet_Scraper) -> None:
         """Saves the tokens to the config file.
@@ -534,10 +494,19 @@ class SplatNetImporter(BaseImporter):
             overview, detailed = self.get_matches(
                 scraper, time_str, flag, kwargs
             )
-            if len(detailed) == 0:
+            if overview is None:
                 continue
+
+            if len(detailed) == 0:
+                self.warn(
+                    f"No {s.OPTION_COLOR}{consts.FLAG_MAP[flag]}[/] data "
+                    "found. Skipping this mode."
+                )
+                continue
+
+            self.vprint("Processing data...", level=1)
             out = self.process_matches(overview, detailed, flag)
-            outs.append(out)
+            outs.extend(out)
 
         return outs
 
@@ -545,24 +514,23 @@ class SplatNetImporter(BaseImporter):
         self,
         scraper: SplatNet_Scraper,
         time_str: str,
-        flag: str,
+        flag: consts.FlagType,
         kwargs: dict,
-    ) -> tuple[QueryResponse, list[QueryResponse]]:
+    ) -> tuple[QueryResponse | None, list[QueryResponse]]:
         if not kwargs.get(flag, False):
-            return []
+            return (None, [])
 
         message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
 
         with ProgressBar(
             message % consts.FLAG_MAP[flag],
         ) as progress_callback:
-            overview, detailed = self.get_matches(
+            overview, detailed = self.__get_matches(
                 scraper,
                 flag,
                 limit=self.limit,
                 progress_callback=progress_callback,
             )
-        self.vprint("Processing data...", level=1)
         self.save_raw_data(overview, detailed, flag, time_str, kwargs)
         return overview, detailed
 
@@ -570,65 +538,39 @@ class SplatNetImporter(BaseImporter):
         self,
         overview: QueryResponse,
         detailed: list[QueryResponse],
-        flag: str,
-        kwargs: dict,
+        flag: consts.FlagType,
     ) -> list[main.VsExtract]:
         if len(detailed) == 0:
             return []
-
-    @overload
-    def convert_metadata(
-        overview: QueryResponse,
-        flag: Literal["xbattle"],
-    ) -> main.XMetadata:
-        ...
-
-    @overload
-    def convert_metadata(
-        overview: QueryResponse,
-        flag: Literal["turf"],
-    ) -> None:
-        ...
-
-    @overload
-    def convert_metadata(
-        overview: QueryResponse,
-        flag: Literal["anarchy"],
-    ) -> main.AnarchyMetadata:
-        ...
-
-    @overload
-    def convert_metadata(
-        overview: QueryResponse,
-        flag: Literal["private"],
-    ) -> None:
-        ...
-
-    @overload
-    def convert_metadata(
-        overview: QueryResponse,
-        flag: Literal["challenge"],
-    ) -> None:
-        ...
-
-    @overload
-    def convert_metadata(
-        overview: QueryResponse,
-        flag: Literal["salmon"],
-    ) -> None:
-        ...
+        out: list[main.VsExtract] = []
+        self.vprint("Converting metadata...", level=2)
+        metadata = self.convert_metadata(overview, flag)
+        self.vprint("Converting matches...", level=2)
+        for match in detailed:
+            out.append(self.convert_vs_data(match, metadata))
+        return out
 
     def convert_metadata(
+        self,
         overview: QueryResponse,
         flag: consts.FlagType,
-    ) -> dict[str, main.AnarchyMetadata | main.XMetadata] | None:
+    ) -> dict[str, main.AnarchyMetadata | main.XMetadata]:
         raw_metadata = splatnet.generate_metadata(overview.data)
         if flag in ("private", "turf", "challenge", "salmon"):
-            return None
+            return {}
         assert isinstance(
             raw_metadata, (splatnet.AnarchyMetadata, splatnet.XMetadata)
         )
         return transforms.convert_metadata(raw_metadata)
+
+    def convert_vs_data(
+        self,
+        vs_detail: QueryResponse,
+        metadata: dict[str, main.AnarchyMetadata | main.XMetadata],
+    ) -> main.VsExtract:
+        vs_detailed = splatnet.generate_vs_detail(vs_detail.data)
+        converted_vs = transforms.convert_vs_data(vs_detailed)
+        return transforms.append_metadata(converted_vs, metadata)
 
     def save_raw_data(
         self,

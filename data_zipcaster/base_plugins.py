@@ -10,7 +10,7 @@ from typing_extensions import NotRequired, TypedDict
 
 from data_zipcaster.cli import styles as s
 from data_zipcaster.cli.utils import handle_exception
-from data_zipcaster.schemas.vs_modes import VsExtractDict
+from data_zipcaster.models import main
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -204,7 +204,7 @@ class BasePlugin(ABC):
 
 class BaseExporter(BasePlugin):
     @abstractmethod
-    def do_run(self, data: list[VsExtractDict]) -> None:
+    def do_run(self, data: list[main.VsExtract]) -> None:
         pass
 
     class ConfigKeys(TypedDict):
@@ -278,7 +278,7 @@ class BaseExporter(BasePlugin):
         except (KeyError, TypeError):
             return None
 
-    def run(self, data: list[VsExtractDict]) -> None:
+    def run(self, data: list[main.VsExtract]) -> None:
         """The main function for the exporter. This is what's called when the
         command is run. This function will call the do_run function and pass the
         data to the exporters.
@@ -292,7 +292,7 @@ class BaseExporter(BasePlugin):
 
 class BaseImporter(BasePlugin):
     @abstractmethod
-    def do_run(self, **kwargs) -> list[VsExtractDict]:
+    def do_run(self, **kwargs) -> list[main.VsExtract]:
         """The main function for the importer. This is where the importer should
         do its work. This function should return a dictionary of data that will
         be passed to the exporters.

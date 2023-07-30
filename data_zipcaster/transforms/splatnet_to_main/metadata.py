@@ -185,7 +185,9 @@ def convert_xbattle_metadata(
     return out
 
 
-def convert_metadata(raw_metadata: Metadata) -> dict[str, Metadata]:
+def convert_metadata(
+    raw_metadata: splatnet.AnarchyMetadata | splatnet.XMetadata,
+) -> dict[str, Metadata]:
     out: dict[str, Metadata] = {}
     if isinstance(raw_metadata, splatnet.AnarchyMetadata):
         out = {**out, **convert_anarchy_metadata(raw_metadata)}

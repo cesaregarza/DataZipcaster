@@ -15,7 +15,7 @@ from data_zipcaster.transforms.splatnet_to_main.common import (
 )
 from data_zipcaster.utils import base64_decode
 
-SeriesMetadata: TypeAlias = main.XMetadata | main.AnarchySeriesMetadata
+SeriesMetadata: TypeAlias = main.XMetadata | main.AnarchyMetadata
 
 
 def convert_vs_data(vs_detail: splatnet.VsDetail) -> main.VsExtract:

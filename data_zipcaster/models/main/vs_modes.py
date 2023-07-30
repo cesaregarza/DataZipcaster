@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, validator
 
-from data_zipcaster.models.main.metadata import AnarchySeriesMetadata, XMetadata
+from data_zipcaster.models.main.metadata import AnarchyMetadata, XMetadata
 from data_zipcaster.models.main.players import Player
 from data_zipcaster.models.main.typing import (
     AwardRankType,
@@ -68,7 +68,7 @@ class VsExtract(BaseModel):
     teams: list[Team]
     awards: list[Awards]
     id: str
-    series_metadata: Optional[AnarchySeriesMetadata | XMetadata] = None
+    series_metadata: Optional[AnarchyMetadata | XMetadata] = None
     match_power: Optional[float] = None
     challenge_id: Optional[str] = None
     splatfest_metadata: Optional[SplatfestMetadata] = None
