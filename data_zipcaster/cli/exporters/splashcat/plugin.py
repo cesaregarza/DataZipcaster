@@ -4,7 +4,7 @@ import msgpack
 import requests
 
 from data_zipcaster import __version__
-from data_zipcaster.base_plugins import BaseExporter
+from data_zipcaster.cli.base_plugins import BaseExporter
 from data_zipcaster.exporters.splashcat.convert import convert
 from data_zipcaster.schemas.vs_modes import VsExtractDict
 

@@ -12,9 +12,9 @@ from splatnet3_scraper.auth.exceptions import (
 from splatnet3_scraper.query import QueryResponse
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
-from data_zipcaster.base_plugins import BaseImporter
 from data_zipcaster.cli import constants as consts
 from data_zipcaster.cli import styles as s
+from data_zipcaster.cli.base_plugins import BaseImporter
 from data_zipcaster.cli.utils import ProgressBar
 from data_zipcaster.models import main, splatnet
 from data_zipcaster.transforms import splatnet_to_main as transforms

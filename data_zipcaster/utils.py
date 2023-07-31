@@ -95,3 +95,12 @@ def parse_rank(rank: str) -> tuple[str, int | None]:
 
 def cast_qr(item: Any) -> QueryResponse:
     return cast(QueryResponse, item)
+
+
+def delete_none_keys(dict_: dict) -> dict:
+    keys = list(dict_.keys())
+    for key in keys:
+        if dict_[key] is None:
+            del dict_[key]
+
+    return dict_

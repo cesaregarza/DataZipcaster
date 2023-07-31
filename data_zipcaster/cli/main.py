@@ -1,8 +1,8 @@
 import rich_click as click
 
-from data_zipcaster import exporters, importers
-from data_zipcaster.base_plugins import BaseExporter, BaseImporter
+from data_zipcaster.cli import exporters, importers
 from data_zipcaster.cli import styles as s
+from data_zipcaster.cli.base_plugins import BaseExporter, BaseImporter
 from data_zipcaster.cli.plugin_discover import discover_plugins
 
 click.rich_click.USE_RICH_MARKUP = True

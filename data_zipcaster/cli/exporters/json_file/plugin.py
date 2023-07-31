@@ -4,8 +4,8 @@ import pathlib
 import time
 from typing import cast
 
-from data_zipcaster.base_plugins import BaseExporter
-from data_zipcaster.schemas.vs_modes import VsExtractDict
+from data_zipcaster.cli.base_plugins import BaseExporter
+from data_zipcaster.models.main import VsExtract
 
 DEFAULT_OUTPUT_PATH = "Splatoon-3-Battles-%Y-%m-%d-%H-%M-%S.json"
 
@@ -73,7 +73,7 @@ class JSONExporter(BaseExporter):
         ]
         return keys
 
-    def do_run(self, data: list[VsExtractDict], **kwargs) -> None:
+    def do_run(self, data: list[VsExtract], **kwargs) -> None:
         output_path = self.parse_output_path()
         gzip_output = self.get_from_config(self.name, "gzip_output")
         json_lines = self.get_from_config(self.name, "json_lines")
@@ -138,7 +138,7 @@ class JSONExporter(BaseExporter):
 
     def to_json(
         self,
-        vs_extract_dict: VsExtractDict | list[VsExtractDict],
+        vs_extract_dict: VsExtract | list[VsExtract],
         file_path: str,
         gzip_output: bool = False,
         **kwargs,
@@ -152,25 +152,25 @@ class JSONExporter(BaseExporter):
 
     def __to_json(
         self,
-        vs_extract_dict: VsExtractDict | list[VsExtractDict],
+        vs_extract_dict: VsExtract | list[VsExtract],
         file_path: str,
         **kwargs,
     ) -> None:
         with open(file_path, "w") as f:
-            json.dump(vs_extract_dict, f, **kwargs)
+            json.dump(vs_extract_dict.model_dump(), f, **kwargs)
 
     def __to_json_gzip(
         self,
-        vs_extract_dict: VsExtractDict | list[VsExtractDict],
+        vs_extract_dict: VsExtract | list[VsExtract],
         file_path: str,
         **kwargs,
     ) -> None:
         with gzip.open(file_path, "wt") as f:
-            json.dump(vs_extract_dict, f, **kwargs)
+            json.dump(vs_extract_dict.model_dump(), f, **kwargs)
 
     def to_json_lines(
         self,
-        vs_extract_dicts: list[VsExtractDict],
+        vs_extract_dicts: list[VsExtract],
         file_path: str,
         gzip_output: bool = False,
         **kwargs,
@@ -184,22 +184,22 @@ class JSONExporter(BaseExporter):
 
     def __to_json_lines(
         self,
-        vs_extract_dicts: list[VsExtractDict],
+        vs_extract_dicts: list[VsExtract],
         file_path: str,
         **kwargs,
     ) -> None:
         with open(file_path, "w") as f:
             for vs_extract_dict in vs_extract_dicts:
-                json.dump(vs_extract_dict, f, **kwargs)
+                json.dump(vs_extract_dict.model_dump(), f, **kwargs)
                 f.write("\n")
 
     def __to_json_lines_gzip(
         self,
-        vs_extract_dicts: list[VsExtractDict],
+        vs_extract_dicts: list[VsExtract],
         file_path: str,
         **kwargs,
     ) -> None:
         with gzip.open(file_path, "wt") as f:
             for vs_extract_dict in vs_extract_dicts:
-                json.dump(vs_extract_dict, f, **kwargs)
+                json.dump(vs_extract_dict.model_dump(), f, **kwargs)
                 f.write("\n")

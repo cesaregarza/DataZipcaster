@@ -1,4 +1,4 @@
-from data_zipcaster.base_plugins import BaseImporter
+from data_zipcaster.cli.base_plugins import BaseImporter
 
 
 class ExampleImporter(BaseImporter):
