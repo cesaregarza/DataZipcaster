@@ -102,11 +102,13 @@ class SplashcatExporter(BaseExporter):
             return
 
         msg = msgpack.packb(body)
-        self.session.post(
+        response = self.session.post(
             Endpoints.upload_battle,
             data=msg,
             headers=self.headers,
         )
+        if response.status_code != 200:
+            raise ValueError(f"Error uploading match: {response.text}")
 
     def get_existing_battle_ids(self) -> list[str]:
         self.vprint("Getting existing battle IDs...", level=2)

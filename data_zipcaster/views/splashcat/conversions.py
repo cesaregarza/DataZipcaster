@@ -89,8 +89,11 @@ def convert_anarchy(model: main.VsExtract) -> dict:
     assert isinstance(model.series_metadata, main.AnarchyMetadata)
     out: dict = {
         "mode": "OPEN" if model.mode == "bankara_open" else "SERIES",
-        "rank": model.series_metadata.rank_after,
     }
+
+    if model.series_metadata.rank_after is not None:
+        out["rank"] = model.series_metadata.rank_after.upper()
+
     if model.match_power is not None:
         out["power"] = model.match_power
 
@@ -156,6 +159,7 @@ def convert_player(player: main.Player) -> dict:
         "name": player.name,
         "nameId": player.player_number,
         "title": player.splashtag,
+        "paint": player.inked,
         "splashtagBackgroundId": int(player.nameplate.background_id),
         "weaponId": player.weapon_id,
         "headGear": convert_gear(player.gear.headgear),
@@ -207,7 +211,6 @@ def generate_view(model: main.VsExtract) -> dict:
         "playedTime": convert_start_time(model.start_time),
         "duration": convert_duration(model.duration),
         "judgement": model.result.upper(),
-        "knockout": model.knockout,
         "awards": [award.name for award in model.awards],
     }
     team_idx = find_player_team(model.teams)
@@ -216,6 +219,9 @@ def generate_view(model: main.VsExtract) -> dict:
         convert_team(team, team_idx == idx)
         for idx, team in enumerate(model.teams)
     ]
+
+    if model.knockout is not None:
+        out["knockout"] = model.knockout.upper()
 
     if model.mode in ("splatfest_open", "splatfest_challenge"):
         out["splatfest"] = convert_splatfest(model)
