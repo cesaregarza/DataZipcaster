@@ -5,20 +5,58 @@ Named after the [Zipcaster](https://splatoonwiki.org/wiki/Zipcaster) special fro
 
 Data Zipcaster boasts a robust Command Line Interface (CLI), crafted with Python and supported across Windows, macOS, and Linux platforms. With the CLI, users can easily access and utilize the extensive features of the platform. Moreover, the CLI is conveniently available as a Python package for integration into other Python projects, aiming for the utmost ease-of-use.
 
-In addition to its fully featured CLI, Data Zipcaster also offers an automatic updater, ensuring that users always have the latest version of the platform. This feature is especially useful for those less familiar with the command line, as it eliminates the need for manual updates that may be difficult to perform for some users.
+Screenshots
+-----------
 
-Data Zipcaster prioritizes user experience with its intuitive error handling system. The platform is designed to provide clear and comprehensible error messages, making it user-friendly even for those less acquainted with tech. In the case of a fatal error that Data Zipcaster cannot recover from, the platform will automatically generate a crash report, which can be submitted to the developers for further investigation.
+Clear and descriptive help messages!
+![Help Screenshot](assets/v0.1.1-help.png)
 
-At its core, Data Zipcaster embodies the Open/Closed Principle, significantly simplifying the creation of new importers and exporters. This powerful tool thus offers a seamless data management experience by handling most of the complexity at its core, allowing newer developers to meaningfully contribute to the platform with ease.
+Beautiful, helpful error messages!
+![Error Screenshot](assets/v0.1.1-error.png)
 
-Key Features
+Progress bars for long-running tasks!
+![Progress Screenshot](assets/v0.1.1-progress.png)
+
+Installation
 ------------
 
-- **Versatile Data Transportation**: Facilitates effortless data transport from SplatNet 3 to various Splatoon 3 related platforms.
-- **Cross-Platform CLI**: Comprehensive Command Line Interface available on Windows, macOS, and Linux.
-- **Python Package**: CLI also available as a Python package for easy integration into other Python projects.
-- **Automatic Updater**: Stay up-to-date with the latest features and fixes, no manual updates required.
-- **Intuitive Error Handling**: Clear and comprehensible error messages designed with less tech-savvy users in mind.
-- **Open/Closed Principle**: Simplifies the creation of new importers and exporters, embodying seamless data management.
+Data Zipcaster currently requires Python and Git. After cloning the repository, simply use `python data_zipcaster` to start the application. We are working on easier installation methods which will include an executable file, PyPI package, and Docker image. If you are interested in other installation methods, please open an issue on our Github page.
 
-Whether you're a user needing an efficient tool for your data transportation needs or a developer seeking to build on a well-structured, feature-rich platform, Data Zipcaster is here to deliver. The platform offers a user-friendly, developer-friendly environment that allows you to focus on what truly matters, leaving the heavy lifting to us.
+Usage
+-----
+
+To get started, use `python data_zipcaster --help` for general help. For specific functionality, try `python data_zipcaster splatnet --help`. For more information on the CLI, refer to the `cli` folder which contains a README with detailed information.
+
+Integration as Python Package
+-----------------------------
+
+Data Zipcaster uses a MVC pattern, with the CLI completely independent from the models, views, and transforms. This makes it easy to build upon the platform and integrate it into other projects. To extend the CLI with additional importers and exporters, refer to the `splatnet` importer and `splashcat` exporter as guides.
+
+Error Handling
+--------------
+
+The CLI employs `rich` for intuitive error handling, including beautiful error messages and descriptive text for most common errors. Unsolvable errors are logged to `errors.txt` with instructions on how to report them.
+
+Automatic Updater
+-----------------
+
+Our automatic updater is currently under development and will be available as part of the first release. Sorry for the inconvenience!
+
+Contributing
+------------
+
+Contributions are welcome! Please refer to our upcoming contribution guide for detailed instructions.
+
+License
+-------
+
+Data Zipcaster is licensed under GNU GPLv3. For more information, please refer to the `LICENSE` file.
+
+Support
+-------
+
+For support or to report issues, please open an issue on our Github page or add us on Discord at `pyproject.toml`.
+
+For the latest updates or changes to the project, please refer to the repo, although this may change in the future.
+
+Stay tuned for screenshots and diagrams that will help users better understand our project and its usage!

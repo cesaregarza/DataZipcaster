@@ -2,10 +2,11 @@
 max-line-length = 80
 extend-ignore = E203
 per-file-ignores = 
-    __init__.py:F401, E402
+    data_zipcaster/*/__init__.py:F401, E402
     data_zipcaster/base_plugins.py:DAR202
     data_zipcaster/importers/example_importer.py:T201
-    tests\*:DAR101, DAR201, F401
+    tests/*:DAR101, DAR201, F401
+    data_zipcaster/models/*:N815,N805
 exclude = 
     test.py
     .venv

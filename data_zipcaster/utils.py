@@ -38,7 +38,7 @@ def color_from_percent_to_str(color_dict: dict | QueryResponse) -> str:
     def color_to_str(color: float) -> str:
         return f"{int(color * 255):02x}"
 
-    return "".join([color_to_str(color_dict[color]) for color in "rgba"])
+    return "#" + "".join([color_to_str(color_dict[color]) for color in "rgba"])
 
 
 def color_from_str_to_percent(color_str: str) -> dict[str, float]:
@@ -95,3 +95,12 @@ def parse_rank(rank: str) -> tuple[str, int | None]:
 
 def cast_qr(item: Any) -> QueryResponse:
     return cast(QueryResponse, item)
+
+
+def delete_none_keys(dict_: dict) -> dict:
+    keys = list(dict_.keys())
+    for key in keys:
+        if dict_[key] is None:
+            del dict_[key]
+
+    return dict_
