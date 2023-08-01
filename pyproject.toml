@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "data_zipcaster"
-version = "0.1.0"
+version = "0.1.1"
 description = "Import and Export SplatNet Data anywhere!"
 authors = ["Cesar E Garza <cesar@cegarza.com>"]
 license = "GPL-3.0-or-later"
