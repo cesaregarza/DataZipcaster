@@ -52,6 +52,7 @@ class SplashcatExporter(BaseExporter):
         self.session = self.start_session()
         self.headers = self.build_headers()
 
+        self.vprint("Getting existing battle IDs...", level=1)
         existing_ids = self.get_existing_battle_ids()
 
         self.vprint("Uploading data to Splashcat...", level=1)
