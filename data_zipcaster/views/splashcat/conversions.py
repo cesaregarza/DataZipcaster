@@ -198,7 +198,7 @@ def find_player_team(teams: list[main.Team]) -> int:
     return -1  # Should never happen but mypy complains otherwise
 
 
-def convert(model: main.VsExtract) -> dict:
+def generate_view(model: main.VsExtract) -> dict:
     out = {
         "splatnetId": convert_id(model.id),
         "vsMode": MODE_MAP[model.mode],
