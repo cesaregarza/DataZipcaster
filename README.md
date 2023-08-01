@@ -5,6 +5,18 @@ Named after the [Zipcaster](https://splatoonwiki.org/wiki/Zipcaster) special fro
 
 Data Zipcaster boasts a robust Command Line Interface (CLI), crafted with Python and supported across Windows, macOS, and Linux platforms. With the CLI, users can easily access and utilize the extensive features of the platform. Moreover, the CLI is conveniently available as a Python package for integration into other Python projects, aiming for the utmost ease-of-use.
 
+Screenshots
+-----------
+
+Clear and descriptive help messages!
+![Help Screenshot](assets/v0.1.1-help.png)
+
+Beautiful, helpful error messages!
+![Error Screenshot](assets/v0.1.1-error.png)
+
+Progress bars for long-running tasks!
+![Progress Screenshot](assets/v0.1.1-progress.png)
+
 Installation
 ------------
 

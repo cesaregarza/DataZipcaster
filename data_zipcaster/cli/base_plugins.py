@@ -459,7 +459,7 @@ class BaseImporter(BasePlugin):
 
         splatnet_save_raw = (
             self.name == "splatnet"
-            and ctx.get_parameter_source("save_raw") != "DEFAULT"
+            and ctx.get_parameter_source("save_raw").name != "DEFAULT"
         )
 
         if len(exporters) == 0:
@@ -468,10 +468,7 @@ class BaseImporter(BasePlugin):
                     "No exporters were specified. Please specify at least one "
                     + "exporter with the -e/--exporter flag. Available "
                     + "exporters are: "
-                    + f"[/], {s.EXPORTER_COLOR}".join(
-                        [exporter.name for exporter in self.exporters]
-                    )
-                    + ("[/]" if len(self.exporters) > 1 else "")
+                    + ", ".join([exporter.name for exporter in self.exporters])
                 )
             else:
                 self.vprint(
