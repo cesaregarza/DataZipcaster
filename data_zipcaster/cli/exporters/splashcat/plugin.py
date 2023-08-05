@@ -1,13 +1,13 @@
-import json
+from typing import cast
 
 import msgpack
 import requests
-import rich_click as click
 
 from data_zipcaster import __version__
 from data_zipcaster.cli.base_plugins import BaseExporter
 from data_zipcaster.cli.utils import ProgressBar
 from data_zipcaster.models import main
+from data_zipcaster.utils import base64_encode
 from data_zipcaster.views.splashcat import generate_view
 
 
@@ -78,9 +78,16 @@ class SplashcatExporter(BaseExporter):
         with ProgressBar("Processing data...") as progress_callback:
             max_val = len(data)
             progress_callback(0, max_val)
+            if self.get_from_context("imported") is None:
+                self.set_to_context("imported", [])
+
             for idx, battle in enumerate(data):
                 body = self.process_battle(battle)
                 self.upload_match(body, existing_ids)
+                imported = cast(list[str], self.get_from_context("imported"))
+                if battle.id not in imported:
+                    imported.append(base64_encode(battle.id))
+
                 if progress_callback is not None:
                     progress_callback(idx + 1, max_val)
 

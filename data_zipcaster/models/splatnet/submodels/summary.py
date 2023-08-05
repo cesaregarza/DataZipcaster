@@ -9,7 +9,7 @@ __all__ = [
 
 
 class XPower(BaseModel):
-    lastXPower: float
+    lastXPower: Optional[float] = None
 
 
 class Summary(BaseModel):

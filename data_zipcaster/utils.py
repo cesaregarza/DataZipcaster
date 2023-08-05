@@ -20,6 +20,18 @@ def base64_decode(data: str) -> str:
     return base64.b64decode(data).decode("utf-8")
 
 
+def base64_encode(data: str) -> str:
+    """Encodes a utf-8 string into a base64 string.
+
+    Args:
+        data (str): The string to encode.
+
+    Returns:
+        str: The encoded string.
+    """
+    return base64.b64encode(data.encode("utf-8")).decode("utf-8")
+
+
 def color_from_percent_to_str(color_dict: dict | QueryResponse) -> str:
     """Converts a color from a percent to a string.
 
