@@ -54,6 +54,10 @@ class SplatNetImporter(BaseImporter):
             "generate one by following the instructions at "
         )
 
+    @property
+    def include_monitoring(self) -> bool:
+        return True
+
     def get_options(self) -> list[BaseImporter.Options]:
         options = [
             BaseImporter.Options(
@@ -210,6 +214,14 @@ class SplatNetImporter(BaseImporter):
         silent = kwargs.get("silent", False)
         limit = kwargs.get("limit", None)
 
+        if session_token is None:
+            raise click.ClickException(
+                "No session token was specified. Please specify a session "
+                "token with the --session-token flag, or use the --config "
+                "flag to load your tokens from a config file. If you have a "
+                "config file, make sure you've specified the correct path."
+            )
+
         # Set as self attributes
         self.session_token = cast(str, session_token)
         self.gtoken = cast(str | None, gtoken)
@@ -295,6 +307,7 @@ class SplatNetImporter(BaseImporter):
         mode: str,
         limit: int | None = None,
         progress_callback: Callable[[int, int], None] | None = None,
+        existing_ids: list[str] | None = None,
     ) -> tuple[QueryResponse, list[QueryResponse]]:
         """Gets the vs battles from the scraper.
 
@@ -322,6 +335,7 @@ class SplatNetImporter(BaseImporter):
             True,
             limit,
             progress_callback=progress_callback,
+            existing_ids=existing_ids,
         )
 
         self.save_tokens(scraper)
@@ -591,7 +605,14 @@ class SplatNetImporter(BaseImporter):
             return (None, [])
 
         message = f"Importing {s.OPTION_COLOR}%s[/] data from SplatNet 3."
+        if self.get_from_context("imported") is not None:
+            previously_imported = cast(
+                list[str], self.get_from_context("imported")
+            )
+        else:
+            previously_imported = []
 
+        previously_imported = cast(list[str], self.get_from_context("imported"))
         with ProgressBar(
             message % consts.FLAG_MAP[flag],
         ) as progress_callback:
@@ -600,8 +621,11 @@ class SplatNetImporter(BaseImporter):
                 flag,
                 limit=self.limit,
                 progress_callback=progress_callback,
+                existing_ids=previously_imported,
             )
         self.save_raw_data(overview, detailed, flag, time_str, kwargs)
+        if len(detailed) == 0:
+            return (None, detailed)
         return overview, detailed
 
     def process_matches(

@@ -1,5 +1,6 @@
 import configparser
 import os
+import time
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Callable, ParamSpec, Type, TypeAlias, TypeVar, cast
 
@@ -9,7 +10,7 @@ from rich.progress import Progress
 from typing_extensions import NotRequired, TypedDict
 
 from data_zipcaster.cli import styles as s
-from data_zipcaster.cli.utils import handle_exception
+from data_zipcaster.cli.utils import ProgressBar, handle_exception
 from data_zipcaster.models import main
 
 T = TypeVar("T")
@@ -318,6 +319,18 @@ class BaseImporter(BasePlugin):
         envvar: NotRequired[str]
 
     @property
+    def include_monitoring(self) -> bool:
+        """Whether or not to include the monitoring option. This is used to
+        determine if the monitoring option should be added to the command.
+        Subclasses should override this if they want to include the monitoring
+        option.
+
+        Returns:
+            bool: Whether or not to include the monitoring option.
+        """
+        return False
+
+    @property
     def has_options(self) -> bool:
         return self.get_options() is not None
 
@@ -414,6 +427,32 @@ class BaseImporter(BasePlugin):
         # Save the exporter list
         self.exporters = exporters
 
+        # Add monitor mode if it's enabled
+        if self.include_monitoring:
+            out_func = click.option(
+                "--monitor-interval",
+                type=int,
+                help=(
+                    "The interval to check for new data in monitor mode. This "
+                    "is specified in seconds. The default is "
+                    f"{s.OPTION_COLOR}300[/] seconds."
+                ),
+                default=300,
+            )(out_func)
+
+            out_func = click.option(
+                "-m",
+                "--monitor",
+                is_flag=True,
+                help=(
+                    "Enable monitor mode. This will run the importer in a loop "
+                    "and will run the exporters every time new data is "
+                    "available. This is useful for running the importer in a "
+                    "cron job."
+                ),
+                default=False,
+            )(out_func)
+
         # Add the verbose flag
         out_func = click.option(
             "-v",
@@ -436,6 +475,43 @@ class BaseImporter(BasePlugin):
         return click.command(name=self.name, help=self.help)(out_func)
 
     def run(self, ctx: click.Context, *, verbose: int = 0, **kwargs) -> None:
+        """A wrapper around the sub_run function. If the monitor option is
+        enabled, this will run the sub_run function in a loop. Otherwise, it
+        will run the sub_run function once.
+
+        Args:
+            ctx (click.Context): The click context.
+            verbose (int): The verbose level. Defaults to 0.
+            **kwargs: The keyword arguments passed to the command. This will
+                include the options specified by the user.
+        """
+        if self.include_monitoring and (
+            ctx.params["monitor"]
+            or ctx.get_parameter_source("monitor_interval").name != "DEFAULT"
+        ):
+            while True:
+                self.sub_run(ctx, verbose=verbose, **kwargs)
+                self.monitor_wait(ctx.params["monitor_interval"])
+
+        else:
+            self.sub_run(ctx, verbose=verbose, **kwargs)
+
+    def monitor_wait(self, interval: int) -> None:
+        """Wait for the specified interval. This will display a progress bar
+        while waiting.
+
+        Args:
+            interval (int): The interval to wait for.
+        """
+        with Progress(transient=True) as progress:
+            task_id = progress.add_task("Waiting for new data", total=interval)
+            for _ in range(interval):
+                time.sleep(1)
+                progress.advance(task_id)
+
+    def sub_run(
+        self, ctx: click.Context, *, verbose: int = 0, **kwargs
+    ) -> None:
         """The main function for the importer. This is what's called when the
         command is run. This function will call the do_run function and pass the
         data to the exporters.
