@@ -70,6 +70,7 @@ class SplashcatExporter(BaseExporter):
         return {
             "Content-Type": "application/x-msgpack",
             "Authorization": f"Bearer {self.api_key}",
+            "fly-prefer-region": "iad",
         }
 
     def process_data(
