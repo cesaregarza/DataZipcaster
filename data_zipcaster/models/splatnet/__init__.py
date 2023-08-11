@@ -90,7 +90,7 @@ def generate_metadata(input_dict: dict) -> Metadata:
             return metadata_type(**input_dict)  # type: ignore
         except ValidationError:
             pass
-    raise ValueError("Could not generate metadata")
+    raise ValueError(f"Could not generate metadata, input_dict: {input_dict}")
 
 
 def generate_vs_detail(input_dict: dict) -> VsDetail:
