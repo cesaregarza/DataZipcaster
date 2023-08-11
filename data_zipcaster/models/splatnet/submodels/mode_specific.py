@@ -27,7 +27,7 @@ class BankaraPower(BaseModel):
 class BankaraMatch(BaseModel):
     earnedUdemaePoint: Optional[int] = None
     mode: str
-    bankaraPower: Optional[BankaraPower] = None
+    bankaraPower: Optional[BankaraPower | float] = None
 
 
 class LeagueMatchEvent(BaseModel):
