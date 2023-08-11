@@ -20,10 +20,14 @@ class SplatfestMatch(BaseModel):
     myFestPower: Optional[float] = None
 
 
+class BankaraPower(BaseModel):
+    power: float
+
+
 class BankaraMatch(BaseModel):
     earnedUdemaePoint: Optional[int] = None
     mode: str
-    bankaraPower: Optional[float] = None
+    bankaraPower: Optional[BankaraPower] = None
 
 
 class LeagueMatchEvent(BaseModel):

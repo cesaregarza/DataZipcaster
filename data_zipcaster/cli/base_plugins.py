@@ -152,7 +152,7 @@ class BasePlugin(ABC):
         config = self.get_from_context("config")
         try:
             return config[section][key]  # type: ignore
-        except KeyError:
+        except (KeyError, TypeError):
             return None
 
     def set_to_config(self, section: str, key: str, value: str) -> None:
