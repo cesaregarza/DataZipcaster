@@ -21,13 +21,13 @@ class SplatfestMatch(BaseModel):
 
 
 class BankaraPower(BaseModel):
-    power: float
+    power: Optional[float] = None
 
 
 class BankaraMatch(BaseModel):
     earnedUdemaePoint: Optional[int] = None
     mode: str
-    bankaraPower: Optional[BankaraPower | float] = None
+    bankaraPower: Optional[BankaraPower] = None
 
 
 class LeagueMatchEvent(BaseModel):
