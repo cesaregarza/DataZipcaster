@@ -6,6 +6,8 @@ from typing import TypedDict
 from data_zipcaster import __version__
 
 DEFAULT_USER_AGENT = f"data_zipcaster/{__version__}"
+IMINK_URL = "https://api.imink.app/f"
+NXAPI_URL = "https://nxapi-znca-api.fancy.org.uk/api/znca/f"
 
 
 # From S3S

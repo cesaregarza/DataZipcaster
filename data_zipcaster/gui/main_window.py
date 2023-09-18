@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 from PyQt5 import uic
@@ -5,14 +6,14 @@ from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
+    QCheckBox,
     QLabel,
     QMainWindow,
+    QProgressBar,
     QPushButton,
     QSlider,
     QSpinBox,
     QWidget,
-    QCheckBox,
-    QProgressBar,
 )
 
 from data_zipcaster import __version__
@@ -24,6 +25,7 @@ class App(QMainWindow):
         super().__init__()
         ui_path = pathlib.Path(__file__).parent / "ui" / "main.ui"
         uic.loadUi(str(ui_path), self)
+        self.cwd = os.getcwd()
         self.setup_ui()
 
     def setup_ui(self) -> None:
@@ -34,11 +36,11 @@ class App(QMainWindow):
 
         self.setup_buttons()
         self.setup_sliders_spinboxes()
+        self.check_config_path_on_init()
 
         # Disable Salmon Run for now with a tooltip
         self.salmon_check.setEnabled(False)
         self.salmon_check.setToolTip("Salmon Run is not supported yet")
-
 
     def setup_buttons(self) -> None:
         """Set up the buttons. Disable buttons initially if necessary."""
@@ -100,6 +102,15 @@ class App(QMainWindow):
         )
         icon = QIcon(str(logo_path))
         self.setWindowIcon(icon)
+
+    def check_config_path_on_init(self) -> None:
+        """Check if a config file exists in the current working directory.
+
+        If a config file exists, enable the "Test Tokens" button.
+        """
+        config_path = pathlib.Path(self.cwd) / "config.ini"
+        if config_path.exists():
+            self.config_path_text.setText(str(config_path))
 
 
 if __name__ == "__main__":

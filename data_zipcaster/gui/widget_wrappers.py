@@ -1,14 +1,14 @@
 import numpy as np
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import (
     QApplication,
+    QCheckBox,
     QLabel,
     QMainWindow,
     QPushButton,
     QSlider,
     QSpinBox,
     QWidget,
-    QCheckBox,
 )
 
 
