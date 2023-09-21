@@ -90,6 +90,8 @@ class App(QMainWindow):
 
         # Connect buttons to functions
         self.config_path_button.clicked.connect(self.open_file_dialog)
+        self.load_config_button.clicked.connect(self.load_config)
+        self.test_tokens_button.clicked.connect(self.test_tokens)
 
     def setup_sliders_spinboxes(self) -> None:
         """Set up the sliders and spinboxes."""
@@ -126,13 +128,22 @@ class App(QMainWindow):
         config_path = pathlib.Path(self.cwd) / "config.ini"
         if config_path.exists():
             self.config_path_text.setText(str(config_path))
-            try:
-                scraper = SplatNet_Scraper_Wrapper.from_config(str(config_path))
-            except KeyError:
-                return
-            self.test_tokens_button_wrapper.set_enabled(True)
-            self.load_config_button_wrapper.set_enabled(True)
-            self.scraper = scraper
+            self.load_config()
+    
+    def load_config(self) -> None:
+        """Load a config file."""
+        config_path = self.config_path_text.text()
+        if not config_path:
+            return
+        try:
+            scraper = SplatNet_Scraper_Wrapper.from_config(config_path)
+        except KeyError:
+            self.show_error(
+                "The config file is invalid. Please make sure the file is "
+                "correctly formatted."
+            )
+            return
+        self.set_scraper(scraper)
 
     def open_file_dialog(self) -> None:
         """Open a file dialog to select a config file."""
@@ -154,6 +165,14 @@ class App(QMainWindow):
 
         self.scraper.test_tokens()
     
+    def show_info(self, msg: str, window_title: str = "Info") -> None:
+        info = QMessageBox()
+        info.setIcon(QMessageBox.Information)
+        info.setText("Info")
+        info.setInformativeText(msg)
+        info.setWindowTitle(window_title)
+        info.exec_()
+    
     def show_error(self, msg: str, window_title: str = "Error") -> None:
         error = QMessageBox()
         error.setIcon(QMessageBox.Critical)
@@ -161,7 +180,30 @@ class App(QMainWindow):
         error.setInformativeText(msg)
         error.setWindowTitle(window_title)
         error.exec_()
-
+    
+    def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
+        self.scraper = scraper
+        self.test_tokens_button_wrapper.set_enabled(True)
+        self.load_config_button_wrapper.set_enabled(True)
+        self.connect_signals()
+    
+    def connect_signals(self) -> None:
+        self.scraper.testing_started.connect(self.testing_started)
+        self.scraper.testing_finished.connect(self.testing_finished)
+    
+    @pyqtSlot()
+    def testing_started(self) -> None:
+        self.test_tokens_button_wrapper.set_enabled(False)
+        self.test_tokens_button_wrapper.button.setText("Testing...")
+    
+    @pyqtSlot(bool)
+    def testing_finished(self, success: bool) -> None:
+        self.test_tokens_button_wrapper.set_enabled(True)
+        self.test_tokens_button_wrapper.button.setText("Test Tokens")
+        if success:
+            self.show_info("Tokens are valid!")
+        else:
+            self.show_error("Tokens are invalid!")
 
 if __name__ == "__main__":
     app = QApplication([])
