@@ -1,4 +1,5 @@
 import configparser as cp
+import logging
 from typing import cast
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -8,6 +9,10 @@ from splatnet3_scraper.scraper import SplatNet_Scraper
 
 from data_zipcaster.constants import IMINK_URL, NXAPI_URL
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
 class SplatNet_Scraper_Wrapper(QObject):
     testing_started = pyqtSignal()
     testing_finished = pyqtSignal(bool)
@@ -15,14 +20,26 @@ class SplatNet_Scraper_Wrapper(QObject):
     def __init__(self, scraper: SplatNet_Scraper) -> None:
         super().__init__()
         self.scraper = scraper
+        logging.debug("SplatNet_Scraper_Wrapper initialized")
 
     def test_tokens(self) -> None:
+        logging.info("Testing tokens")
+        logging.debug("Emitting testing_started signal")
         self.testing_started.emit()
         try:
-            self.scraper.query_handler.config.token_manager.test_tokens()
+            handler = self.scraper.query_handler
+            handler.query(
+                "HomeQuery",
+                variables={
+                    "language": "en-US",
+                    "naCountry": "US",
+                },
+            )
         except Exception:
+            logging.exception("Error while testing tokens")
             self.testing_finished.emit(False)
         else:
+            logging.debug("Emitting testing_finished signal")
             self.testing_finished.emit(True)
 
     @classmethod

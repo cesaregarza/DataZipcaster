@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 
@@ -10,17 +11,20 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QProgressBar,
     QPushButton,
     QSlider,
     QSpinBox,
     QWidget,
-    QMessageBox,
 )
 
 from data_zipcaster import __version__
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class App(QMainWindow):
@@ -31,9 +35,11 @@ class App(QMainWindow):
         self.cwd = os.getcwd()
         self.setup_ui()
         self.scraper: SplatNet_Scraper_Wrapper | None = None
+        logger.debug("App initialized")
 
     def setup_ui(self) -> None:
         """Set up the UI."""
+        logger.debug("Setting up UI")
         self.setWindowTitle("Data Zipcaster")
         self.set_icon()
         self.version_label.setText(f"v.{__version__}")
@@ -48,6 +54,7 @@ class App(QMainWindow):
 
     def setup_buttons(self) -> None:
         """Set up the buttons. Disable buttons initially if necessary."""
+        logger.debug("Setting up buttons")
         # Wrap buttons in Button class
         self.fetch_button_wrapper = Button(
             self.fetch_button,
@@ -95,6 +102,7 @@ class App(QMainWindow):
 
     def setup_sliders_spinboxes(self) -> None:
         """Set up the sliders and spinboxes."""
+        logger.debug("Setting up sliders and spinboxes")
         self.limit_slider_spinbox = SliderSpinbox(
             self.limit_slider,
             self.limit_spinbox,
@@ -114,6 +122,8 @@ class App(QMainWindow):
         self.interval_slider_spinbox.link_checkbox(self.continuous_check)
 
     def set_icon(self) -> None:
+        """Set the window icon."""
+        logger.debug("Setting window icon")
         logo_path = (
             pathlib.Path(__file__).parent.parent / "assets" / "dz_logo.png"
         )
@@ -125,19 +135,26 @@ class App(QMainWindow):
 
         If a config file exists, enable the "Test Tokens" button.
         """
+        logger.debug("Checking for config file")
         config_path = pathlib.Path(self.cwd) / "config.ini"
         if config_path.exists():
+            logger.debug("Config file found")
             self.config_path_text.setText(str(config_path))
             self.load_config()
-    
+
     def load_config(self) -> None:
         """Load a config file."""
+        logger.info("Attempting to load config file")
         config_path = self.config_path_text.text()
         if not config_path:
+            logger.error("No config file selected")
+            self.show_error("Please select a config file first.")
             return
         try:
+            logger.debug("Loading config file")
             scraper = SplatNet_Scraper_Wrapper.from_config(config_path)
         except KeyError:
+            logger.error("Config file is invalid")
             self.show_error(
                 "The config file is invalid. Please make sure the file is "
                 "correctly formatted."
@@ -147,6 +164,7 @@ class App(QMainWindow):
 
     def open_file_dialog(self) -> None:
         """Open a file dialog to select a config file."""
+        logger.debug("Opening file dialog")
         config_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select config file",
@@ -154,56 +172,88 @@ class App(QMainWindow):
             "Config files (*.ini)",
         )
         if config_path:
+            logger.debug("Config file selected")
             self.config_path_text.setText(config_path)
             self.cwd = os.path.dirname(config_path)
             self.test_tokens_button_wrapper.set_enabled(True)
             self.load_config_button_wrapper.set_enabled(True)
+        else:
+            logger.debug("No config file selected")
 
     def test_tokens(self) -> None:
+        """Test the tokens in the config file."""
+        logger.info("Testing tokens")
         if self.scraper is None:
+            logger.error("No scraper found")
             return
-
         self.scraper.test_tokens()
-    
+
     def show_info(self, msg: str, window_title: str = "Info") -> None:
+        """Show an info message.
+
+        Args:
+            msg (str): The message to show.
+            window_title (str): The title of the window. Defaults to "Info".
+        """
+        logger.debug("Showing info message")
         info = QMessageBox()
         info.setIcon(QMessageBox.Information)
         info.setText("Info")
         info.setInformativeText(msg)
         info.setWindowTitle(window_title)
         info.exec_()
-    
+
     def show_error(self, msg: str, window_title: str = "Error") -> None:
+        """Show an error message.
+
+        Args:
+            msg (str): The message to show.
+            window_title (str): The title of the window. Defaults to "Error".
+        """
+        logger.debug("Showing error message")
         error = QMessageBox()
         error.setIcon(QMessageBox.Critical)
         error.setText("Error")
         error.setInformativeText(msg)
         error.setWindowTitle(window_title)
         error.exec_()
-    
+
     def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
+        """Set the scraper and make changes that depend on it.
+
+        Args:
+            scraper (SplatNet_Scraper_Wrapper): The scraper to set.
+        """
+        logger.debug("Setting scraper")
         self.scraper = scraper
         self.test_tokens_button_wrapper.set_enabled(True)
         self.load_config_button_wrapper.set_enabled(True)
         self.connect_signals()
-    
+
     def connect_signals(self) -> None:
+        """Connect signals to slots."""
+        logger.debug("Connecting signals")
         self.scraper.testing_started.connect(self.testing_started)
         self.scraper.testing_finished.connect(self.testing_finished)
-    
+
     @pyqtSlot()
     def testing_started(self) -> None:
+        """Disable the "Test Tokens" button and change its text to "Testing..."""
+        logger.debug("Signal received: testing_started")
         self.test_tokens_button_wrapper.set_enabled(False)
         self.test_tokens_button_wrapper.button.setText("Testing...")
-    
+
     @pyqtSlot(bool)
     def testing_finished(self, success: bool) -> None:
+        """Enable the "Test Tokens" button and change its text to "Test Tokens" """
+        logger.debug("Signal received: testing_finished")
         self.test_tokens_button_wrapper.set_enabled(True)
         self.test_tokens_button_wrapper.button.setText("Test Tokens")
         if success:
             self.show_info("Tokens are valid!")
         else:
             self.show_error("Tokens are invalid!")
+
 
 if __name__ == "__main__":
     app = QApplication([])
