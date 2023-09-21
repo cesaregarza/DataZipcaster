@@ -4,7 +4,7 @@ import pathlib
 
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QMovie
 from PyQt5.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -26,6 +26,8 @@ from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
+
 
 class App(QMainWindow):
     def __init__(self) -> None:
@@ -35,6 +37,7 @@ class App(QMainWindow):
         self.cwd = os.getcwd()
         self.setup_ui()
         self.scraper: SplatNet_Scraper_Wrapper | None = None
+        self.movie = QMovie(str(ASSETS_PATH / "spinner_transparent.gif"))
         logger.debug("App initialized")
 
     def setup_ui(self) -> None:
@@ -124,9 +127,7 @@ class App(QMainWindow):
     def set_icon(self) -> None:
         """Set the window icon."""
         logger.debug("Setting window icon")
-        logo_path = (
-            pathlib.Path(__file__).parent.parent / "assets" / "dz_logo.png"
-        )
+        logo_path = ASSETS_PATH / "dz_logo.png"
         icon = QIcon(str(logo_path))
         self.setWindowIcon(icon)
 
@@ -201,6 +202,7 @@ class App(QMainWindow):
         info.setText("Info")
         info.setInformativeText(msg)
         info.setWindowTitle(window_title)
+        info.setWindowIcon(self.windowIcon())
         info.exec_()
 
     def show_error(self, msg: str, window_title: str = "Error") -> None:
@@ -216,6 +218,7 @@ class App(QMainWindow):
         error.setText("Error")
         error.setInformativeText(msg)
         error.setWindowTitle(window_title)
+        error.setWindowIcon(self.windowIcon())
         error.exec_()
 
     def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
@@ -242,6 +245,10 @@ class App(QMainWindow):
         logger.debug("Signal received: testing_started")
         self.test_tokens_button_wrapper.set_enabled(False)
         self.test_tokens_button_wrapper.button.setText("Testing...")
+        self.test_tokens_button_wrapper.button.setIcon(
+            QIcon(self.movie.currentPixmap())
+        )
+        self.movie.start()
 
     @pyqtSlot(bool)
     def testing_finished(self, success: bool) -> None:
@@ -249,6 +256,8 @@ class App(QMainWindow):
         logger.debug("Signal received: testing_finished")
         self.test_tokens_button_wrapper.set_enabled(True)
         self.test_tokens_button_wrapper.button.setText("Test Tokens")
+        self.movie.stop()
+        self.test_tokens_button_wrapper.button.setIcon(QIcon())
         if success:
             self.show_info("Tokens are valid!")
         else:
