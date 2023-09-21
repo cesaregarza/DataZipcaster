@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>310</width>
-    <height>464</height>
+    <height>526</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -230,6 +230,54 @@
       </layout>
      </widget>
     </item>
+    <item row="5" column="0">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Session Token</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="1" column="0">
+        <widget class="QPushButton" name="load_config_button">
+         <property name="text">
+          <string>Load From Config</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="new_session_button">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Get New Session Token</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QPushButton" name="test_tokens_button">
+         <property name="text">
+          <string>Test Tokens</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
     <item row="9" column="0">
      <layout class="QVBoxLayout" name="progress_group">
       <item>
@@ -332,25 +380,6 @@
       </property>
      </spacer>
     </item>
-    <item row="5" column="0">
-     <widget class="QPushButton" name="new_session_button">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Get New Session Token</string>
-      </property>
-     </widget>
-    </item>
     <item row="11" column="0">
      <widget class="QPushButton" name="export_all_button">
       <property name="maximumSize">
@@ -388,13 +417,6 @@
       </item>
      </layout>
     </item>
-    <item row="6" column="0">
-     <widget class="QPushButton" name="test_tokens_button">
-      <property name="text">
-       <string>Test Tokens</string>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -406,8 +428,33 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu_file">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_load_from_config"/>
+    <addaction name="action_load_from_token"/>
+    <addaction name="action_load_from_s3s"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menu_file"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_load_from_config">
+   <property name="text">
+    <string>Load from config</string>
+   </property>
+  </action>
+  <action name="action_load_from_token">
+   <property name="text">
+    <string>Load from session token</string>
+   </property>
+  </action>
+  <action name="action_load_from_s3s">
+   <property name="text">
+    <string>Load from s3s config</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

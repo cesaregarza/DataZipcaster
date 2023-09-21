@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QSlider,
     QSpinBox,
     QWidget,
+    QFileDialog,
 )
 
 from data_zipcaster import __version__
@@ -76,6 +77,12 @@ class App(QMainWindow):
             disabled_tooltip="Please load a config file first",
             enabled=False,
         )
+        self.load_config_button_wrapper = Button(
+            self.load_config_button,
+            enabled_tooltip="Load config file",
+            enabled=False,
+        )
+        self.config_path_button.clicked.connect(self.open_file_dialog)
 
     def setup_sliders_spinboxes(self) -> None:
         """Set up the sliders and spinboxes."""
@@ -111,6 +118,20 @@ class App(QMainWindow):
         config_path = pathlib.Path(self.cwd) / "config.ini"
         if config_path.exists():
             self.config_path_text.setText(str(config_path))
+    
+    def open_file_dialog(self) -> None:
+        """Open a file dialog to select a config file."""
+        config_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select config file",
+            self.cwd,
+            "Config files (*.ini)",
+        )
+        if config_path:
+            self.config_path_text.setText(config_path)
+            self.cwd = os.path.dirname(config_path)
+            self.test_tokens_button_wrapper.set_enabled(True)
+            self.load_config_button_wrapper.set_enabled(True)
 
 
 if __name__ == "__main__":
