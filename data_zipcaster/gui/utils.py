@@ -7,7 +7,7 @@ from splatnet3_scraper.query import QueryHandler
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
 from data_zipcaster.constants import IMINK_URL, NXAPI_URL
-
+from data_zipcaster.gui.gui_types import ScraperErrors
 
 class SplatNet_Scraper_Wrapper(QObject):
     testing_started = pyqtSignal()

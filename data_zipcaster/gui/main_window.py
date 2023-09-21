@@ -7,6 +7,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
     QCheckBox,
+    QFileDialog,
     QLabel,
     QMainWindow,
     QProgressBar,
@@ -14,10 +15,11 @@ from PyQt5.QtWidgets import (
     QSlider,
     QSpinBox,
     QWidget,
-    QFileDialog,
+    QMessageBox,
 )
 
 from data_zipcaster import __version__
+from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
 
 
@@ -28,6 +30,7 @@ class App(QMainWindow):
         uic.loadUi(str(ui_path), self)
         self.cwd = os.getcwd()
         self.setup_ui()
+        self.scraper: SplatNet_Scraper_Wrapper | None = None
 
     def setup_ui(self) -> None:
         """Set up the UI."""
@@ -45,6 +48,7 @@ class App(QMainWindow):
 
     def setup_buttons(self) -> None:
         """Set up the buttons. Disable buttons initially if necessary."""
+        # Wrap buttons in Button class
         self.fetch_button_wrapper = Button(
             self.fetch_button,
             enabled_tooltip="Fetch data",
@@ -80,8 +84,11 @@ class App(QMainWindow):
         self.load_config_button_wrapper = Button(
             self.load_config_button,
             enabled_tooltip="Load config file",
+            disabled_tooltip="Please select a config file first",
             enabled=False,
         )
+
+        # Connect buttons to functions
         self.config_path_button.clicked.connect(self.open_file_dialog)
 
     def setup_sliders_spinboxes(self) -> None:
@@ -101,6 +108,7 @@ class App(QMainWindow):
                 '"Fetch Continuously" must be checked for this to be enabled'
             ),
         )
+        # Link interval to continuous check
         self.interval_slider_spinbox.link_checkbox(self.continuous_check)
 
     def set_icon(self) -> None:
@@ -118,7 +126,14 @@ class App(QMainWindow):
         config_path = pathlib.Path(self.cwd) / "config.ini"
         if config_path.exists():
             self.config_path_text.setText(str(config_path))
-    
+            try:
+                scraper = SplatNet_Scraper_Wrapper.from_config(str(config_path))
+            except KeyError:
+                return
+            self.test_tokens_button_wrapper.set_enabled(True)
+            self.load_config_button_wrapper.set_enabled(True)
+            self.scraper = scraper
+
     def open_file_dialog(self) -> None:
         """Open a file dialog to select a config file."""
         config_path, _ = QFileDialog.getOpenFileName(
@@ -132,6 +147,20 @@ class App(QMainWindow):
             self.cwd = os.path.dirname(config_path)
             self.test_tokens_button_wrapper.set_enabled(True)
             self.load_config_button_wrapper.set_enabled(True)
+
+    def test_tokens(self) -> None:
+        if self.scraper is None:
+            return
+
+        self.scraper.test_tokens()
+    
+    def show_error(self, msg: str, window_title: str = "Error") -> None:
+        error = QMessageBox()
+        error.setIcon(QMessageBox.Critical)
+        error.setText("Error")
+        error.setInformativeText(msg)
+        error.setWindowTitle(window_title)
+        error.exec_()
 
 
 if __name__ == "__main__":
