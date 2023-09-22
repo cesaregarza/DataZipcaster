@@ -37,10 +37,11 @@ class App(QMainWindow):
         logger.debug(f"Loading UI from {ui_path}")
         uic.loadUi(str(ui_path), self)
         self.cwd = os.getcwd()
+        self.scraper: SplatNet_Scraper_Wrapper | None = None
+        self.ready: bool = False
+        self.started: bool = False
         self.setup_ui()
-        self.scraper: SplatNet_Scraper_Wrapper | None = getattr(
-            self, "scraper", None
-        )
+        self.started = True
         logger.debug("App initialized")
 
     def setup_ui(self) -> None:
@@ -200,6 +201,9 @@ class App(QMainWindow):
             window_title (str): The title of the window. Defaults to "Info".
         """
         logger.debug("Showing info message")
+        if not self.started:
+            logger.debug("App not started yet, returning")
+            return
         info = QMessageBox()
         info.setIcon(QMessageBox.Information)
         info.setText("Info")
@@ -216,6 +220,9 @@ class App(QMainWindow):
             window_title (str): The title of the window. Defaults to "Error".
         """
         logger.debug("Showing error message")
+        if not self.started:
+            logger.debug("App not started yet, returning")
+            return
         error = QMessageBox()
         error.setIcon(QMessageBox.Critical)
         error.setText("Error")
@@ -258,12 +265,25 @@ class App(QMainWindow):
         self.test_tokens_button_wrapper.button.setText("Test Tokens")
         QApplication.processEvents()
         if success:
-            path = pathlib.Path(self.config_path_text.text())
-            if path.exists():
-                self.scraper.save_config(str(path))
-            self.show_info("Tokens are valid!")
+            self.valid_tokens()
         else:
-            self.show_error("Tokens are invalid!")
+            self.invalid_tokens()
+
+    def valid_tokens(self) -> None:
+        self.ready = True
+        path = pathlib.Path(self.config_path_text.text())
+        if path.exists():
+            self.scraper.save_config(str(path))
+
+        self.status_icon.setText("Ready")
+        self.status_icon.setStyleSheet("color : green;")
+        self.show_info("Tokens are valid!")
+
+    def invalid_tokens(self) -> None:
+        self.ready = False
+        self.status_icon.setText("Not Ready")
+        self.status_icon.setStyleSheet("color : red;")
+        self.show_error("Tokens are invalid!")
 
 
 if __name__ == "__main__":
