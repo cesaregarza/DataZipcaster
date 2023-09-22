@@ -95,3 +95,33 @@ class SplatNet_Scraper_Wrapper(QObject):
             logger.debug("Writing config file")
             config.write(f)
         logger.info("Config saved")
+
+    def fetch_data(
+        self,
+        anarchy: bool = False,
+        private: bool = False,
+        turf_war: bool = False,
+        x_battle: bool = False,
+        challenge: bool = False,
+        limit: int = 50,
+    ) -> dict:
+        """Fetch data from SplatNet.
+
+        Args:
+            anarchy (bool, optional): Whether to fetch data for anarchy modes.
+                Defaults to False.
+            private (bool, optional): Whether to fetch data for private battles.
+                Defaults to False.
+            turf_war (bool, optional): Whether to fetch data for turf war.
+                Defaults to False.
+            x_battle (bool, optional): Whether to fetch data for X battles.
+                Defaults to False.
+            challenge (bool, optional): Whether to fetch data for challenge
+                modes. Defaults to False.
+            limit (int, optional): The maximum number of battles to fetch.
+                Defaults to 50.
+
+        Returns:
+            dict: The data fetched from SplatNet.
+        """
+        logger.debug("Fetching data")

@@ -104,6 +104,7 @@ class App(QMainWindow):
         self.config_path_button.clicked.connect(self.open_file_dialog)
         self.load_config_button.clicked.connect(self.load_config)
         self.test_tokens_button.clicked.connect(self.test_tokens)
+        self.fetch_button.clicked.connect(self.fetch_data)
 
     def setup_sliders_spinboxes(self) -> None:
         """Set up the sliders and spinboxes."""
@@ -283,6 +284,23 @@ class App(QMainWindow):
         logger.debug("Connecting scraper signals")
         self.scraper.testing_started.connect(self.testing_started)
         self.scraper.testing_finished.connect(self.testing_finished)
+
+    def fetch_data(self) -> None:
+        """Fetch data."""
+        logger.info("Fetching data")
+        if self.scraper is None:
+            logger.error("No scraper found, this should not happen")
+            return
+
+        self.scraper.fetch_data(
+            anarchy=self.anarchy_check.isChecked(),
+            private=self.private_check.isChecked(),
+            turf=self.turf_check.isChecked(),
+            salmon=self.salmon_check.isChecked(),
+            x=self.x_check.isChecked(),
+            challenge=self.challenge_check.isChecked(),
+            limit=self.limit_spinbox.value(),
+        )
 
     @pyqtSlot()
     def testing_started(self) -> None:
