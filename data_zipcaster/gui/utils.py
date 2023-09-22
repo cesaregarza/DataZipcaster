@@ -4,7 +4,6 @@ import os
 from typing import cast
 
 from PyQt5.QtCore import QObject, pyqtSignal
-from splatnet3_scraper.auth import TokenManager
 from splatnet3_scraper.query import QueryHandler
 from splatnet3_scraper.scraper import SplatNet_Scraper
 

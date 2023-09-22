@@ -3,7 +3,7 @@ import os
 import pathlib
 
 from PyQt5 import uic
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
@@ -24,6 +24,8 @@ ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
 
 
 class App(QMainWindow):
+    ready_signal = pyqtSignal(bool)
+
     def __init__(self) -> None:
         logger.debug("Initializing App")
         super().__init__()
@@ -48,6 +50,7 @@ class App(QMainWindow):
         self.setup_buttons()
         self.setup_sliders_spinboxes()
         self.setup_checkboxes()
+        self.setup_signals()
         self.check_config_path_on_init()
 
         # Disable Salmon Run for now with a tooltip
@@ -123,6 +126,11 @@ class App(QMainWindow):
         # Link interval to continuous check
         self.interval_slider_spinbox.link_checkbox(self.continuous_check)
 
+    def setup_signals(self) -> None:
+        """Connect signals to slots."""
+        logger.debug("Connecting signals")
+        self.ready_signal.connect(self.ready_changed)
+
     @property
     def checkboxes(self) -> list[QCheckBox]:
         return [
@@ -161,6 +169,7 @@ class App(QMainWindow):
         """Load a config file."""
         logger.info("Attempting to load config file")
         config_path = self.config_path_text.text()
+        self.ready_signal.emit(False)
         if not config_path:
             logger.error("No config file selected")
             self.show_error("Please select a config file first.")
@@ -251,7 +260,7 @@ class App(QMainWindow):
         self.scraper = scraper
         self.test_tokens_button_wrapper.set_enabled(True)
         self.load_config_button_wrapper.set_enabled(True)
-        self.connect_signals()
+        self.connect_scraper_signals()
 
     def checkboxes_changed(self) -> None:
         """Check if at least one checkbox is checked."""
@@ -269,9 +278,9 @@ class App(QMainWindow):
             logger.debug("No checkboxes are checked or tokens are invalid")
             self.fetch_button_wrapper.set_enabled(False)
 
-    def connect_signals(self) -> None:
+    def connect_scraper_signals(self) -> None:
         """Connect signals to slots."""
-        logger.debug("Connecting signals")
+        logger.debug("Connecting scraper signals")
         self.scraper.testing_started.connect(self.testing_started)
         self.scraper.testing_finished.connect(self.testing_finished)
 
@@ -290,26 +299,27 @@ class App(QMainWindow):
         self.test_tokens_button_wrapper.set_enabled(True)
         self.test_tokens_button_wrapper.button.setText("Test Tokens")
         QApplication.processEvents()
+        self.ready_signal.emit(success)
         if success:
-            self.valid_tokens()
+            path = pathlib.Path(self.config_path_text.text())
+            if path.exists():
+                self.scraper.save_config(str(path))
         else:
-            self.invalid_tokens()
+            self.show_error("Tokens are invalid!")
 
-    def valid_tokens(self) -> None:
-        self.ready = True
-        path = pathlib.Path(self.config_path_text.text())
-        if path.exists():
-            self.scraper.save_config(str(path))
-
-        self.status_icon.setText("Ready")
-        self.status_icon.setStyleSheet("color : green;")
-        self.show_info("Tokens are valid!")
-
-    def invalid_tokens(self) -> None:
-        self.ready = False
-        self.status_icon.setText("Not Ready")
-        self.status_icon.setStyleSheet("color : red;")
-        self.show_error("Tokens are invalid!")
+    @pyqtSlot(bool)
+    def ready_changed(self, ready: bool) -> None:
+        """Enable or disable the "Fetch Data" button based on whether the
+        scraper is ready.
+        """
+        logger.debug("Signal received: ready_changed")
+        self.ready = ready
+        if ready:
+            self.status_icon.setText("Ready")
+            self.status_icon.setStyleSheet("color : green;")
+        else:
+            self.status_icon.setText("Not Ready")
+            self.status_icon.setStyleSheet("color : red;")
 
 
 if __name__ == "__main__":
