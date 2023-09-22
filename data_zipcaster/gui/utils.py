@@ -1,5 +1,6 @@
 import configparser as cp
 import logging
+import os
 from typing import cast
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -71,3 +72,27 @@ class SplatNet_Scraper_Wrapper(QObject):
             NXAPI_URL,
         ]
         return cls(scraper)
+
+    def save_config(self, config_path: str) -> None:
+        """Save the config to a file.
+
+        Args:
+            config_path (str): The path to the config file.
+        """
+        logger.debug("Saving config")
+        config = cp.ConfigParser()
+        if os.path.exists(config_path):
+            config.read(config_path)
+
+        if "splatnet" not in config:
+            config["splatnet"] = {}
+
+        token_manager = self.scraper.query_handler.config.token_manager
+        config["splatnet"]["session_token"] = token_manager.get("session_token")
+        config["splatnet"]["gtoken"] = token_manager.get("gtoken")
+        config["splatnet"]["bullet_token"] = token_manager.get("bullet_token")
+        config["splatnet"]["ftoken_url"] = ",".join(token_manager.f_token_url)
+        with open(config_path, "w") as f:
+            logger.debug("Writing config file")
+            config.write(f)
+        logger.info("Config saved")

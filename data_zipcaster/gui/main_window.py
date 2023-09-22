@@ -31,13 +31,16 @@ ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
 
 class App(QMainWindow):
     def __init__(self) -> None:
+        logger.debug("Initializing App")
         super().__init__()
         ui_path = pathlib.Path(__file__).parent / "ui" / "main.ui"
+        logger.debug(f"Loading UI from {ui_path}")
         uic.loadUi(str(ui_path), self)
         self.cwd = os.getcwd()
         self.setup_ui()
-        self.scraper: SplatNet_Scraper_Wrapper | None = None
-        self.movie = QMovie(str(ASSETS_PATH / "spinner_transparent.gif"))
+        self.scraper: SplatNet_Scraper_Wrapper | None = getattr(
+            self, "scraper", None
+        )
         logger.debug("App initialized")
 
     def setup_ui(self) -> None:
@@ -241,14 +244,11 @@ class App(QMainWindow):
 
     @pyqtSlot()
     def testing_started(self) -> None:
-        """Disable the "Test Tokens" button and change its text to "Testing..."""
+        """Disable the "Test Tokens" button and change its text to "Testing..." """
         logger.debug("Signal received: testing_started")
         self.test_tokens_button_wrapper.set_enabled(False)
         self.test_tokens_button_wrapper.button.setText("Testing...")
-        self.test_tokens_button_wrapper.button.setIcon(
-            QIcon(self.movie.currentPixmap())
-        )
-        self.movie.start()
+        QApplication.processEvents()
 
     @pyqtSlot(bool)
     def testing_finished(self, success: bool) -> None:
@@ -256,15 +256,21 @@ class App(QMainWindow):
         logger.debug("Signal received: testing_finished")
         self.test_tokens_button_wrapper.set_enabled(True)
         self.test_tokens_button_wrapper.button.setText("Test Tokens")
-        self.movie.stop()
-        self.test_tokens_button_wrapper.button.setIcon(QIcon())
+        QApplication.processEvents()
         if success:
+            path = pathlib.Path(self.config_path_text.text())
+            if path.exists():
+                self.scraper.save_config(str(path))
             self.show_info("Tokens are valid!")
         else:
             self.show_error("Tokens are invalid!")
 
 
 if __name__ == "__main__":
+    # Reset logging
+    logging.root.handlers = []
+    logging.basicConfig(level=logging.DEBUG)
+
     app = QApplication([])
     ex = App()
     ex.show()
