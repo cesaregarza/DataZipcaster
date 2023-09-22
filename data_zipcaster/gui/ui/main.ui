@@ -33,17 +33,10 @@
        <string>Fetch Battles</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="1" column="0">
-        <widget class="QCheckBox" name="turf_check">
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="salmon_check">
          <property name="text">
-          <string>Turf War</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QCheckBox" name="anarchy_check">
-         <property name="text">
-          <string>Anarchy</string>
+          <string>Salmon Run</string>
          </property>
         </widget>
        </item>
@@ -54,6 +47,13 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="turf_check">
+         <property name="text">
+          <string>Turf War</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="2">
         <widget class="QCheckBox" name="private_check">
          <property name="text">
@@ -61,10 +61,10 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QCheckBox" name="salmon_check">
+       <item row="0" column="0">
+        <widget class="QCheckBox" name="anarchy_check">
          <property name="text">
-          <string>Salmon Run</string>
+          <string>Anarchy</string>
          </property>
         </widget>
        </item>
@@ -75,7 +75,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0" colspan="3">
+       <item row="3" column="0" colspan="3">
         <layout class="QHBoxLayout" name="limit_group">
          <item>
           <widget class="QLabel" name="limit_label">
@@ -121,7 +121,7 @@
          </item>
         </layout>
        </item>
-       <item row="3" column="0" colspan="3">
+       <item row="4" column="0" colspan="3">
         <layout class="QHBoxLayout" name="interval_group">
          <item>
           <widget class="QLabel" name="interval_label">
@@ -166,6 +166,13 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="2" column="0">
+        <widget class="QCheckBox" name="challenge_check">
+         <property name="text">
+          <string>Challenges</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

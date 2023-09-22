@@ -4,19 +4,13 @@ import pathlib
 
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtGui import QIcon, QMovie
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
     QCheckBox,
     QFileDialog,
-    QLabel,
     QMainWindow,
     QMessageBox,
-    QProgressBar,
-    QPushButton,
-    QSlider,
-    QSpinBox,
-    QWidget,
 )
 
 from data_zipcaster import __version__
@@ -53,6 +47,7 @@ class App(QMainWindow):
 
         self.setup_buttons()
         self.setup_sliders_spinboxes()
+        self.setup_checkboxes()
         self.check_config_path_on_init()
 
         # Disable Salmon Run for now with a tooltip
@@ -127,6 +122,21 @@ class App(QMainWindow):
         )
         # Link interval to continuous check
         self.interval_slider_spinbox.link_checkbox(self.continuous_check)
+
+    @property
+    def checkboxes(self) -> list[QCheckBox]:
+        return [
+            self.anarchy_check,
+            self.private_check,
+            self.turf_check,
+            self.salmon_check,
+            self.x_check,
+            self.challenge_check,
+        ]
+
+    def setup_checkboxes(self) -> None:
+        for checkbox in self.checkboxes:
+            checkbox.stateChanged.connect(self.checkboxes_changed)
 
     def set_icon(self) -> None:
         """Set the window icon."""
@@ -242,6 +252,22 @@ class App(QMainWindow):
         self.test_tokens_button_wrapper.set_enabled(True)
         self.load_config_button_wrapper.set_enabled(True)
         self.connect_signals()
+
+    def checkboxes_changed(self) -> None:
+        """Check if at least one checkbox is checked."""
+        logger.debug("Checking if at least one checkbox is checked")
+
+        if (
+            any(checkbox.isChecked() for checkbox in self.checkboxes)
+            and self.ready
+        ):
+            logger.debug(
+                "At least one checkbox is checked and tokens are valid"
+            )
+            self.fetch_button_wrapper.set_enabled(True)
+        else:
+            logger.debug("No checkboxes are checked or tokens are invalid")
+            self.fetch_button_wrapper.set_enabled(False)
 
     def connect_signals(self) -> None:
         """Connect signals to slots."""
