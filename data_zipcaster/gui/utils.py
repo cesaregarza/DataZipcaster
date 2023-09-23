@@ -16,10 +16,13 @@ logger.setLevel(logging.DEBUG)
 class SplatNet_Scraper_Wrapper(QObject):
     testing_started = pyqtSignal()
     testing_finished = pyqtSignal(bool)
+    progress_outer_changed = pyqtSignal(int, int)
+    progress_inner_changed = pyqtSignal(int, int)
 
     def __init__(self, scraper: SplatNet_Scraper) -> None:
         super().__init__()
         self.scraper = scraper
+        self.cancelled = False
         logging.debug("SplatNet_Scraper_Wrapper initialized")
 
     def test_tokens(self) -> None:
@@ -103,6 +106,7 @@ class SplatNet_Scraper_Wrapper(QObject):
         turf_war: bool = False,
         x_battle: bool = False,
         challenge: bool = False,
+        salmon_run: bool = False,
         limit: int = 50,
     ) -> dict:
         """Fetch data from SplatNet.
@@ -125,3 +129,10 @@ class SplatNet_Scraper_Wrapper(QObject):
             dict: The data fetched from SplatNet.
         """
         logger.debug("Fetching data")
+        logger.debug("Anarchy: %s", anarchy)
+        logger.debug("Private: %s", private)
+        logger.debug("Turf War: %s", turf_war)
+        logger.debug("X Battle: %s", x_battle)
+        logger.debug("Challenge: %s", challenge)
+        logger.debug("Limit: %s", limit)
+        self.cancelled = False

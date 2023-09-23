@@ -11,9 +11,12 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QMainWindow,
     QMessageBox,
+    QProgressBar,
+    QWidget,
 )
 
 from data_zipcaster import __version__
+from data_zipcaster.gui.exceptions import CancelFetchException
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
 
@@ -25,6 +28,8 @@ ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
 
 class App(QMainWindow):
     ready_signal = pyqtSignal(bool)
+    fetch_signal = pyqtSignal()
+    cancel_signal = pyqtSignal()
 
     def __init__(self) -> None:
         logger.debug("Initializing App")
@@ -131,6 +136,8 @@ class App(QMainWindow):
         """Connect signals to slots."""
         logger.debug("Connecting signals")
         self.ready_signal.connect(self.ready_changed)
+        self.fetch_signal.connect(self.fetch_started)
+        self.cancel_signal.connect(self.cancel_fetch_signal)
 
     @property
     def checkboxes(self) -> list[QCheckBox]:
@@ -284,6 +291,8 @@ class App(QMainWindow):
         logger.debug("Connecting scraper signals")
         self.scraper.testing_started.connect(self.testing_started)
         self.scraper.testing_finished.connect(self.testing_finished)
+        self.scraper.progress_outer_changed.connect(self.outer_progress_changed)
+        self.scraper.progress_inner_changed.connect(self.inner_progress_changed)
 
     def fetch_data(self) -> None:
         """Fetch data."""
@@ -291,16 +300,29 @@ class App(QMainWindow):
         if self.scraper is None:
             logger.error("No scraper found, this should not happen")
             return
+        try:
+            self.fetch_signal.emit()
+            self.scraper.fetch_data(
+                anarchy=self.anarchy_check.isChecked(),
+                private=self.private_check.isChecked(),
+                turf_war=self.turf_check.isChecked(),
+                salmon_run=self.salmon_check.isChecked(),
+                x_battle=self.x_check.isChecked(),
+                challenge=self.challenge_check.isChecked(),
+                limit=self.limit_spinbox.value(),
+            )
+        except CancelFetchException:
+            logger.info("Fetch canceled")
+            return
 
-        self.scraper.fetch_data(
-            anarchy=self.anarchy_check.isChecked(),
-            private=self.private_check.isChecked(),
-            turf=self.turf_check.isChecked(),
-            salmon=self.salmon_check.isChecked(),
-            x=self.x_check.isChecked(),
-            challenge=self.challenge_check.isChecked(),
-            limit=self.limit_spinbox.value(),
-        )
+    def cancel_fetch(self) -> None:
+        """Cancel fetching data."""
+        logger.info("Canceling fetch")
+        if self.scraper is None:
+            logger.error("No scraper found, this should not happen")
+            return
+        self.scraper.cancelled = True
+        self.cancel_signal.emit()
 
     @pyqtSlot()
     def testing_started(self) -> None:
@@ -338,6 +360,53 @@ class App(QMainWindow):
         else:
             self.status_icon.setText("Not Ready")
             self.status_icon.setStyleSheet("color : red;")
+
+    @pyqtSlot()
+    def fetch_started(self) -> None:
+        """Change the text of the "Fetch Data" button to "Cancel", and turn the
+        self.progress_outer and self.progress_inner widgets into progress bars.
+        """
+        logger.debug("Signal received: fetch_started")
+        self.fetch_button_wrapper.button.setText("Cancel")
+        self.fetch_button_wrapper.button.clicked.disconnect(self.fetch_data)
+        self.fetch_button_wrapper.button.clicked.connect(self.cancel_fetch)
+        # The progress bars are empty widgets by default, so we need to
+        # replace them with progress bars
+        self.progress_outer = QProgressBar(self.progress_outer)
+        self.progress_inner = QProgressBar(self.progress_inner)
+
+    @pyqtSlot(int)
+    def outer_progress_changed(
+        self, current_value: int, max_value: int
+    ) -> None:
+        """Set the value of the outer progress bar."""
+        logger.debug("Signal received: progress_bar_outer")
+        self.progress_outer.setMaximum(max_value)
+        self.progress_outer.setValue(current_value)
+
+    @pyqtSlot(int)
+    def inner_progress_changed(
+        self, current_value: int, max_value: int
+    ) -> None:
+        """Set the value of the inner progress bar."""
+        logger.debug("Signal received: progress_bar_inner")
+        self.progress_inner.setMaximum(max_value)
+        self.progress_inner.setValue(current_value)
+
+    @pyqtSlot()
+    def cancel_fetch_signal(
+        self,
+    ) -> None:
+        """Change the text of the "Cancel" button back to "Fetch Data", and
+        disconnect the signal from the slot.
+        """
+        logger.debug("Signal received: cancel_fetch")
+        self.fetch_button_wrapper.button.setText("Fetch Data")
+        self.fetch_button_wrapper.button.clicked.disconnect(self.cancel_fetch)
+        self.fetch_button_wrapper.button.clicked.connect(self.fetch_data)
+        # Reset progress bars to empty widgets
+        self.progress_outer = QWidget()
+        self.progress_inner = QWidget()
 
 
 if __name__ == "__main__":
