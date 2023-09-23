@@ -141,6 +141,7 @@ class App(QMainWindow):
         self.ready_signal.connect(self.ready_changed)
         self.fetch_signal.connect(self.fetch_started)
         self.cancel_signal.connect(self.cancel_fetch_signal)
+        self.set_scraper_signal.connect(self.set_scraper)
 
     @property
     def checkboxes(self) -> list[QCheckBox]:
