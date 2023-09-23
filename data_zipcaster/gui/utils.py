@@ -1,9 +1,10 @@
+import asyncio
 import configparser as cp
 import logging
 import os
 from typing import cast
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from splatnet3_scraper.query import QueryHandler
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
@@ -25,10 +26,24 @@ class SplatNet_Scraper_Wrapper(QObject):
         self.cancelled = False
         logging.debug("SplatNet_Scraper_Wrapper initialized")
 
-    def test_tokens(self) -> None:
+    async def test_tokens(self) -> None:
         logging.info("Testing tokens")
         logging.debug("Emitting testing_started signal")
         self.testing_started.emit()
+
+        loop = asyncio.get_event_loop()
+        try:
+            result = await loop.run_in_executor(None, self.test_tokens_blocking)
+            logging.debug("Emitting testing_finished signal")
+            if result:
+                self.testing_finished.emit(True)
+            else:
+                self.testing_finished.emit(False)
+        except Exception:
+            logging.exception("Error while testing tokens")
+            self.testing_finished.emit(False)
+
+    def test_tokens_blocking(self) -> None:
         try:
             handler = self.scraper.query_handler
             handler.query(
@@ -38,12 +53,9 @@ class SplatNet_Scraper_Wrapper(QObject):
                     "naCountry": "US",
                 },
             )
+            return True
         except Exception:
-            logging.exception("Error while testing tokens")
-            self.testing_finished.emit(False)
-        else:
-            logging.debug("Emitting testing_finished signal")
-            self.testing_finished.emit(True)
+            return False
 
     @classmethod
     def from_config(cls, config_path: str) -> "SplatNet_Scraper_Wrapper":
@@ -136,3 +148,23 @@ class SplatNet_Scraper_Wrapper(QObject):
         logger.debug("Challenge: %s", challenge)
         logger.debug("Limit: %s", limit)
         self.cancelled = False
+
+
+class AsyncRunner(QThread):
+    trigger_test_tokens_signal = pyqtSignal()
+
+    def __init__(self, wrapper: SplatNet_Scraper_Wrapper) -> None:
+        super().__init__()
+        self.wrapper = wrapper
+        self.trigger_test_tokens_signal.connect(self.run_test_tokens)
+
+    def run(self) -> None:
+        logging.debug("Running AsyncRunner")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
+
+    @pyqtSlot()
+    def run_test_tokens(self) -> None:
+        logging.debug("Running test_tokens")
+        asyncio.ensure_future(self.wrapper.test_tokens())

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import pathlib
@@ -17,7 +18,7 @@ from PyQt5.QtWidgets import (
 
 from data_zipcaster import __version__
 from data_zipcaster.gui.exceptions import CancelFetchException
-from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
+from data_zipcaster.gui.utils import AsyncRunner, SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
 
 logger = logging.getLogger(__name__)
@@ -30,24 +31,26 @@ class App(QMainWindow):
     ready_signal = pyqtSignal(bool)
     fetch_signal = pyqtSignal()
     cancel_signal = pyqtSignal()
+    set_scraper_signal = pyqtSignal(SplatNet_Scraper_Wrapper)
 
     def __init__(self) -> None:
-        logger.debug("Initializing App")
+        logging.debug("Initializing App")
         super().__init__()
         ui_path = pathlib.Path(__file__).parent / "ui" / "main.ui"
-        logger.debug(f"Loading UI from {ui_path}")
+        logging.debug(f"Loading UI from {ui_path}")
         uic.loadUi(str(ui_path), self)
         self.cwd = os.getcwd()
         self.scraper: SplatNet_Scraper_Wrapper | None = None
         self.ready: bool = False
         self.started: bool = False
+        self.async_runner: AsyncRunner | None = None
         self.setup_ui()
         self.started = True
-        logger.debug("App initialized")
+        logging.debug("App initialized")
 
     def setup_ui(self) -> None:
         """Set up the UI."""
-        logger.debug("Setting up UI")
+        logging.debug("Setting up UI")
         self.setWindowTitle("Data Zipcaster")
         self.set_icon()
         self.version_label.setText(f"v.{__version__}")
@@ -64,7 +67,7 @@ class App(QMainWindow):
 
     def setup_buttons(self) -> None:
         """Set up the buttons. Disable buttons initially if necessary."""
-        logger.debug("Setting up buttons")
+        logging.debug("Setting up buttons")
         # Wrap buttons in Button class
         self.fetch_button_wrapper = Button(
             self.fetch_button,
@@ -113,7 +116,7 @@ class App(QMainWindow):
 
     def setup_sliders_spinboxes(self) -> None:
         """Set up the sliders and spinboxes."""
-        logger.debug("Setting up sliders and spinboxes")
+        logging.debug("Setting up sliders and spinboxes")
         self.limit_slider_spinbox = SliderSpinbox(
             self.limit_slider,
             self.limit_spinbox,
@@ -134,7 +137,7 @@ class App(QMainWindow):
 
     def setup_signals(self) -> None:
         """Connect signals to slots."""
-        logger.debug("Connecting signals")
+        logging.debug("Connecting signals")
         self.ready_signal.connect(self.ready_changed)
         self.fetch_signal.connect(self.fetch_started)
         self.cancel_signal.connect(self.cancel_fetch_signal)
@@ -156,7 +159,7 @@ class App(QMainWindow):
 
     def set_icon(self) -> None:
         """Set the window icon."""
-        logger.debug("Setting window icon")
+        logging.debug("Setting window icon")
         logo_path = ASSETS_PATH / "dz_logo.png"
         icon = QIcon(str(logo_path))
         self.setWindowIcon(icon)
@@ -166,37 +169,37 @@ class App(QMainWindow):
 
         If a config file exists, enable the "Test Tokens" button.
         """
-        logger.debug("Checking for config file")
+        logging.debug("Checking for config file")
         config_path = pathlib.Path(self.cwd) / "config.ini"
         if config_path.exists():
-            logger.debug("Config file found")
+            logging.debug("Config file found")
             self.config_path_text.setText(str(config_path))
             self.load_config()
 
     def load_config(self) -> None:
         """Load a config file."""
-        logger.info("Attempting to load config file")
+        logging.info("Attempting to load config file")
         config_path = self.config_path_text.text()
         self.ready_signal.emit(False)
         if not config_path:
-            logger.error("No config file selected")
+            logging.error("No config file selected")
             self.show_error("Please select a config file first.")
             return
         try:
-            logger.debug("Loading config file")
+            logging.debug("Loading config file")
             scraper = SplatNet_Scraper_Wrapper.from_config(config_path)
         except KeyError:
-            logger.error("Config file is invalid")
+            logging.error("Config file is invalid")
             self.show_error(
                 "The config file is invalid. Please make sure the file is "
                 "correctly formatted."
             )
             return
-        self.set_scraper(scraper)
+        self.set_scraper_signal.emit(scraper)
 
     def open_file_dialog(self) -> None:
         """Open a file dialog to select a config file."""
-        logger.debug("Opening file dialog")
+        logging.debug("Opening file dialog")
         config_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select config file",
@@ -204,21 +207,21 @@ class App(QMainWindow):
             "Config files (*.ini)",
         )
         if config_path:
-            logger.debug("Config file selected")
+            logging.debug("Config file selected")
             self.config_path_text.setText(config_path)
             self.cwd = os.path.dirname(config_path)
             self.test_tokens_button_wrapper.set_enabled(True)
             self.load_config_button_wrapper.set_enabled(True)
         else:
-            logger.debug("No config file selected")
+            logging.debug("No config file selected")
 
     def test_tokens(self) -> None:
         """Test the tokens in the config file."""
-        logger.info("Testing tokens")
+        logging.info("Testing tokens")
         if self.scraper is None:
-            logger.error("No scraper found")
+            logging.error("No scraper found")
             return
-        self.scraper.test_tokens()
+        asyncio.ensure_future(self.scraper.test_tokens())
 
     def show_info(self, msg: str, window_title: str = "Info") -> None:
         """Show an info message.
@@ -227,9 +230,9 @@ class App(QMainWindow):
             msg (str): The message to show.
             window_title (str): The title of the window. Defaults to "Info".
         """
-        logger.debug("Showing info message")
+        logging.debug("Showing info message")
         if not self.started:
-            logger.debug("App not started yet, returning")
+            logging.debug("App not started yet, returning")
             return
         info = QMessageBox()
         info.setIcon(QMessageBox.Information)
@@ -246,9 +249,9 @@ class App(QMainWindow):
             msg (str): The message to show.
             window_title (str): The title of the window. Defaults to "Error".
         """
-        logger.debug("Showing error message")
+        logging.debug("Showing error message")
         if not self.started:
-            logger.debug("App not started yet, returning")
+            logging.debug("App not started yet, returning")
             return
         error = QMessageBox()
         error.setIcon(QMessageBox.Critical)
@@ -258,37 +261,25 @@ class App(QMainWindow):
         error.setWindowIcon(self.windowIcon())
         error.exec_()
 
-    def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
-        """Set the scraper and make changes that depend on it.
-
-        Args:
-            scraper (SplatNet_Scraper_Wrapper): The scraper to set.
-        """
-        logger.debug("Setting scraper")
-        self.scraper = scraper
-        self.test_tokens_button_wrapper.set_enabled(True)
-        self.load_config_button_wrapper.set_enabled(True)
-        self.connect_scraper_signals()
-
     def checkboxes_changed(self) -> None:
         """Check if at least one checkbox is checked."""
-        logger.debug("Checking if at least one checkbox is checked")
+        logging.debug("Checking if at least one checkbox is checked")
 
         if (
             any(checkbox.isChecked() for checkbox in self.checkboxes)
             and self.ready
         ):
-            logger.debug(
+            logging.debug(
                 "At least one checkbox is checked and tokens are valid"
             )
             self.fetch_button_wrapper.set_enabled(True)
         else:
-            logger.debug("No checkboxes are checked or tokens are invalid")
+            logging.debug("No checkboxes are checked or tokens are invalid")
             self.fetch_button_wrapper.set_enabled(False)
 
     def connect_scraper_signals(self) -> None:
         """Connect signals to slots."""
-        logger.debug("Connecting scraper signals")
+        logging.debug("Connecting scraper signals")
         self.scraper.testing_started.connect(self.testing_started)
         self.scraper.testing_finished.connect(self.testing_finished)
         self.scraper.progress_outer_changed.connect(self.outer_progress_changed)
@@ -296,9 +287,9 @@ class App(QMainWindow):
 
     def fetch_data(self) -> None:
         """Fetch data."""
-        logger.info("Fetching data")
+        logging.info("Fetching data")
         if self.scraper is None:
-            logger.error("No scraper found, this should not happen")
+            logging.error("No scraper found, this should not happen")
             return
         try:
             self.fetch_signal.emit()
@@ -312,14 +303,14 @@ class App(QMainWindow):
                 limit=self.limit_spinbox.value(),
             )
         except CancelFetchException:
-            logger.info("Fetch canceled")
+            logging.info("Fetch canceled")
             return
 
     def cancel_fetch(self) -> None:
         """Cancel fetching data."""
-        logger.info("Canceling fetch")
+        logging.info("Canceling fetch")
         if self.scraper is None:
-            logger.error("No scraper found, this should not happen")
+            logging.error("No scraper found, this should not happen")
             return
         self.scraper.cancelled = True
         self.cancel_signal.emit()
@@ -327,7 +318,7 @@ class App(QMainWindow):
     @pyqtSlot()
     def testing_started(self) -> None:
         """Disable the "Test Tokens" button and change its text to "Testing..." """
-        logger.debug("Signal received: testing_started")
+        logging.debug("Signal received: testing_started")
         self.test_tokens_button_wrapper.set_enabled(False)
         self.test_tokens_button_wrapper.button.setText("Testing...")
         QApplication.processEvents()
@@ -335,7 +326,7 @@ class App(QMainWindow):
     @pyqtSlot(bool)
     def testing_finished(self, success: bool) -> None:
         """Enable the "Test Tokens" button and change its text to "Test Tokens" """
-        logger.debug("Signal received: testing_finished")
+        logging.debug("Signal received: testing_finished")
         self.test_tokens_button_wrapper.set_enabled(True)
         self.test_tokens_button_wrapper.button.setText("Test Tokens")
         QApplication.processEvents()
@@ -352,7 +343,7 @@ class App(QMainWindow):
         """Enable or disable the "Fetch Data" button based on whether the
         scraper is ready.
         """
-        logger.debug("Signal received: ready_changed")
+        logging.debug("Signal received: ready_changed")
         self.ready = ready
         if ready:
             self.status_icon.setText("Ready")
@@ -366,7 +357,7 @@ class App(QMainWindow):
         """Change the text of the "Fetch Data" button to "Cancel", and turn the
         self.progress_outer and self.progress_inner widgets into progress bars.
         """
-        logger.debug("Signal received: fetch_started")
+        logging.debug("Signal received: fetch_started")
         self.fetch_button_wrapper.button.setText("Cancel")
         self.fetch_button_wrapper.button.clicked.disconnect(self.fetch_data)
         self.fetch_button_wrapper.button.clicked.connect(self.cancel_fetch)
@@ -380,7 +371,7 @@ class App(QMainWindow):
         self, current_value: int, max_value: int
     ) -> None:
         """Set the value of the outer progress bar."""
-        logger.debug("Signal received: progress_bar_outer")
+        logging.debug("Signal received: progress_bar_outer")
         self.progress_outer.setMaximum(max_value)
         self.progress_outer.setValue(current_value)
 
@@ -389,7 +380,7 @@ class App(QMainWindow):
         self, current_value: int, max_value: int
     ) -> None:
         """Set the value of the inner progress bar."""
-        logger.debug("Signal received: progress_bar_inner")
+        logging.debug("Signal received: progress_bar_inner")
         self.progress_inner.setMaximum(max_value)
         self.progress_inner.setValue(current_value)
 
@@ -400,13 +391,27 @@ class App(QMainWindow):
         """Change the text of the "Cancel" button back to "Fetch Data", and
         disconnect the signal from the slot.
         """
-        logger.debug("Signal received: cancel_fetch")
+        logging.debug("Signal received: cancel_fetch")
         self.fetch_button_wrapper.button.setText("Fetch Data")
         self.fetch_button_wrapper.button.clicked.disconnect(self.cancel_fetch)
         self.fetch_button_wrapper.button.clicked.connect(self.fetch_data)
         # Reset progress bars to empty widgets
         self.progress_outer = QWidget()
         self.progress_inner = QWidget()
+
+    @pyqtSlot(SplatNet_Scraper_Wrapper)
+    def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
+        """Set the scraper and make changes that depend on it.
+
+        Args:
+            scraper (SplatNet_Scraper_Wrapper): The scraper to set.
+        """
+        logging.debug("Setting scraper")
+        self.scraper = scraper
+        self.test_tokens_button_wrapper.set_enabled(True)
+        self.load_config_button_wrapper.set_enabled(True)
+        self.async_runner = AsyncRunner(scraper)
+        self.connect_scraper_signals()
 
 
 if __name__ == "__main__":
