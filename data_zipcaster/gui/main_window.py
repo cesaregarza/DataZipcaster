@@ -20,6 +20,7 @@ from data_zipcaster import __version__
 from data_zipcaster.gui.exceptions import CancelFetchException
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
+from data_zipcaster.gui.constants import GUIStates
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -41,10 +42,9 @@ class App(QMainWindow):
         uic.loadUi(str(ui_path), self)
         self.cwd = os.getcwd()
         self.scraper: SplatNet_Scraper_Wrapper | None = None
-        self.ready: bool = False
-        self.started: bool = False
+        self.state: GUIStates = GUIStates.INIT
         self.setup_ui()
-        self.started = True
+        self.state: GUIStates = GUIStates.READY
         logging.debug("App initialized")
 
     def setup_ui(self) -> None:
@@ -241,7 +241,7 @@ class App(QMainWindow):
             window_title (str): The title of the window. Defaults to "Info".
         """
         logging.debug("Showing info message")
-        if not self.started:
+        if self.state == GUIStates.INIT:
             logging.debug("App not started yet, returning")
             return
         info = QMessageBox()
@@ -260,7 +260,7 @@ class App(QMainWindow):
             window_title (str): The title of the window. Defaults to "Error".
         """
         logging.debug("Showing error message")
-        if not self.started:
+        if self.state == GUIStates.INIT:
             logging.debug("App not started yet, returning")
             return
         error = QMessageBox()
@@ -301,6 +301,10 @@ class App(QMainWindow):
         if self.scraper is None:
             logging.error("No scraper found, this should not happen")
             return
+        
+        if self.state in (GUIStates.FETCHING, GUIStates.CANCELLING):
+            logging.debug("Fetch already in progress, returning")
+            return
 
         self.thread = QThread()
         logging.debug("Moving scraper to thread and connecting signals")
@@ -320,6 +324,7 @@ class App(QMainWindow):
         self.thread.finished.connect(self.thread.deleteLater)
         logging.debug("Starting thread")
         self.fetch_signal.emit()
+        self.state = GUIStates.FETCHING
         self.thread.start()
 
     def cancel_fetch(self) -> None:
@@ -328,7 +333,13 @@ class App(QMainWindow):
         if self.scraper is None:
             logging.error("No scraper found, this should not happen")
             return
+        
+        if self.state != GUIStates.FETCHING:
+            logging.debug("No fetch in progress, returning")
+            return
+        
         self.scraper.cancelled = True
+        self.state = GUIStates.CANCELLING
         self.cancel_signal.emit()
 
     def show_progress_bars(self) -> None:
@@ -417,9 +428,7 @@ class App(QMainWindow):
     def cancel_fetch_signal(
         self,
     ) -> None:
-        """Change the text of the "Cancel" button back to "Fetch Data", and
-        disconnect the signal from the slot.
-        """
+        """Set to the cancelling state."""
         logging.debug("Signal received: cancel_fetch")
         self.fetch_button_wrapper.button.setText("Cancelling...")
         self.fetch_button_wrapper.button.clicked.disconnect(self.cancel_fetch)
