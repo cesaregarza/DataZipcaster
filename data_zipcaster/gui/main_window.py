@@ -4,7 +4,13 @@ import pathlib
 from functools import partial
 
 from PyQt5 import uic
-from PyQt5.QtCore import QCoreApplication, QThread, pyqtSignal, pyqtSlot, QThreadPool
+from PyQt5.QtCore import (
+    QCoreApplication,
+    QThread,
+    QThreadPool,
+    pyqtSignal,
+    pyqtSlot,
+)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
@@ -58,6 +64,7 @@ class App(QMainWindow):
         self.setup_sliders_spinboxes()
         self.setup_checkboxes()
         self.setup_signals()
+        self.hide_progress_bars()
         self.check_config_path_on_init()
 
         # Disable Salmon Run for now with a tooltip
@@ -330,6 +337,24 @@ class App(QMainWindow):
         self.scraper.cancelled = True
         self.cancel_signal.emit()
 
+    def show_progress_bars(self) -> None:
+        """Show the progress bars."""
+        logging.debug("Showing progress bars")
+        self.widget_outer.hide()
+        self.widget_inner.hide()
+        self.progress_outer.setValue(0)
+        self.progress_inner.setValue(0)
+        self.progress_outer.show()
+        self.progress_inner.show()
+
+    def hide_progress_bars(self) -> None:
+        """Hide the progress bars."""
+        logging.debug("Hiding progress bars")
+        self.progress_outer.hide()
+        self.progress_inner.hide()
+        self.widget_outer.show()
+        self.widget_inner.show()
+
     @pyqtSlot()
     def testing_started(self) -> None:
         """Disable the "Test Tokens" button and change its text to "Testing..." """
@@ -374,13 +399,7 @@ class App(QMainWindow):
         self.fetch_button_wrapper.button.setText("Cancel")
         self.fetch_button_wrapper.button.clicked.disconnect(self.fetch_data)
         self.fetch_button_wrapper.button.clicked.connect(self.cancel_fetch)
-        # The progress bars are empty widgets by default, so we need to
-        # replace them with progress bars
-        self.progress_outer = QProgressBar(self.progress_outer)
-        self.progress_inner = QProgressBar(self.progress_inner)
-        self.progress_outer.show()
-        self.progress_inner.show()
-        QApplication.processEvents()
+        self.show_progress_bars()
 
     @pyqtSlot(int, int)
     def outer_progress_changed(
@@ -411,9 +430,7 @@ class App(QMainWindow):
         self.fetch_button_wrapper.button.setText("Fetch Data")
         self.fetch_button_wrapper.button.clicked.disconnect(self.cancel_fetch)
         self.fetch_button_wrapper.button.clicked.connect(self.fetch_data)
-        # Reset progress bars to empty widgets
-        self.progress_outer = QWidget()
-        self.progress_inner = QWidget()
+        self.hide_progress_bars()
 
     @pyqtSlot(SplatNet_Scraper_Wrapper)
     def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:

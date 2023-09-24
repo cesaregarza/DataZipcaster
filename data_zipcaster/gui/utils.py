@@ -1,9 +1,9 @@
 import configparser as cp
 import logging
 import os
-from typing import cast, ParamSpec, TypeVar, Callable
+from typing import Callable, ParamSpec, TypeVar, cast
 
-from PyQt5.QtCore import QObject, pyqtSignal, QCoreApplication
+from PyQt5.QtCore import QCoreApplication, QObject, pyqtSignal
 from splatnet3_scraper.query import QueryHandler
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
@@ -30,13 +30,14 @@ class SplatNet_Scraper_Wrapper(QObject):
         self.scraper = scraper
         self.cancelled = False
         logging.debug("SplatNet_Scraper_Wrapper initialized")
-    
+
     @staticmethod
     def scraper_decorator(func: Callable[P, T]) -> Callable[P, T]:
         def wrapper(self: "SplatNet_Scraper_Wrapper", *args, **kwargs):
             result = func(self, *args, **kwargs)
             self.moveToThread(QCoreApplication.instance().thread())
             return result
+
         return wrapper
 
     @scraper_decorator
@@ -182,6 +183,6 @@ class SplatNet_Scraper_Wrapper(QObject):
             counter -= 1
             self.progress_inner_changed.emit(10 - counter, 10)
             if self.cancelled:
-                logging.debug("Cancelled")
+                logging.debug("SIMULATED Cancelled")
                 raise CancelFetchException()
         self.fetching_finished.emit({})
