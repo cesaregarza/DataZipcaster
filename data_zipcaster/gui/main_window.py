@@ -4,13 +4,7 @@ import pathlib
 from functools import partial
 
 from PyQt5 import uic
-from PyQt5.QtCore import (
-    QCoreApplication,
-    QThread,
-    QThreadPool,
-    pyqtSignal,
-    pyqtSlot,
-)
+from PyQt5.QtCore import QCoreApplication, QThread, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
@@ -427,10 +421,19 @@ class App(QMainWindow):
         disconnect the signal from the slot.
         """
         logging.debug("Signal received: cancel_fetch")
-        self.fetch_button_wrapper.button.setText("Fetch Data")
+        self.fetch_button_wrapper.button.setText("Cancelling...")
         self.fetch_button_wrapper.button.clicked.disconnect(self.cancel_fetch)
         self.fetch_button_wrapper.button.clicked.connect(self.fetch_data)
         self.hide_progress_bars()
+        self.fetch_button_wrapper.button.setEnabled(False)
+        QTimer.singleShot(3000, self.enable_fetch_button)
+
+    @pyqtSlot()
+    def enable_fetch_button(self) -> None:
+        """Enable the "Fetch Data" button."""
+        logging.debug("Enabling fetch button")
+        self.fetch_button_wrapper.button.setText("Fetch Data")
+        self.fetch_button_wrapper.button.setEnabled(True)
 
     @pyqtSlot(SplatNet_Scraper_Wrapper)
     def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
