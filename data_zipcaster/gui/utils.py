@@ -1,16 +1,20 @@
 import configparser as cp
 import logging
 import os
-from typing import cast
+from typing import cast, ParamSpec, TypeVar, Callable
 
-from PyQt5.QtCore import QEventLoop, QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, QCoreApplication
 from splatnet3_scraper.query import QueryHandler
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
 from data_zipcaster.constants import IMINK_URL, NXAPI_URL
+from data_zipcaster.gui.exceptions import CancelFetchException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class SplatNet_Scraper_Wrapper(QObject):
@@ -18,13 +22,24 @@ class SplatNet_Scraper_Wrapper(QObject):
     testing_finished = pyqtSignal(bool)
     progress_outer_changed = pyqtSignal(int, int)
     progress_inner_changed = pyqtSignal(int, int)
+    fetching_started = pyqtSignal()
+    fetching_finished = pyqtSignal(dict)
 
     def __init__(self, scraper: SplatNet_Scraper) -> None:
         super().__init__()
         self.scraper = scraper
         self.cancelled = False
         logging.debug("SplatNet_Scraper_Wrapper initialized")
+    
+    @staticmethod
+    def scraper_decorator(func: Callable[P, T]) -> Callable[P, T]:
+        def wrapper(self: "SplatNet_Scraper_Wrapper", *args, **kwargs):
+            result = func(self, *args, **kwargs)
+            self.moveToThread(QCoreApplication.instance().thread())
+            return result
+        return wrapper
 
+    @scraper_decorator
     def test_tokens(self) -> None:
         logging.info("Testing tokens")
         logging.debug("Emitting testing_started signal")
@@ -49,7 +64,9 @@ class SplatNet_Scraper_Wrapper(QObject):
                 },
             )
             return True
-        except Exception:
+        except Exception as e:
+            logging.exception("Error while testing tokens")
+            logging.debug("Error: %s", e)
             return False
 
     @classmethod
@@ -106,6 +123,7 @@ class SplatNet_Scraper_Wrapper(QObject):
             config.write(f)
         logging.info("Config saved")
 
+    @scraper_decorator
     def fetch_data(
         self,
         anarchy: bool = False,
@@ -115,7 +133,7 @@ class SplatNet_Scraper_Wrapper(QObject):
         challenge: bool = False,
         salmon_run: bool = False,
         limit: int = 50,
-    ) -> dict:
+    ) -> None:
         """Fetch data from SplatNet.
 
         Args:
@@ -143,28 +161,27 @@ class SplatNet_Scraper_Wrapper(QObject):
         logging.debug("Challenge: %s", challenge)
         logging.debug("Limit: %s", limit)
         self.cancelled = False
-
-
-class GeneralWorker(QObject):
-    started = pyqtSignal()
-    finished = pyqtSignal()
-    progress_outer_changed = pyqtSignal(int, int)
-    progress_inner_changed = pyqtSignal(int, int)
-
-    def __init__(self, wrapper: SplatNet_Scraper_Wrapper, method: str) -> None:
-        super().__init__()
-        self.wrapper = wrapper
-        self.method = method
-        self.cancelled = False
-        logging.debug("GeneralWorker initialized")
-
-    def run(self) -> None:
-        logging.debug("GeneralWorker started")
-        self.started.emit()
+        self.fetching_started.emit()
         try:
-            getattr(self.wrapper, self.method)()
-        except Exception:
-            logging.exception("Error while running GeneralWorker")
-        finally:
-            self.finished.emit()
-            logging.debug("GeneralWorker finished")
+            self.simulated_fetch()
+        except CancelFetchException:
+            logging.debug("Fetch cancelled")
+            self.fetching_finished.emit({})
+
+    def simulated_fetch(self) -> None:
+        logging.debug("Simulating fetch")
+        self.cancelled = False
+        import time
+
+        counter = 10
+        self.progress_outer_changed.emit(0, 1)
+        self.progress_inner_changed.emit(0, 10)
+        while counter > 0:
+            logging.debug("Counter: %s", counter)
+            time.sleep(1)
+            counter -= 1
+            self.progress_inner_changed.emit(10 - counter, 10)
+            if self.cancelled:
+                logging.debug("Cancelled")
+                raise CancelFetchException()
+        self.fetching_finished.emit({})

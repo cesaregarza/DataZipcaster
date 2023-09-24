@@ -1,10 +1,10 @@
-import asyncio
 import logging
 import os
 import pathlib
+from functools import partial
 
 from PyQt5 import uic
-from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QCoreApplication, QThread, pyqtSignal, pyqtSlot, QThreadPool
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
@@ -222,6 +222,7 @@ class App(QMainWindow):
         if self.scraper is None:
             logging.error("No scraper found")
             return
+
         self.thread = QThread()
         logging.debug("Moving scraper to thread and connecting signals")
         self.scraper.moveToThread(self.thread)
@@ -299,20 +300,26 @@ class App(QMainWindow):
         if self.scraper is None:
             logging.error("No scraper found, this should not happen")
             return
-        try:
-            self.fetch_signal.emit()
-            self.scraper.fetch_data(
-                anarchy=self.anarchy_check.isChecked(),
-                private=self.private_check.isChecked(),
-                turf_war=self.turf_check.isChecked(),
-                salmon_run=self.salmon_check.isChecked(),
-                x_battle=self.x_check.isChecked(),
-                challenge=self.challenge_check.isChecked(),
-                limit=self.limit_spinbox.value(),
-            )
-        except CancelFetchException:
-            logging.info("Fetch canceled")
-            return
+
+        self.thread = QThread()
+        logging.debug("Moving scraper to thread and connecting signals")
+        self.scraper.moveToThread(self.thread)
+        partial_fetch_data = partial(
+            self.scraper.fetch_data,
+            anarchy=self.anarchy_check.isChecked(),
+            private=self.private_check.isChecked(),
+            turf_war=self.turf_check.isChecked(),
+            salmon_run=self.salmon_check.isChecked(),
+            x_battle=self.x_check.isChecked(),
+            challenge=self.challenge_check.isChecked(),
+            limit=self.limit_spinbox.value(),
+        )
+        self.thread.started.connect(partial_fetch_data)
+        self.scraper.fetching_finished.connect(self.thread.quit)
+        self.thread.finished.connect(self.thread.deleteLater)
+        logging.debug("Starting thread")
+        self.fetch_signal.emit()
+        self.thread.start()
 
     def cancel_fetch(self) -> None:
         """Cancel fetching data."""
@@ -329,7 +336,6 @@ class App(QMainWindow):
         logging.debug("Signal received: testing_started")
         self.test_tokens_button_wrapper.set_enabled(False)
         self.test_tokens_button_wrapper.button.setText("Testing...")
-        QApplication.processEvents()
 
     @pyqtSlot(bool)
     def testing_finished(self, success: bool) -> None:
@@ -337,7 +343,6 @@ class App(QMainWindow):
         logging.debug("Signal received: testing_finished")
         self.test_tokens_button_wrapper.set_enabled(True)
         self.test_tokens_button_wrapper.button.setText("Test Tokens")
-        QApplication.processEvents()
         self.ready_signal.emit(success)
         if success:
             path = pathlib.Path(self.config_path_text.text())
@@ -373,8 +378,11 @@ class App(QMainWindow):
         # replace them with progress bars
         self.progress_outer = QProgressBar(self.progress_outer)
         self.progress_inner = QProgressBar(self.progress_inner)
+        self.progress_outer.show()
+        self.progress_inner.show()
+        QApplication.processEvents()
 
-    @pyqtSlot(int)
+    @pyqtSlot(int, int)
     def outer_progress_changed(
         self, current_value: int, max_value: int
     ) -> None:
@@ -383,7 +391,7 @@ class App(QMainWindow):
         self.progress_outer.setMaximum(max_value)
         self.progress_outer.setValue(current_value)
 
-    @pyqtSlot(int)
+    @pyqtSlot(int, int)
     def inner_progress_changed(
         self, current_value: int, max_value: int
     ) -> None:
