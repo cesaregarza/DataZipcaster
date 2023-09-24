@@ -17,10 +17,11 @@ from PyQt5.QtWidgets import (
 )
 
 from data_zipcaster import __version__
+from data_zipcaster.gui.constants import GUIStates
 from data_zipcaster.gui.exceptions import CancelFetchException
+from data_zipcaster.gui.ui_class import UIBaseClass
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
-from data_zipcaster.gui.constants import GUIStates
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,7 +29,7 @@ logger.setLevel(logging.DEBUG)
 ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
 
 
-class App(QMainWindow):
+class App(UIBaseClass):
     ready_signal = pyqtSignal(bool)
     fetch_signal = pyqtSignal()
     cancel_signal = pyqtSignal()
@@ -301,7 +302,7 @@ class App(QMainWindow):
         if self.scraper is None:
             logging.error("No scraper found, this should not happen")
             return
-        
+
         if self.state in (GUIStates.FETCHING, GUIStates.CANCELLING):
             logging.debug("Fetch already in progress, returning")
             return
@@ -333,11 +334,11 @@ class App(QMainWindow):
         if self.scraper is None:
             logging.error("No scraper found, this should not happen")
             return
-        
+
         if self.state != GUIStates.FETCHING:
             logging.debug("No fetch in progress, returning")
             return
-        
+
         self.scraper.cancelled = True
         self.state = GUIStates.CANCELLING
         self.cancel_signal.emit()
@@ -389,11 +390,11 @@ class App(QMainWindow):
         logging.debug("Signal received: ready_changed")
         self.ready = ready
         if ready:
-            self.status_icon.setText("Ready")
-            self.status_icon.setStyleSheet("color : green;")
+            self.status_icon_label.setText("Ready")
+            self.status_icon_label.setStyleSheet("color : green;")
         else:
-            self.status_icon.setText("Not Ready")
-            self.status_icon.setStyleSheet("color : red;")
+            self.status_icon_label.setText("Not Ready")
+            self.status_icon_label.setStyleSheet("color : red;")
 
     @pyqtSlot()
     def fetch_started(self) -> None:
