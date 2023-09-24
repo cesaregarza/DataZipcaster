@@ -4,7 +4,7 @@ import os
 import pathlib
 
 from PyQt5 import uic
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QApplication,
@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (
 
 from data_zipcaster import __version__
 from data_zipcaster.gui.exceptions import CancelFetchException
-from data_zipcaster.gui.utils import AsyncRunner, SplatNet_Scraper_Wrapper
+from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,6 @@ class App(QMainWindow):
         self.scraper: SplatNet_Scraper_Wrapper | None = None
         self.ready: bool = False
         self.started: bool = False
-        self.async_runner: AsyncRunner | None = None
         self.setup_ui()
         self.started = True
         logging.debug("App initialized")
@@ -197,6 +196,7 @@ class App(QMainWindow):
             )
             return
         self.set_scraper_signal.emit(scraper)
+        logging.debug("Config file loaded")
 
     def open_file_dialog(self) -> None:
         """Open a file dialog to select a config file."""
@@ -222,7 +222,14 @@ class App(QMainWindow):
         if self.scraper is None:
             logging.error("No scraper found")
             return
-        asyncio.ensure_future(self.scraper.test_tokens())
+        self.thread = QThread()
+        logging.debug("Moving scraper to thread and connecting signals")
+        self.scraper.moveToThread(self.thread)
+        self.thread.started.connect(self.scraper.test_tokens)
+        self.scraper.testing_finished.connect(self.thread.quit)
+        self.thread.finished.connect(self.thread.deleteLater)
+        logging.debug("Starting thread")
+        self.thread.start()
 
     def show_info(self, msg: str, window_title: str = "Info") -> None:
         """Show an info message.
@@ -411,8 +418,8 @@ class App(QMainWindow):
         self.scraper = scraper
         self.test_tokens_button_wrapper.set_enabled(True)
         self.load_config_button_wrapper.set_enabled(True)
-        self.async_runner = AsyncRunner(scraper)
         self.connect_scraper_signals()
+        logging.debug("Scraper set")
 
 
 if __name__ == "__main__":

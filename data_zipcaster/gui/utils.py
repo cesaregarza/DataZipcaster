@@ -1,10 +1,9 @@
-import asyncio
 import configparser as cp
 import logging
 import os
 from typing import cast
 
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QEventLoop, QObject, QThread, pyqtSignal, pyqtSlot
 from splatnet3_scraper.query import QueryHandler
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
@@ -26,24 +25,20 @@ class SplatNet_Scraper_Wrapper(QObject):
         self.cancelled = False
         logging.debug("SplatNet_Scraper_Wrapper initialized")
 
-    async def test_tokens(self) -> None:
+    def test_tokens(self) -> None:
         logging.info("Testing tokens")
         logging.debug("Emitting testing_started signal")
         self.testing_started.emit()
 
-        loop = asyncio.get_event_loop()
         try:
-            result = await loop.run_in_executor(None, self.test_tokens_blocking)
+            result = self.test_tokens_blocking()
             logging.debug("Emitting testing_finished signal")
-            if result:
-                self.testing_finished.emit(True)
-            else:
-                self.testing_finished.emit(False)
+            self.testing_finished.emit(result)
         except Exception:
             logging.exception("Error while testing tokens")
             self.testing_finished.emit(False)
 
-    def test_tokens_blocking(self) -> None:
+    def test_tokens_blocking(self) -> bool:
         try:
             handler = self.scraper.query_handler
             handler.query(
@@ -93,7 +88,7 @@ class SplatNet_Scraper_Wrapper(QObject):
         Args:
             config_path (str): The path to the config file.
         """
-        logger.debug("Saving config")
+        logging.debug("Saving config")
         config = cp.ConfigParser()
         if os.path.exists(config_path):
             config.read(config_path)
@@ -107,9 +102,9 @@ class SplatNet_Scraper_Wrapper(QObject):
         config["splatnet"]["bullet_token"] = token_manager.get("bullet_token")
         config["splatnet"]["ftoken_url"] = ",".join(token_manager.f_token_url)
         with open(config_path, "w") as f:
-            logger.debug("Writing config file")
+            logging.debug("Writing config file")
             config.write(f)
-        logger.info("Config saved")
+        logging.info("Config saved")
 
     def fetch_data(
         self,
@@ -140,31 +135,36 @@ class SplatNet_Scraper_Wrapper(QObject):
         Returns:
             dict: The data fetched from SplatNet.
         """
-        logger.debug("Fetching data")
-        logger.debug("Anarchy: %s", anarchy)
-        logger.debug("Private: %s", private)
-        logger.debug("Turf War: %s", turf_war)
-        logger.debug("X Battle: %s", x_battle)
-        logger.debug("Challenge: %s", challenge)
-        logger.debug("Limit: %s", limit)
+        logging.debug("Fetching data")
+        logging.debug("Anarchy: %s", anarchy)
+        logging.debug("Private: %s", private)
+        logging.debug("Turf War: %s", turf_war)
+        logging.debug("X Battle: %s", x_battle)
+        logging.debug("Challenge: %s", challenge)
+        logging.debug("Limit: %s", limit)
         self.cancelled = False
 
 
-class AsyncRunner(QThread):
-    trigger_test_tokens_signal = pyqtSignal()
+class GeneralWorker(QObject):
+    started = pyqtSignal()
+    finished = pyqtSignal()
+    progress_outer_changed = pyqtSignal(int, int)
+    progress_inner_changed = pyqtSignal(int, int)
 
-    def __init__(self, wrapper: SplatNet_Scraper_Wrapper) -> None:
+    def __init__(self, wrapper: SplatNet_Scraper_Wrapper, method: str) -> None:
         super().__init__()
         self.wrapper = wrapper
-        self.trigger_test_tokens_signal.connect(self.run_test_tokens)
+        self.method = method
+        self.cancelled = False
+        logging.debug("GeneralWorker initialized")
 
     def run(self) -> None:
-        logging.debug("Running AsyncRunner")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_forever()
-
-    @pyqtSlot()
-    def run_test_tokens(self) -> None:
-        logging.debug("Running test_tokens")
-        asyncio.ensure_future(self.wrapper.test_tokens())
+        logging.debug("GeneralWorker started")
+        self.started.emit()
+        try:
+            getattr(self.wrapper, self.method)()
+        except Exception:
+            logging.exception("Error while running GeneralWorker")
+        finally:
+            self.finished.emit()
+            logging.debug("GeneralWorker finished")
