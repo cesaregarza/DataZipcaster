@@ -65,17 +65,6 @@ class App(BaseClass):
         self.cancel_signal.connect(self.cancel_fetch_signal)
         self.set_scraper_signal.connect(self.set_scraper)
 
-    @property
-    def checkboxes(self) -> list[QCheckBox]:
-        return [
-            self.anarchy_check,
-            self.private_check,
-            self.turf_check,
-            self.salmon_check,
-            self.x_check,
-            self.challenge_check,
-        ]
-
     def check_config_path_on_init(self) -> None:
         """Check if a config file exists in the current working directory.
 
