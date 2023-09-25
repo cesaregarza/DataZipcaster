@@ -17,9 +17,9 @@ from PyQt5.QtWidgets import (
 )
 
 from data_zipcaster import __version__
+from data_zipcaster.gui.base_class import BaseClass
 from data_zipcaster.gui.constants import GUIStates
 from data_zipcaster.gui.exceptions import CancelFetchException
-from data_zipcaster.gui.ui_class import UIBaseClass
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
 
@@ -29,7 +29,7 @@ logger.setLevel(logging.DEBUG)
 ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
 
 
-class App(UIBaseClass):
+class App(BaseClass):
     ready_signal = pyqtSignal(bool)
     fetch_signal = pyqtSignal()
     cancel_signal = pyqtSignal()
@@ -49,15 +49,6 @@ class App(UIBaseClass):
         logging.debug("App initialized")
 
     def setup_ui(self) -> None:
-        """Set up the UI."""
-        logging.debug("Setting up UI")
-        self.setWindowTitle("Data Zipcaster")
-        self.set_icon()
-        self.version_label.setText(f"v.{__version__}")
-
-        self.setup_buttons()
-        self.setup_sliders_spinboxes()
-        self.setup_checkboxes()
         self.setup_signals()
         self.hide_progress_bars()
         self.check_config_path_on_init()
@@ -65,76 +56,6 @@ class App(UIBaseClass):
         # Disable Salmon Run for now with a tooltip
         self.salmon_check.setEnabled(False)
         self.salmon_check.setToolTip("Salmon Run is not supported yet")
-
-    def setup_buttons(self) -> None:
-        """Set up the buttons. Disable buttons initially if necessary."""
-        logging.debug("Setting up buttons")
-        # Wrap buttons in Button class
-        self.fetch_button_wrapper = Button(
-            self.fetch_button,
-            enabled_tooltip="Fetch data",
-            disabled_tooltip="Please select at least one data source first",
-            enabled=False,
-        )
-        self.view_button_wrapper = Button(
-            self.view_button,
-            enabled_tooltip="View data",
-            disabled_tooltip="Please fetch data first",
-            enabled=False,
-        )
-        self.export_all_button_wrapper = Button(
-            self.export_all_button,
-            enabled_tooltip="Export all data",
-            disabled_tooltip="Please fetch data first",
-            enabled=False,
-        )
-        self.config_path_button_wrapper = Button(
-            self.config_path_button,
-            enabled_tooltip="Select config file",
-        )
-        self.new_session_button_wrapper = Button(
-            self.new_session_button,
-            enabled_tooltip="Fetch a new session token",
-        )
-        self.test_tokens_button_wrapper = Button(
-            self.test_tokens_button,
-            enabled_tooltip="Test tokens",
-            disabled_tooltip="Please load a config file first",
-            enabled=False,
-        )
-        self.load_config_button_wrapper = Button(
-            self.load_config_button,
-            enabled_tooltip="Load config file",
-            disabled_tooltip="Please select a config file first",
-            enabled=False,
-        )
-
-        # Connect buttons to functions
-        self.config_path_button.clicked.connect(self.open_file_dialog)
-        self.load_config_button.clicked.connect(self.load_config)
-        self.test_tokens_button.clicked.connect(self.test_tokens)
-        self.fetch_button.clicked.connect(self.fetch_data)
-
-    def setup_sliders_spinboxes(self) -> None:
-        """Set up the sliders and spinboxes."""
-        logging.debug("Setting up sliders and spinboxes")
-        self.limit_slider_spinbox = SliderSpinbox(
-            self.limit_slider,
-            self.limit_spinbox,
-            enabled=True,
-            enabled_tooltip="Limit the number of matches to fetch",
-        )
-        self.interval_slider_spinbox = SliderSpinbox(
-            self.interval_slider,
-            self.interval_spinbox,
-            enabled=False,
-            enabled_tooltip="Set the time interval to fetch data for",
-            disabled_tooltip=(
-                '"Fetch Continuously" must be checked for this to be enabled'
-            ),
-        )
-        # Link interval to continuous check
-        self.interval_slider_spinbox.link_checkbox(self.continuous_check)
 
     def setup_signals(self) -> None:
         """Connect signals to slots."""
@@ -154,17 +75,6 @@ class App(UIBaseClass):
             self.x_check,
             self.challenge_check,
         ]
-
-    def setup_checkboxes(self) -> None:
-        for checkbox in self.checkboxes:
-            checkbox.stateChanged.connect(self.checkboxes_changed)
-
-    def set_icon(self) -> None:
-        """Set the window icon."""
-        logging.debug("Setting window icon")
-        logo_path = ASSETS_PATH / "dz_logo.png"
-        icon = QIcon(str(logo_path))
-        self.setWindowIcon(icon)
 
     def check_config_path_on_init(self) -> None:
         """Check if a config file exists in the current working directory.
