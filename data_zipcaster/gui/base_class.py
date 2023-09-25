@@ -10,17 +10,17 @@ from PyQt5.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMessageBox,
     QProgressBar,
     QPushButton,
     QSlider,
     QSpinBox,
     QWidget,
-    QMessageBox,
 )
 
+from data_zipcaster.gui.constants import GUIStates
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
-from data_zipcaster.gui.constants import GUIStates
 
 
 class BaseClass(QMainWindow):
@@ -64,6 +64,7 @@ class BaseClass(QMainWindow):
     widget_inner: QWidget
     scraper: SplatNet_Scraper_Wrapper
     state: GUIStates
+    ready: bool
 
     # Button wrappers
     fetch_button_wrapper: Button
@@ -83,6 +84,7 @@ class BaseClass(QMainWindow):
     fetching_started = pyqtSignal()
     cancel_signal = pyqtSignal()
     set_scraper_signal = pyqtSignal(SplatNet_Scraper_Wrapper)
+    state_changed_signal = pyqtSignal(GUIStates)
 
     # Properties
     @property
@@ -101,6 +103,11 @@ class BaseClass(QMainWindow):
         if not hasattr(self, "_cwd"):
             self._cwd = pathlib.Path.cwd()
         return str(self._cwd)
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.state = GUIStates.INIT
+        self.ready = False
 
     def show_info(self, msg: str, window_title: str = "Info") -> None:
         """Show an info message.
