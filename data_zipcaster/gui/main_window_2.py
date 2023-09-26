@@ -1,12 +1,13 @@
 import logging
 import pathlib
 
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import QThread, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from data_zipcaster.gui.base_class import BaseClass
 from data_zipcaster.gui.constants import GUIStates
 from data_zipcaster.gui.ui_manager import UIManager
+from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 
 
 class App:
@@ -28,9 +29,17 @@ class App:
 
     def setup_signals(self) -> None:
         base = self.base
+
+        # Signals
         base.ready_signal.connect(self.ready_changed)
         base.state_changed_signal.connect(self.state_changed)
         base.set_scraper_signal.connect(self.set_scraper)
+
+        # Button signals
+        base.config_path_button.clicked.connect(self.config_button_clicked)
+        base.load_config_button.clicked.connect(self.load_config_button_clicked)
+        base.test_tokens_button.clicked.connect(self.test_tokens_button_clicked)
+        base.fetch_button.clicked.connect(self.fetch_button_clicked)
 
     @pyqtSlot()
     def testing_started(self) -> None:
@@ -127,3 +136,50 @@ class App:
         base.fetch_button.clicked.disconnect(self.cancel_fetch)
         base.fetch_button.clicked.connect(self.fetch_data)
         base.fetch_button.setEnabled(False)
+
+    @pyqtSlot(SplatNet_Scraper_Wrapper)
+    def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
+        logging.info("Setting scraper")
+        base = self.base
+        base.scraper = scraper
+        base.state_changed_signal.emit(GUIStates.NOT_READY)
+
+    def cancel_fetch(self) -> None:
+        logging.info("Cancelling fetch")
+        base = self.base
+        base.cancel_signal.emit()
+
+    def fetch_data(self) -> None:
+        logging.info("Fetching data")
+        base = self.base
+        base.fetch_button_wrapper.set_enabled(False)
+        base.view_button_wrapper.set_enabled(False)
+        base.export_all_button_wrapper.set_enabled(False)
+        base.cancel_signal.emit()
+        base.fetching_started.emit()
+
+    # Button functions
+    def config_button_clicked(self) -> None:
+        logging.info("Config path button clicked")
+        self.ui_manager.open_file_dialog()
+
+    def load_config_button_clicked(self) -> None:
+        logging.info("Load config button clicked")
+        self.ui_manager.load_config()
+
+    def test_tokens_button_clicked(self) -> None:
+        logging.info("Test tokens button clicked")
+        base = self.base
+        if base.scraper is None:
+            logging.error("No scraper set")
+            return
+
+        base.thread = QThread()
+        logging.debug("Moving scraper to thread and connecting signals")
+        base.scraper.moveToThread(base.thread)
+        base.thread.started.connect(base.scraper.test_tokens)
+        base.scraper.testing_finished.connect(base.thread.quit)
+        base.thread.finished.connect(base.thread.deleteLater)
+        logging.debug("Starting thread")
+        base.state_changed_signal.emit(GUIStates.TESTING)
+        base.thread.start()

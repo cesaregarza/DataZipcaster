@@ -1,11 +1,15 @@
 import logging
+import os
 import pathlib
 
 from PyQt5.QtCore import QObject, pyqtSlot
 from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QFileDialog
 
 from data_zipcaster import __version__
 from data_zipcaster.gui.base_class import BaseClass
+from data_zipcaster.gui.constants import GUIStates
+from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
 
 ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
@@ -140,6 +144,7 @@ class UIManager(QObject):
         base.widget_outer.show()
         base.widget_inner.show()
 
+    # Signal functions
     @pyqtSlot(int, int)
     def outer_progress_changed(
         self, current_value: int, max_value: int
@@ -159,3 +164,44 @@ class UIManager(QObject):
         base = self.base
         base.progress_inner.setMaximum(max_value)
         base.progress_inner.setValue(current_value)
+
+    # Other
+    def open_file_dialog(self) -> None:
+        logging.info("Opening file dialog")
+        base = self.base
+        config_path, _ = QFileDialog.getOpenFileName(
+            base,
+            "Select config file",
+            base.cwd,
+            "Config files (*.ini)",
+        )
+        if not config_path:
+            logging.debug("No config file selected")
+            return
+
+        logging.debug("Config file selected: %s", config_path)
+        base.config_path_text.setText(config_path)
+        base.cwd = os.path.dirname(config_path)
+        self.load_config()
+
+    def load_config(self) -> None:
+        """Load a config file"""
+        logging.info("Attempting to load config file")
+        base = self.base
+        config_path = base.config_path_text.text()
+        if not config_path:
+            logging.debug("No config file selected")
+            base.show_error("No config file selected")
+            return
+
+        try:
+            logging.debug("Loading config file")
+            scraper = SplatNet_Scraper_Wrapper(config_path)
+        except KeyError:
+            logging.error("Invalid config file")
+            base.show_error(
+                "The config file is invalid. Please make sure the file is "
+                "correctly formatted."
+            )
+            return
+        base.set_scraper_signal.emit(scraper)

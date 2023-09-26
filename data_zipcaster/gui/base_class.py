@@ -104,6 +104,10 @@ class BaseClass(QMainWindow):
             self._cwd = pathlib.Path.cwd()
         return str(self._cwd)
 
+    @cwd.setter
+    def cwd(self, value: str) -> None:
+        self._cwd = pathlib.Path(value)
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.state = GUIStates.INIT
