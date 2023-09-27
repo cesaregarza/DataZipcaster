@@ -22,6 +22,7 @@ class UIManager(QObject):
     """
 
     def __init__(self, base: BaseClass) -> None:
+        super().__init__()
         self.base = base
         self.setup_ui()
 
@@ -196,4 +197,3 @@ class UIManager(QObject):
                 "The config file is invalid. Please make sure the file is "
                 "correctly formatted."
             )
-            return

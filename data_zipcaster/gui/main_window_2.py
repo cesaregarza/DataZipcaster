@@ -40,8 +40,7 @@ class App(QObject):
         logging.info("Setting up signals")
         base = self.base
 
-        # Signals
-        base.ready_signal.connect(self.ready_changed)
+        # Base Signals
         base.state_changed_signal.connect(self.state_changed)
         base.set_scraper_signal.connect(self.set_scraper)
 
@@ -66,43 +65,30 @@ class App(QObject):
             base.config_path_text.setText(str(config_path))
             self.ui_manager.load_config()
 
-    @pyqtSlot()
-    def testing_started(self) -> None:
-        """Disable the "Test Tokens" button and change its text to "Testing..." """
-        logging.debug("Signal received: testing_started")
-        base = self.base
-        base.test_tokens_button_wrapper.set_enabled(False)
-        base.test_tokens_button.setText("Testing...")
+    def setup_scraper_signals(self) -> None:
+        logging.info("Setting up scraper signals")
+        scraper = self.base.scraper
+        ui = self.ui_manager
+        scraper.testing_finished.connect(self.testing_finished)
+        # scraper.fetching_started.connect(self.fetching_started)
+        # scraper.fetching_finished.connect(self.fetching_finished)
+        scraper.progress_inner_changed.connect(ui.inner_progress_changed)
+        scraper.progress_outer_changed.connect(ui.outer_progress_changed)
 
     @pyqtSlot(bool)
     def testing_finished(self, success: bool) -> None:
         """Enable the "Test Tokens" button and change its text to "Test Tokens" """
         logging.debug("Signal received: testing_finished")
         base = self.base
-        base.test_tokens_button_wrapper.set_enabled(True)
-        base.test_tokens_button.setText("Test Tokens")
-        base.ready_signal.emit(success)
         if success:
+            base.state_changed_signal.emit(GUIStates.READY)
+            self.checkbox_state_changed()
             path = pathlib.Path(base.config_path_text.text())
             if path.exists():
                 base.scraper.save_config(str(path))
         else:
+            base.state_changed_signal.emit(GUIStates.NOT_READY)
             base.show_error("Tokens are invalid!")
-
-    @pyqtSlot(bool)
-    def ready_changed(self, ready: bool) -> None:
-        """Enable or disable the "Fetch Data" button based on whether the
-        scraper is ready.
-        """
-        logging.debug("Signal received: ready_changed")
-        base = self.base
-        base.ready = ready
-        if ready:
-            base.status_icon_label.setText("Ready")
-            base.status_icon_label.setStyleSheet("color : green;")
-        else:
-            base.status_icon_label.setText("Not Ready")
-            base.status_icon_label.setStyleSheet("color : red;")
 
     @pyqtSlot(GUIStates)
     def state_changed(self, new_state: GUIStates) -> None:
@@ -114,6 +100,7 @@ class App(QObject):
             GUIStates.FETCHING: self.state_fetching,
             GUIStates.CANCELLING: self.state_cancelling,
         }
+        self.base.state = new_state
         func_map[new_state]()
 
     def state_not_ready(self) -> None:
@@ -168,6 +155,7 @@ class App(QObject):
         base = self.base
         base.scraper = scraper
         base.state_changed_signal.emit(GUIStates.NOT_READY)
+        self.setup_scraper_signals()
 
     def cancel_fetch(self) -> None:
         logging.info("Cancelling fetch")
@@ -206,6 +194,7 @@ class App(QObject):
         base.scraper.testing_finished.connect(base.thread.quit)
         base.thread.finished.connect(base.thread.deleteLater)
         logging.debug("Starting thread")
+        base.state_changed_signal.emit(GUIStates.NOT_READY)
         base.state_changed_signal.emit(GUIStates.TESTING)
         base.thread.start()
 

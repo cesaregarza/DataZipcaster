@@ -18,7 +18,6 @@ P = ParamSpec("P")
 
 
 class SplatNet_Scraper_Wrapper(QObject):
-    testing_started = pyqtSignal()
     testing_finished = pyqtSignal(bool)
     progress_outer_changed = pyqtSignal(int, int)
     progress_inner_changed = pyqtSignal(int, int)
@@ -47,16 +46,9 @@ class SplatNet_Scraper_Wrapper(QObject):
     @scraper_decorator
     def test_tokens(self) -> None:
         logging.info("Testing tokens")
-        logging.debug("Emitting testing_started signal")
-        self.testing_started.emit()
-
-        try:
-            result = self.test_tokens_blocking()
-            logging.debug("Emitting testing_finished signal")
-            self.testing_finished.emit(result)
-        except Exception:
-            logging.exception("Error while testing tokens")
-            self.testing_finished.emit(False)
+        result = self.test_tokens_blocking()
+        logging.debug("Emitting testing_finished signal")
+        self.testing_finished.emit(result)
 
     def test_tokens_blocking(self) -> bool:
         try:

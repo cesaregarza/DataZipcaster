@@ -81,7 +81,6 @@ class BaseClass(QMainWindow):
     interval_slider_spinbox: SliderSpinbox
 
     # Signals
-    ready_signal = pyqtSignal(bool)
     fetching_started = pyqtSignal()
     cancel_signal = pyqtSignal()
     set_scraper_signal = pyqtSignal(SplatNet_Scraper_Wrapper)
