@@ -29,6 +29,7 @@ class BaseClass(QMainWindow):
     # Labels
     version_label: QLabel
     status_icon_label: QLabel
+    status_label: QLabel
 
     # Progress bars
     progress_outer: QProgressBar

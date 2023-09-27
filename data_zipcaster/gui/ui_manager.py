@@ -188,7 +188,8 @@ class UIManager(QObject):
 
         try:
             logging.debug("Loading config file")
-            scraper = SplatNet_Scraper_Wrapper(config_path)
+            scraper = SplatNet_Scraper_Wrapper.from_config(config_path)
+            base.set_scraper_signal.emit(scraper)
         except KeyError:
             logging.error("Invalid config file")
             base.show_error(
@@ -196,4 +197,3 @@ class UIManager(QObject):
                 "correctly formatted."
             )
             return
-        base.set_scraper_signal.emit(scraper)

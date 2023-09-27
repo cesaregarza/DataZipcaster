@@ -27,6 +27,7 @@ class App(QObject):
         self.base.show()
         self.setup_signals()
         self.setup_checkboxes()
+        self.setup_config_on_init()
 
     def run(self) -> None:
         """Runs the UI."""
@@ -55,6 +56,15 @@ class App(QObject):
         base = self.base
         for checkbox in base.checkboxes:
             checkbox.stateChanged.connect(self.checkbox_state_changed)
+
+    def setup_config_on_init(self) -> None:
+        logging.info("Setting up config on init, if possible")
+        base = self.base
+        config_path = pathlib.Path(base.cwd) / "config.ini"
+        if config_path.exists():
+            logging.debug("Config file found, loading it")
+            base.config_path_text.setText(str(config_path))
+            self.ui_manager.load_config()
 
     @pyqtSlot()
     def testing_started(self) -> None:

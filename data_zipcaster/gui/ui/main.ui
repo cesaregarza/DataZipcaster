@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>319</width>
-    <height>589</height>
+    <height>597</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -292,7 +292,7 @@
           </widget>
          </item>
          <item alignment="Qt::AlignRight">
-          <widget class="QLabel" name="status_icon">
+          <widget class="QLabel" name="status_icon_label">
            <property name="styleSheet">
             <string notr="true">color: red;</string>
            </property>

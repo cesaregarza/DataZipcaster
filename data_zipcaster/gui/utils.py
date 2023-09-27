@@ -27,6 +27,10 @@ class SplatNet_Scraper_Wrapper(QObject):
 
     def __init__(self, scraper: SplatNet_Scraper) -> None:
         super().__init__()
+        if not isinstance(scraper, SplatNet_Scraper):
+            raise TypeError(
+                f"Expected SplatNet_Scraper, got {type(scraper).__name__}"
+            )
         self.scraper = scraper
         self.cancelled = False
         logging.debug("SplatNet_Scraper_Wrapper initialized")
