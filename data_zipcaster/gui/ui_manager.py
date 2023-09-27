@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 
+from PyQt5 import uic
 from PyQt5.QtCore import QObject, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog
@@ -28,13 +29,15 @@ class UIManager(QObject):
         """Sets up the UI elements."""
         logging.info("Setting up UI elements")
         base = self.base
+        ui_path = pathlib.Path(__file__).parent / "ui" / "main.ui"
+        logging.debug("Loading UI file: %s", ui_path)
+        uic.loadUi(ui_path, base)
         base.setWindowTitle("Data Zipcaster")
         self.set_icon()
         base.version_label.setText(f"v.{__version__}")
 
         self.setup_buttons()
         self.setup_sliders_spinboxes()
-        self.setup_checkboxes()
         self.hide_progress_bars()
 
         # Disable Salmon Run for now with the tooltip
@@ -91,38 +94,27 @@ class UIManager(QObject):
             enabled=False,
         )
 
-        # Connect buttons to functions
-        # base.config_path_button.clicked.connect(base.open_file_dialog)
-        # base.load_config_button.clicked.connect(base.load_config)
-        # base.test_tokens_button.clicked.connect(base.test_tokens)
-        # base.fetch_button.clicked.connect(base.fetch_data)
-
     def setup_sliders_spinboxes(self) -> None:
         logging.info("Setting up sliders and spinboxes")
         base = self.base
         base.limit_slider_spinbox = SliderSpinbox(
             base.limit_slider,
             base.limit_spinbox,
-            enabled_tooltip="Limit",
-            disabled_tooltip="Please fetch data first",
-            enabled=False,
+            enabled=True,
+            enabled_tooltip="Limit the number of matches to fetch",
         )
         base.interval_slider_spinbox = SliderSpinbox(
             base.interval_slider,
             base.interval_spinbox,
-            enabled_tooltip="Interval",
-            disabled_tooltip="Please fetch data first",
             enabled=False,
+            enabled_tooltip="Set the time interval to fetch data for",
+            disabled_tooltip=(
+                '"Fetch Continuously" must be checked for this to be enabled'
+            ),
         )
 
         # Connect sliders and spinboxes to functions
         base.interval_slider_spinbox.link_checkbox(base.continuous_check)
-
-    def setup_checkboxes(self) -> None:
-        logging.info("Setting up checkboxes")
-        # base = self.base_window
-        # for checkbox in base.checkboxes:
-        # checkbox.stateChanged.connect(base.checkboxes_changed)
 
     def show_progress_bars(self) -> None:
         """Show the progress bars."""

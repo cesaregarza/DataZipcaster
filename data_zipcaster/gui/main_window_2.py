@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-from PyQt5.QtCore import QThread, pyqtSlot
+from PyQt5.QtCore import QObject, QThread, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from data_zipcaster.gui.base_class import BaseClass
@@ -10,24 +10,33 @@ from data_zipcaster.gui.ui_manager import UIManager
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 
 
-class App:
+class App(QObject):
     """Main class for the UI. This is the class that is run when the program
     is started.
     """
 
     def __init__(self) -> None:
+        super().__init__()
         self.app = QApplication([])
         self.base = BaseClass()
         self.ui_manager = UIManager(self.base)
 
+    def setup(self) -> None:
+        """Sets up the UI."""
+        logging.info("Finalizing UI setup")
+        self.base.show()
+        self.setup_signals()
+        self.setup_checkboxes()
+
     def run(self) -> None:
         """Runs the UI."""
         logging.info("Starting UI")
-        self.base.show()
-        self.app.exec_()
+        self.setup()
+        self.app.exec()
         logging.info("UI closed")
 
     def setup_signals(self) -> None:
+        logging.info("Setting up signals")
         base = self.base
 
         # Signals
@@ -40,6 +49,12 @@ class App:
         base.load_config_button.clicked.connect(self.load_config_button_clicked)
         base.test_tokens_button.clicked.connect(self.test_tokens_button_clicked)
         base.fetch_button.clicked.connect(self.fetch_button_clicked)
+
+    def setup_checkboxes(self) -> None:
+        logging.info("Setting up checkboxes")
+        base = self.base
+        for checkbox in base.checkboxes:
+            checkbox.stateChanged.connect(self.checkbox_state_changed)
 
     @pyqtSlot()
     def testing_started(self) -> None:
@@ -183,3 +198,30 @@ class App:
         logging.debug("Starting thread")
         base.state_changed_signal.emit(GUIStates.TESTING)
         base.thread.start()
+
+    def fetch_button_clicked(self) -> None:
+        logging.info("Fetch button clicked")
+        base = self.base
+
+    def checkbox_state_changed(self) -> None:
+        logging.info("Checkbox state changed")
+        base = self.base
+
+        if (
+            any(checkbox.isChecked() for checkbox in base.checkboxes)
+            and base.ready
+        ):
+            logging.debug(
+                "At least one checkbox is checked and scraper is ready"
+            )
+            base.fetch_button_wrapper.set_enabled(True)
+        else:
+            logging.debug("No checkboxes are checked or scraper is not ready")
+            base.fetch_button_wrapper.set_enabled(False)
+
+
+if __name__ == "__main__":
+    logging.root.handlers = []
+    logging.basicConfig(level=logging.DEBUG)
+    app = App()
+    app.run()
