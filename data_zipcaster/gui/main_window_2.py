@@ -89,6 +89,13 @@ class App(QObject):
         else:
             base.state_changed_signal.emit(GUIStates.NOT_READY)
             base.show_error("Tokens are invalid!")
+    
+    @pyqtSlot()
+    def fetching_started(self) -> None:
+        """Change the state to FETCHING"""
+        logging.debug("Signal received: fetching_started")
+        base = self.base
+        base.state_changed_signal.emit(GUIStates.FETCHING)
 
     @pyqtSlot(GUIStates)
     def state_changed(self, new_state: GUIStates) -> None:
@@ -164,6 +171,8 @@ class App(QObject):
 
     def fetch_data(self) -> None:
         logging.info("Fetching data")
+        # TODO: Remove this, it is outdated and superceded by state_changed
+        # Instead, this will handle the actual fetching
         base = self.base
         base.fetch_button_wrapper.set_enabled(False)
         base.view_button_wrapper.set_enabled(False)
@@ -201,6 +210,20 @@ class App(QObject):
     def fetch_button_clicked(self) -> None:
         logging.info("Fetch button clicked")
         base = self.base
+        if base.scraper is None:
+            logging.error("No scraper set")
+            return
+        
+        if base.state == GUIStates.FETCHING:
+            logging.debug("State is FETCHING, cancelling fetch")
+            self.cancel_fetch()
+        elif base.state == GUIStates.READY:
+            logging.debug("State is READY, fetching data")
+            self.fetch_data()
+        else:
+            logging.error("State is not READY or FETCHING")
+            # Do nothing
+            return
 
     def checkbox_state_changed(self) -> None:
         logging.info("Checkbox state changed")
