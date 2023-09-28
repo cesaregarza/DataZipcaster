@@ -1,370 +1,286 @@
 import logging
-import os
 import pathlib
 from functools import partial
 
-from PyQt5 import uic
-from PyQt5.QtCore import QCoreApplication, QThread, QTimer, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QFileDialog,
-    QMainWindow,
-    QMessageBox,
-    QProgressBar,
-    QWidget,
-)
+from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
-from data_zipcaster import __version__
 from data_zipcaster.gui.base_class import BaseClass
 from data_zipcaster.gui.constants import GUIStates
-from data_zipcaster.gui.exceptions import CancelFetchException
+from data_zipcaster.gui.ui_manager import UIManager
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
-from data_zipcaster.gui.widget_wrappers import Button, SliderSpinbox
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-ASSETS_PATH = pathlib.Path(__file__).parent.parent / "assets"
 
 
-class App(BaseClass):
-    ready_signal = pyqtSignal(bool)
-    fetch_signal = pyqtSignal()
-    cancel_signal = pyqtSignal()
-    set_scraper_signal = pyqtSignal(SplatNet_Scraper_Wrapper)
+class App(QObject):
+    """Main class for the UI. This is the class that is run when the program
+    is started.
+    """
 
     def __init__(self) -> None:
-        logging.debug("Initializing App")
         super().__init__()
-        ui_path = pathlib.Path(__file__).parent / "ui" / "main.ui"
-        logging.debug(f"Loading UI from {ui_path}")
-        uic.loadUi(str(ui_path), self)
-        self.cwd = os.getcwd()
-        self.scraper: SplatNet_Scraper_Wrapper | None = None
-        self.state: GUIStates = GUIStates.INIT
-        self.setup_ui()
-        self.state: GUIStates = GUIStates.READY
-        logging.debug("App initialized")
+        self.app = QApplication([])
+        self.base = BaseClass()
+        self.ui_manager = UIManager(self.base)
 
-    def setup_ui(self) -> None:
+    def setup(self) -> None:
+        """Sets up the UI."""
+        logging.info("Finalizing UI setup")
+        self.base.show()
         self.setup_signals()
-        self.hide_progress_bars()
-        self.check_config_path_on_init()
+        self.setup_checkboxes()
+        self.setup_config_on_init()
 
-        # Disable Salmon Run for now with a tooltip
-        self.salmon_check.setEnabled(False)
-        self.salmon_check.setToolTip("Salmon Run is not supported yet")
+    def run(self) -> None:
+        """Runs the UI."""
+        logging.info("Starting UI")
+        self.setup()
+        self.app.exec()
+        logging.info("UI closed")
 
     def setup_signals(self) -> None:
-        """Connect signals to slots."""
-        logging.debug("Connecting signals")
-        self.ready_signal.connect(self.ready_changed)
-        self.fetch_signal.connect(self.fetch_started)
-        self.cancel_signal.connect(self.cancel_fetch_signal)
-        self.set_scraper_signal.connect(self.set_scraper)
+        logging.info("Setting up signals")
+        base = self.base
 
-    def check_config_path_on_init(self) -> None:
-        """Check if a config file exists in the current working directory.
+        # Base Signals
+        base.state_changed_signal.connect(self.state_changed)
+        base.set_scraper_signal.connect(self.set_scraper)
 
-        If a config file exists, enable the "Test Tokens" button.
-        """
-        logging.debug("Checking for config file")
-        config_path = pathlib.Path(self.cwd) / "config.ini"
+        # Button signals
+        base.config_path_button.clicked.connect(self.config_button_clicked)
+        base.load_config_button.clicked.connect(self.load_config_button_clicked)
+        base.test_tokens_button.clicked.connect(self.test_tokens_button_clicked)
+        base.fetch_button.clicked.connect(self.fetch_button_clicked)
+        base.cancel_signal.connect(self.cancel_fetch)
+
+    def setup_checkboxes(self) -> None:
+        logging.info("Setting up checkboxes")
+        base = self.base
+        for checkbox in base.checkboxes:
+            checkbox.stateChanged.connect(self.checkbox_state_changed)
+
+    def setup_config_on_init(self) -> None:
+        logging.info("Setting up config on init, if possible")
+        base = self.base
+        config_path = pathlib.Path(base.cwd) / "config.ini"
         if config_path.exists():
-            logging.debug("Config file found")
-            self.config_path_text.setText(str(config_path))
-            self.load_config()
+            logging.debug("Config file found, loading it")
+            base.config_path_text.setText(str(config_path))
+            self.ui_manager.load_config()
 
-    def load_config(self) -> None:
-        """Load a config file."""
-        logging.info("Attempting to load config file")
-        config_path = self.config_path_text.text()
-        self.ready_signal.emit(False)
-        if not config_path:
-            logging.error("No config file selected")
-            self.show_error("Please select a config file first.")
-            return
-        try:
-            logging.debug("Loading config file")
-            scraper = SplatNet_Scraper_Wrapper.from_config(config_path)
-        except KeyError:
-            logging.error("Config file is invalid")
-            self.show_error(
-                "The config file is invalid. Please make sure the file is "
-                "correctly formatted."
-            )
-            return
-        self.set_scraper_signal.emit(scraper)
-        logging.debug("Config file loaded")
-
-    def open_file_dialog(self) -> None:
-        """Open a file dialog to select a config file."""
-        logging.debug("Opening file dialog")
-        config_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select config file",
-            self.cwd,
-            "Config files (*.ini)",
-        )
-        if config_path:
-            logging.debug("Config file selected")
-            self.config_path_text.setText(config_path)
-            self.cwd = os.path.dirname(config_path)
-            self.test_tokens_button_wrapper.set_enabled(True)
-            self.load_config_button_wrapper.set_enabled(True)
-        else:
-            logging.debug("No config file selected")
-
-    def test_tokens(self) -> None:
-        """Test the tokens in the config file."""
-        logging.info("Testing tokens")
-        if self.scraper is None:
-            logging.error("No scraper found")
-            return
-
-        self.thread = QThread()
-        logging.debug("Moving scraper to thread and connecting signals")
-        self.scraper.moveToThread(self.thread)
-        self.thread.started.connect(self.scraper.test_tokens)
-        self.scraper.testing_finished.connect(self.thread.quit)
-        self.thread.finished.connect(self.thread.deleteLater)
-        logging.debug("Starting thread")
-        self.thread.start()
-
-    def show_info(self, msg: str, window_title: str = "Info") -> None:
-        """Show an info message.
-
-        Args:
-            msg (str): The message to show.
-            window_title (str): The title of the window. Defaults to "Info".
-        """
-        logging.debug("Showing info message")
-        if self.state == GUIStates.INIT:
-            logging.debug("App not started yet, returning")
-            return
-        info = QMessageBox()
-        info.setIcon(QMessageBox.Information)
-        info.setText("Info")
-        info.setInformativeText(msg)
-        info.setWindowTitle(window_title)
-        info.setWindowIcon(self.windowIcon())
-        info.exec_()
-
-    def show_error(self, msg: str, window_title: str = "Error") -> None:
-        """Show an error message.
-
-        Args:
-            msg (str): The message to show.
-            window_title (str): The title of the window. Defaults to "Error".
-        """
-        logging.debug("Showing error message")
-        if self.state == GUIStates.INIT:
-            logging.debug("App not started yet, returning")
-            return
-        error = QMessageBox()
-        error.setIcon(QMessageBox.Critical)
-        error.setText("Error")
-        error.setInformativeText(msg)
-        error.setWindowTitle(window_title)
-        error.setWindowIcon(self.windowIcon())
-        error.exec_()
-
-    def checkboxes_changed(self) -> None:
-        """Check if at least one checkbox is checked."""
-        logging.debug("Checking if at least one checkbox is checked")
-
-        if (
-            any(checkbox.isChecked() for checkbox in self.checkboxes)
-            and self.ready
-        ):
-            logging.debug(
-                "At least one checkbox is checked and tokens are valid"
-            )
-            self.fetch_button_wrapper.set_enabled(True)
-        else:
-            logging.debug("No checkboxes are checked or tokens are invalid")
-            self.fetch_button_wrapper.set_enabled(False)
-
-    def connect_scraper_signals(self) -> None:
-        """Connect signals to slots."""
-        logging.debug("Connecting scraper signals")
-        self.scraper.testing_started.connect(self.testing_started)
-        self.scraper.testing_finished.connect(self.testing_finished)
-        self.scraper.progress_outer_changed.connect(self.outer_progress_changed)
-        self.scraper.progress_inner_changed.connect(self.inner_progress_changed)
-
-    def fetch_data(self) -> None:
-        """Fetch data."""
-        logging.info("Fetching data")
-        if self.scraper is None:
-            logging.error("No scraper found, this should not happen")
-            return
-
-        if self.state in (GUIStates.FETCHING, GUIStates.CANCELLING):
-            logging.debug("Fetch already in progress, returning")
-            return
-
-        self.thread = QThread()
-        logging.debug("Moving scraper to thread and connecting signals")
-        self.scraper.moveToThread(self.thread)
-        partial_fetch_data = partial(
-            self.scraper.fetch_data,
-            anarchy=self.anarchy_check.isChecked(),
-            private=self.private_check.isChecked(),
-            turf_war=self.turf_check.isChecked(),
-            salmon_run=self.salmon_check.isChecked(),
-            x_battle=self.x_check.isChecked(),
-            challenge=self.challenge_check.isChecked(),
-            limit=self.limit_spinbox.value(),
-        )
-        self.thread.started.connect(partial_fetch_data)
-        self.scraper.fetching_finished.connect(self.thread.quit)
-        self.thread.finished.connect(self.thread.deleteLater)
-        logging.debug("Starting thread")
-        self.fetch_signal.emit()
-        self.state = GUIStates.FETCHING
-        self.thread.start()
-
-    def cancel_fetch(self) -> None:
-        """Cancel fetching data."""
-        logging.info("Canceling fetch")
-        if self.scraper is None:
-            logging.error("No scraper found, this should not happen")
-            return
-
-        if self.state != GUIStates.FETCHING:
-            logging.debug("No fetch in progress, returning")
-            return
-
-        self.scraper.cancelled = True
-        self.state = GUIStates.CANCELLING
-        self.cancel_signal.emit()
-
-    def show_progress_bars(self) -> None:
-        """Show the progress bars."""
-        logging.debug("Showing progress bars")
-        self.widget_outer.hide()
-        self.widget_inner.hide()
-        self.progress_outer.setValue(0)
-        self.progress_inner.setValue(0)
-        self.progress_outer.show()
-        self.progress_inner.show()
-
-    def hide_progress_bars(self) -> None:
-        """Hide the progress bars."""
-        logging.debug("Hiding progress bars")
-        self.progress_outer.hide()
-        self.progress_inner.hide()
-        self.widget_outer.show()
-        self.widget_inner.show()
-
-    @pyqtSlot()
-    def testing_started(self) -> None:
-        """Disable the "Test Tokens" button and change its text to "Testing..." """
-        logging.debug("Signal received: testing_started")
-        self.test_tokens_button_wrapper.set_enabled(False)
-        self.test_tokens_button_wrapper.button.setText("Testing...")
+    def setup_scraper_signals(self) -> None:
+        logging.info("Setting up scraper signals")
+        scraper = self.base.scraper
+        ui = self.ui_manager
+        scraper.testing_finished.connect(self.testing_finished)
+        scraper.fetching_started.connect(self.fetching_started)
+        scraper.fetching_finished.connect(self.fetching_finished)
+        scraper.progress_inner_changed.connect(ui.inner_progress_changed)
+        scraper.progress_outer_changed.connect(ui.outer_progress_changed)
 
     @pyqtSlot(bool)
     def testing_finished(self, success: bool) -> None:
         """Enable the "Test Tokens" button and change its text to "Test Tokens" """
         logging.debug("Signal received: testing_finished")
-        self.test_tokens_button_wrapper.set_enabled(True)
-        self.test_tokens_button_wrapper.button.setText("Test Tokens")
-        self.ready_signal.emit(success)
+        base = self.base
         if success:
-            path = pathlib.Path(self.config_path_text.text())
+            base.state_changed_signal.emit(GUIStates.READY)
+            self.checkbox_state_changed()
+            path = pathlib.Path(base.config_path_text.text())
             if path.exists():
-                self.scraper.save_config(str(path))
+                base.scraper.save_config(str(path))
         else:
-            self.show_error("Tokens are invalid!")
-
-    @pyqtSlot(bool)
-    def ready_changed(self, ready: bool) -> None:
-        """Enable or disable the "Fetch Data" button based on whether the
-        scraper is ready.
-        """
-        logging.debug("Signal received: ready_changed")
-        self.ready = ready
-        if ready:
-            self.status_icon_label.setText("Ready")
-            self.status_icon_label.setStyleSheet("color : green;")
-        else:
-            self.status_icon_label.setText("Not Ready")
-            self.status_icon_label.setStyleSheet("color : red;")
+            base.state_changed_signal.emit(GUIStates.NOT_READY)
+            base.show_error("Tokens are invalid!")
 
     @pyqtSlot()
-    def fetch_started(self) -> None:
-        """Change the text of the "Fetch Data" button to "Cancel", and turn the
-        self.progress_outer and self.progress_inner widgets into progress bars.
-        """
-        logging.debug("Signal received: fetch_started")
-        self.fetch_button_wrapper.button.setText("Cancel")
-        self.fetch_button_wrapper.button.clicked.disconnect(self.fetch_data)
-        self.fetch_button_wrapper.button.clicked.connect(self.cancel_fetch)
-        self.show_progress_bars()
+    def fetching_started(self) -> None:
+        """Change the state to FETCHING"""
+        logging.debug("Signal received: fetching_started")
+        base = self.base
+        base.state_changed_signal.emit(GUIStates.FETCHING)
 
-    @pyqtSlot(int, int)
-    def outer_progress_changed(
-        self, current_value: int, max_value: int
-    ) -> None:
-        """Set the value of the outer progress bar."""
-        logging.debug("Signal received: progress_bar_outer")
-        self.progress_outer.setMaximum(max_value)
-        self.progress_outer.setValue(current_value)
-
-    @pyqtSlot(int, int)
-    def inner_progress_changed(
-        self, current_value: int, max_value: int
-    ) -> None:
-        """Set the value of the inner progress bar."""
-        logging.debug("Signal received: progress_bar_inner")
-        self.progress_inner.setMaximum(max_value)
-        self.progress_inner.setValue(current_value)
+    @pyqtSlot(dict)
+    def fetching_finished(self, data: dict) -> None:
+        """Change the state to READY"""
+        logging.debug("Signal received: fetching_finished")
+        base = self.base
+        base.state_changed_signal.emit(GUIStates.READY)
+        base.show_info("Data fetched successfully!")
+        base.data = data
 
     @pyqtSlot()
-    def cancel_fetch_signal(
-        self,
-    ) -> None:
-        """Set to the cancelling state."""
+    def cancel_fetch(self) -> None:
+        """Change the state to CANCELLING"""
         logging.debug("Signal received: cancel_fetch")
-        self.fetch_button_wrapper.button.setText("Cancelling...")
-        self.fetch_button_wrapper.button.clicked.disconnect(self.cancel_fetch)
-        self.fetch_button_wrapper.button.clicked.connect(self.fetch_data)
-        self.hide_progress_bars()
-        self.fetch_button_wrapper.button.setEnabled(False)
-        QTimer.singleShot(3000, self.enable_fetch_button)
+        base = self.base
+        base.scraper.cancelled = True
+        base.state_changed_signal.emit(GUIStates.CANCELLING)
 
-    @pyqtSlot()
-    def enable_fetch_button(self) -> None:
-        """Enable the "Fetch Data" button."""
-        logging.debug("Enabling fetch button")
-        self.fetch_button_wrapper.button.setText("Fetch Data")
-        self.fetch_button_wrapper.button.setEnabled(True)
+    @pyqtSlot(GUIStates)
+    def state_changed(self, new_state: GUIStates) -> None:
+        logging.debug("Signal received: state_changed")
+        func_map = {
+            GUIStates.NOT_READY: self.state_not_ready,
+            GUIStates.READY: self.state_ready,
+            GUIStates.TESTING: self.state_testing,
+            GUIStates.FETCHING: self.state_fetching,
+            GUIStates.CANCELLING: self.state_cancelling,
+        }
+        self.base.state = new_state
+        func_map[new_state]()
+
+    def state_not_ready(self) -> None:
+        logging.info("State changed to NOT_READY")
+        base = self.base
+        base.ready = False
+        base.status_icon_label.setText("Not Ready")
+        base.status_icon_label.setStyleSheet("color : red;")
+        base.fetch_button_wrapper.set_enabled(False)
+        base.view_button_wrapper.set_enabled(False)
+        base.export_all_button_wrapper.set_enabled(False)
+        base.test_tokens_button_wrapper.set_enabled(True)
+        base.test_tokens_button.setText("Test Tokens")
+
+    def state_ready(self) -> None:
+        logging.info("State changed to READY")
+        base = self.base
+        base.ready = True
+        base.status_icon_label.setText("Ready")
+        base.status_icon_label.setStyleSheet("color : green;")
+        base.fetch_button_wrapper.set_enabled(True)
+        base.view_button_wrapper.set_enabled(False)
+        base.export_all_button_wrapper.set_enabled(False)
+        base.test_tokens_button_wrapper.set_enabled(True)
+        base.test_tokens_button.setText("Test Tokens")
+        base.fetch_button.setText("Fetch")
+        self.ui_manager.hide_progress_bars()
+
+    def state_testing(self) -> None:
+        logging.info("State changed to TESTING")
+        base = self.base
+        base.test_tokens_button_wrapper.set_enabled(False)
+        base.test_tokens_button.setText("Testing...")
+
+    def state_fetching(self) -> None:
+        logging.info("State changed to FETCHING")
+        base = self.base
+        base.fetch_button.setText("Cancel")
+        self.ui_manager.show_progress_bars()
+
+    def state_cancelling(self) -> None:
+        logging.info("State changed to CANCELLING")
+        base = self.base
+        base.fetch_button.setText("Cancelling...")
+        base.fetch_button.setEnabled(False)
 
     @pyqtSlot(SplatNet_Scraper_Wrapper)
     def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:
-        """Set the scraper and make changes that depend on it.
+        logging.info("Setting scraper")
+        base = self.base
+        base.scraper = scraper
+        base.state_changed_signal.emit(GUIStates.NOT_READY)
+        self.setup_scraper_signals()
 
-        Args:
-            scraper (SplatNet_Scraper_Wrapper): The scraper to set.
-        """
-        logging.debug("Setting scraper")
-        self.scraper = scraper
-        self.test_tokens_button_wrapper.set_enabled(True)
-        self.load_config_button_wrapper.set_enabled(True)
-        self.connect_scraper_signals()
-        logging.debug("Scraper set")
+    def cancel_fetch_data(self) -> None:
+        logging.info("Cancelling fetch")
+        base = self.base
+        base.cancel_signal.emit()
+
+    def fetch_data(self) -> None:
+        logging.info("Fetching data")
+        base = self.base
+        if base.scraper is None:
+            logging.error("No scraper set, this should not happen")
+            return
+
+        if base.state in (GUIStates.FETCHING, GUIStates.CANCELLING):
+            logging.debug("State is FETCHING or CANCELLING, returning")
+            return
+
+        base.thread = QThread()
+        logging.debug("Moving scraper to thread and connecting signals")
+        base.scraper.moveToThread(base.thread)
+        partial_fetch_data = partial(
+            base.scraper.fetch_data,
+            anarchy=base.anarchy_check.isChecked(),
+            private=base.private_check.isChecked(),
+            turf_war=base.turf_check.isChecked(),
+            salmon_run=base.salmon_check.isChecked(),
+            x_battle=base.x_check.isChecked(),
+            challenge=base.challenge_check.isChecked(),
+            limit=base.limit_spinbox.value(),
+        )
+        base.thread.started.connect(partial_fetch_data)
+        base.scraper.fetching_finished.connect(base.thread.quit)
+        base.thread.finished.connect(base.thread.deleteLater)
+        logging.debug("Starting thread")
+        base.state_changed_signal.emit(GUIStates.FETCHING)
+        base.thread.start()
+
+    # Button functions
+    def config_button_clicked(self) -> None:
+        logging.info("Config path button clicked")
+        self.ui_manager.open_file_dialog()
+
+    def load_config_button_clicked(self) -> None:
+        logging.info("Load config button clicked")
+        self.ui_manager.load_config()
+
+    def test_tokens_button_clicked(self) -> None:
+        logging.info("Test tokens button clicked")
+        base = self.base
+        if base.scraper is None:
+            logging.error("No scraper set")
+            return
+
+        base.thread = QThread()
+        logging.debug("Moving scraper to thread and connecting signals")
+        base.scraper.moveToThread(base.thread)
+        base.thread.started.connect(base.scraper.test_tokens)
+        base.scraper.testing_finished.connect(base.thread.quit)
+        base.thread.finished.connect(base.thread.deleteLater)
+        logging.debug("Starting thread")
+        base.state_changed_signal.emit(GUIStates.NOT_READY)
+        base.state_changed_signal.emit(GUIStates.TESTING)
+        base.thread.start()
+
+    def fetch_button_clicked(self) -> None:
+        logging.info("Fetch button clicked")
+        base = self.base
+        if base.scraper is None:
+            logging.error("No scraper set")
+            return
+
+        if base.state == GUIStates.FETCHING:
+            logging.debug("State is FETCHING, cancelling fetch")
+            self.cancel_fetch()
+        elif base.state == GUIStates.READY:
+            logging.debug("State is READY, fetching data")
+            self.fetch_data()
+        else:
+            logging.error("State is not READY or FETCHING")
+            # Do nothing
+            return
+
+    def checkbox_state_changed(self) -> None:
+        logging.info("Checkbox state changed")
+        base = self.base
+
+        if (
+            any(checkbox.isChecked() for checkbox in base.checkboxes)
+            and base.ready
+        ):
+            logging.debug(
+                "At least one checkbox is checked and scraper is ready"
+            )
+            base.fetch_button_wrapper.set_enabled(True)
+        else:
+            logging.debug("No checkboxes are checked or scraper is not ready")
+            base.fetch_button_wrapper.set_enabled(False)
 
 
 if __name__ == "__main__":
-    # Reset logging
     logging.root.handlers = []
     logging.basicConfig(level=logging.DEBUG)
-
-    app = QApplication([])
-    ex = App()
-    ex.show()
-    app.exec_()
+    app = App()
+    app.run()
