@@ -1,5 +1,6 @@
 import logging
 import pathlib
+from functools import partial
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -49,6 +50,7 @@ class App(QObject):
         base.load_config_button.clicked.connect(self.load_config_button_clicked)
         base.test_tokens_button.clicked.connect(self.test_tokens_button_clicked)
         base.fetch_button.clicked.connect(self.fetch_button_clicked)
+        base.cancel_signal.connect(self.cancel_fetch)
 
     def setup_checkboxes(self) -> None:
         logging.info("Setting up checkboxes")
@@ -70,8 +72,8 @@ class App(QObject):
         scraper = self.base.scraper
         ui = self.ui_manager
         scraper.testing_finished.connect(self.testing_finished)
-        # scraper.fetching_started.connect(self.fetching_started)
-        # scraper.fetching_finished.connect(self.fetching_finished)
+        scraper.fetching_started.connect(self.fetching_started)
+        scraper.fetching_finished.connect(self.fetching_finished)
         scraper.progress_inner_changed.connect(ui.inner_progress_changed)
         scraper.progress_outer_changed.connect(ui.outer_progress_changed)
 
@@ -89,13 +91,30 @@ class App(QObject):
         else:
             base.state_changed_signal.emit(GUIStates.NOT_READY)
             base.show_error("Tokens are invalid!")
-    
+
     @pyqtSlot()
     def fetching_started(self) -> None:
         """Change the state to FETCHING"""
         logging.debug("Signal received: fetching_started")
         base = self.base
         base.state_changed_signal.emit(GUIStates.FETCHING)
+
+    @pyqtSlot(dict)
+    def fetching_finished(self, data: dict) -> None:
+        """Change the state to READY"""
+        logging.debug("Signal received: fetching_finished")
+        base = self.base
+        base.state_changed_signal.emit(GUIStates.READY)
+        base.show_info("Data fetched successfully!")
+        base.data = data
+
+    @pyqtSlot()
+    def cancel_fetch(self) -> None:
+        """Change the state to CANCELLING"""
+        logging.debug("Signal received: cancel_fetch")
+        base = self.base
+        base.scraper.cancelled = True
+        base.state_changed_signal.emit(GUIStates.CANCELLING)
 
     @pyqtSlot(GUIStates)
     def state_changed(self, new_state: GUIStates) -> None:
@@ -133,6 +152,8 @@ class App(QObject):
         base.export_all_button_wrapper.set_enabled(False)
         base.test_tokens_button_wrapper.set_enabled(True)
         base.test_tokens_button.setText("Test Tokens")
+        base.fetch_button.setText("Fetch")
+        self.ui_manager.hide_progress_bars()
 
     def state_testing(self) -> None:
         logging.info("State changed to TESTING")
@@ -144,16 +165,12 @@ class App(QObject):
         logging.info("State changed to FETCHING")
         base = self.base
         base.fetch_button.setText("Cancel")
-        base.fetch_button.clicked.disconnect(self.fetch_data)
-        base.fetch_button.clicked.connect(self.cancel_fetch)
         self.ui_manager.show_progress_bars()
 
     def state_cancelling(self) -> None:
         logging.info("State changed to CANCELLING")
         base = self.base
         base.fetch_button.setText("Cancelling...")
-        base.fetch_button.clicked.disconnect(self.cancel_fetch)
-        base.fetch_button.clicked.connect(self.fetch_data)
         base.fetch_button.setEnabled(False)
 
     @pyqtSlot(SplatNet_Scraper_Wrapper)
@@ -164,21 +181,41 @@ class App(QObject):
         base.state_changed_signal.emit(GUIStates.NOT_READY)
         self.setup_scraper_signals()
 
-    def cancel_fetch(self) -> None:
+    def cancel_fetch_data(self) -> None:
         logging.info("Cancelling fetch")
         base = self.base
         base.cancel_signal.emit()
 
     def fetch_data(self) -> None:
         logging.info("Fetching data")
-        # TODO: Remove this, it is outdated and superceded by state_changed
-        # Instead, this will handle the actual fetching
         base = self.base
-        base.fetch_button_wrapper.set_enabled(False)
-        base.view_button_wrapper.set_enabled(False)
-        base.export_all_button_wrapper.set_enabled(False)
-        base.cancel_signal.emit()
-        base.fetching_started.emit()
+        if base.scraper is None:
+            logging.error("No scraper set, this should not happen")
+            return
+
+        if base.state in (GUIStates.FETCHING, GUIStates.CANCELLING):
+            logging.debug("State is FETCHING or CANCELLING, returning")
+            return
+
+        base.thread = QThread()
+        logging.debug("Moving scraper to thread and connecting signals")
+        base.scraper.moveToThread(base.thread)
+        partial_fetch_data = partial(
+            base.scraper.fetch_data,
+            anarchy=base.anarchy_check.isChecked(),
+            private=base.private_check.isChecked(),
+            turf_war=base.turf_check.isChecked(),
+            salmon_run=base.salmon_check.isChecked(),
+            x_battle=base.x_check.isChecked(),
+            challenge=base.challenge_check.isChecked(),
+            limit=base.limit_spinbox.value(),
+        )
+        base.thread.started.connect(partial_fetch_data)
+        base.scraper.fetching_finished.connect(base.thread.quit)
+        base.thread.finished.connect(base.thread.deleteLater)
+        logging.debug("Starting thread")
+        base.state_changed_signal.emit(GUIStates.FETCHING)
+        base.thread.start()
 
     # Button functions
     def config_button_clicked(self) -> None:
@@ -213,7 +250,7 @@ class App(QObject):
         if base.scraper is None:
             logging.error("No scraper set")
             return
-        
+
         if base.state == GUIStates.FETCHING:
             logging.debug("State is FETCHING, cancelling fetch")
             self.cancel_fetch()

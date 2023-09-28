@@ -66,6 +66,7 @@ class BaseClass(QMainWindow):
     scraper: SplatNet_Scraper_Wrapper
     state: GUIStates
     ready: bool
+    data: dict
 
     # Button wrappers
     fetch_button_wrapper: Button
