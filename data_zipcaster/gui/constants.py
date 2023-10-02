@@ -19,3 +19,4 @@ class GUIStates(Enum):
     FETCHING = auto()
     CANCELLING = auto()
     DATA_READY = auto()
+    CONTINUOUS = auto()

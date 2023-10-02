@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from data_zipcaster.gui.base_class import BaseClass
 from data_zipcaster.gui.constants import GUIStates
+from data_zipcaster.gui.state_manager import StateManager
 from data_zipcaster.gui.ui_manager import UIManager
 from data_zipcaster.gui.utils import SplatNet_Scraper_Wrapper
 
@@ -21,6 +22,7 @@ class App(QObject):
         self.app = QApplication([])
         self.base = BaseClass()
         self.ui_manager = UIManager(self.base)
+        self.state_manager = StateManager(self.base, self.ui_manager)
 
     def setup(self) -> None:
         """Sets up the UI."""
@@ -42,7 +44,7 @@ class App(QObject):
         base = self.base
 
         # Base Signals
-        base.state_changed_signal.connect(self.state_changed)
+        base.state_changed_signal.connect(self.state_manager.state_changed)
         base.set_scraper_signal.connect(self.set_scraper)
 
         # Button signals
@@ -115,63 +117,6 @@ class App(QObject):
         base = self.base
         base.scraper.cancelled = True
         base.state_changed_signal.emit(GUIStates.CANCELLING)
-
-    @pyqtSlot(GUIStates)
-    def state_changed(self, new_state: GUIStates) -> None:
-        logging.debug("Signal received: state_changed")
-        func_map = {
-            GUIStates.NOT_READY: self.state_not_ready,
-            GUIStates.READY: self.state_ready,
-            GUIStates.TESTING: self.state_testing,
-            GUIStates.FETCHING: self.state_fetching,
-            GUIStates.CANCELLING: self.state_cancelling,
-        }
-        self.base.state = new_state
-        func_map[new_state]()
-
-    def state_not_ready(self) -> None:
-        logging.info("State changed to NOT_READY")
-        base = self.base
-        base.ready = False
-        base.status_icon_label.setText("Not Ready")
-        base.status_icon_label.setStyleSheet("color : red;")
-        base.fetch_button_wrapper.set_enabled(False)
-        base.view_button_wrapper.set_enabled(False)
-        base.export_all_button_wrapper.set_enabled(False)
-        base.test_tokens_button_wrapper.set_enabled(True)
-        base.test_tokens_button.setText("Test Tokens")
-
-    def state_ready(self) -> None:
-        logging.info("State changed to READY")
-        base = self.base
-        base.ready = True
-        base.status_icon_label.setText("Ready")
-        base.status_icon_label.setStyleSheet("color : green;")
-        base.fetch_button_wrapper.set_enabled(True)
-        base.view_button_wrapper.set_enabled(False)
-        base.export_all_button_wrapper.set_enabled(False)
-        base.test_tokens_button_wrapper.set_enabled(True)
-        base.test_tokens_button.setText("Test Tokens")
-        base.fetch_button.setText("Fetch")
-        self.ui_manager.hide_progress_bars()
-
-    def state_testing(self) -> None:
-        logging.info("State changed to TESTING")
-        base = self.base
-        base.test_tokens_button_wrapper.set_enabled(False)
-        base.test_tokens_button.setText("Testing...")
-
-    def state_fetching(self) -> None:
-        logging.info("State changed to FETCHING")
-        base = self.base
-        base.fetch_button.setText("Cancel")
-        self.ui_manager.show_progress_bars()
-
-    def state_cancelling(self) -> None:
-        logging.info("State changed to CANCELLING")
-        base = self.base
-        base.fetch_button.setText("Cancelling...")
-        base.fetch_button.setEnabled(False)
 
     @pyqtSlot(SplatNet_Scraper_Wrapper)
     def set_scraper(self, scraper: SplatNet_Scraper_Wrapper) -> None:

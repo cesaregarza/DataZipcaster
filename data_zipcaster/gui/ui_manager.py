@@ -137,6 +137,16 @@ class UIManager(QObject):
         base.widget_outer.show()
         base.widget_inner.show()
 
+    def set_checkboxes_state(
+        self, enabled: bool, all_checkboxes: bool = False
+    ) -> None:
+        """Enable or disable all checkboxes."""
+        logging.info("Setting checkboxes enabled: %s", enabled)
+        base = self.base
+        checkboxes = base.all_checkboxes if all_checkboxes else base.checkboxes
+        for checkbox in checkboxes:
+            checkbox.setEnabled(enabled)
+
     # Signal functions
     @pyqtSlot(int, int)
     def outer_progress_changed(

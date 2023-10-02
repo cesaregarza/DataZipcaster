@@ -100,6 +100,10 @@ class BaseClass(QMainWindow):
         ]
 
     @property
+    def all_checkboxes(self) -> list[QCheckBox]:
+        return self.checkboxes + [self.continuous_check]
+
+    @property
     def cwd(self) -> str:
         if not hasattr(self, "_cwd"):
             self._cwd = pathlib.Path.cwd()
@@ -113,6 +117,7 @@ class BaseClass(QMainWindow):
         super().__init__(*args, **kwargs)
         self.state = GUIStates.INIT
         self.ready = False
+        self.data = {}
 
     def show_info(self, msg: str, window_title: str = "Info") -> None:
         """Show an info message.
