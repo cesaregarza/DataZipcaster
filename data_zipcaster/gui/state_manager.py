@@ -22,10 +22,13 @@ class StateManager(QObject):
         self.base = base
         self.ui_manager = ui_manager
 
-    @pyqtSlot(GUIStates)
-    def state_changed(self, new_state: GUIStates) -> None:
-        logging.debug("Signal received: state_changed")
-        func_map: StateMap = {
+    @property
+    def state(self) -> GUIStates:
+        return self.base.state
+
+    @property
+    def state_map(self) -> StateMap:
+        return {
             GUIStates.NOT_READY: self.state_not_ready,
             GUIStates.READY: self.state_ready,
             GUIStates.TESTING: self.state_testing,
@@ -34,12 +37,38 @@ class StateManager(QObject):
             GUIStates.DATA_READY: self.state_data_ready,
             GUIStates.CONTINUOUS: self.state_continuous,
         }
+
+    @property
+    def state_transition_map(self) -> StateTransitionMap:
+        return {
+            (
+                GUIStates.CONTINUOUS,
+                GUIStates.FETCHING,
+            ): self.continuous_to_fetching,
+        }
+
+    @pyqtSlot(GUIStates)
+    def state_changed(self, new_state: GUIStates) -> None:
+        logging.debug("Signal received: state_changed")
+        logging.debug(
+            "Attempting to change state from %s to %s",
+            self.base.state.name,
+            new_state.name,
+        )
+
+        if (self.base.state, new_state) in self.state_transition_map:
+            logging.debug("Transitioning state")
+            self.state_transition_map[(self.base.state, new_state)]()
+            return
+
+        logging.debug("No transition found, changing state")
+
         self.base.state = new_state
-        func_map[new_state]()
+        self.state_map[new_state]()
 
     def state_transition(
         self, old_state: GUIStates, new_state: GUIStates
-    ) -> None:
+    ) -> bool:
         logging.debug(
             "Transitioning from %s to %s", old_state.name, new_state.name
         )
@@ -49,7 +78,10 @@ class StateManager(QObject):
                 GUIStates.FETCHING,
             ): self.continuous_to_fetching,
         }
-        transition_map[(old_state, new_state)]()
+        if (old_state, new_state) in transition_map:
+            transition_map[(old_state, new_state)]()
+            return True
+        return False
 
     ### State functions ###
     # These functions should only make changes to the UI, and should not
