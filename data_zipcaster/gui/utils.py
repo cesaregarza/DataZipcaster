@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 import configparser as cp
 import logging
 import os
