@@ -4,6 +4,7 @@ import os
 from typing import Callable, ParamSpec, TypeVar, cast
 
 from PyQt5.QtCore import QCoreApplication, QObject, pyqtSignal
+from splatnet3_scraper.constants import TOKENS
 from splatnet3_scraper.query import QueryHandler
 from splatnet3_scraper.scraper import SplatNet_Scraper
 
@@ -110,11 +111,18 @@ class SplatNet_Scraper_Wrapper(QObject):
         if "splatnet" not in config:
             config["splatnet"] = {}
 
-        token_manager = self.scraper.query_handler.config.token_manager
-        config["splatnet"]["session_token"] = token_manager.get("session_token")
-        config["splatnet"]["gtoken"] = token_manager.get("gtoken")
-        config["splatnet"]["bullet_token"] = token_manager.get("bullet_token")
-        config["splatnet"]["ftoken_url"] = ",".join(token_manager.f_token_url)
+        scraper_config = self.scraper.query_handler.config
+        for value_name in [
+            TOKENS.SESSION_TOKEN,
+            TOKENS.GTOKEN,
+            TOKENS.BULLET_TOKEN,
+            "ftoken_url",
+        ]:
+            value = scraper_config.get_value(value_name)
+            if isinstance(value, list):
+                value = ",".join(value)
+            config["splatnet"][value_name] = value
+
         with open(config_path, "w") as f:
             logging.debug("Writing config file")
             config.write(f)

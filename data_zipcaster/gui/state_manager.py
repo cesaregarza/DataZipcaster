@@ -26,6 +26,10 @@ class StateManager(QObject):
     def state(self) -> GUIStates:
         return self.base.state
 
+    @state.setter
+    def state(self, value: GUIStates) -> None:
+        self.base.state = value
+
     @property
     def state_map(self) -> StateMap:
         return {
@@ -159,6 +163,13 @@ class StateManager(QObject):
     # transitioning from CONTINUOUS to FETCHING. Try to keep UI changes in
     # state functions, with minimal UI changes in state transition functions.
     def continuous_to_fetching(self) -> None:
+        """Transition function for CONTINUOUS to FETCHING.
+
+        Does not actually change the state, but applies all the changes that
+        would be made if the state was changed to FETCHING. This is because the
+        fetch button will attempt to change the state to FETCHING, but we want
+        to keep the state as CONTINUOUS.
+        """
         logging.info("Transitioning from CONTINUOUS to FETCHING")
         # This signal should only be emitted when fetch_data is called, so
         # we can assume that the state is READY
