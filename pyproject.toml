@@ -11,7 +11,7 @@ python = "^3.10"
 colorama = "^0.4.6"
 msgpack = "^1.0.5"
 rich-click = "^1.6.1"
-splatnet3-scraper = "^0.10.0"
+splatnet3-scraper = "^1.0.0"
 pydantic = "^2.0.3"
 pyqt5 = "^5.15.9"
 
