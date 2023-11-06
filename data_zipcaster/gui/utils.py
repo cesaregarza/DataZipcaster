@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 import configparser as cp
 import logging
 import os
@@ -68,7 +71,7 @@ class SplatNet_Scraper_Wrapper(QObject):
             return False
 
     @classmethod
-    def from_config(cls, config_path: str) -> "SplatNet_Scraper_Wrapper":
+    def from_config(cls, config_path: str) -> SplatNet_Scraper_Wrapper:
         config = cp.ConfigParser()
         config.read(config_path)
         splatnet = config["splatnet"]
@@ -87,10 +90,17 @@ class SplatNet_Scraper_Wrapper(QObject):
         return cls(SplatNet_Scraper(query_handler))
 
     @classmethod
-    def from_session_token(
-        cls, session_token: str
-    ) -> "SplatNet_Scraper_Wrapper":
+    def from_session_token(cls, session_token: str) -> SplatNet_Scraper_Wrapper:
         scraper = SplatNet_Scraper.from_session_token(session_token)
+        scraper.query_handler.config.token_manager.f_token_url = [
+            IMINK_URL,
+            NXAPI_URL,
+        ]
+        return cls(scraper)
+
+    @classmethod
+    def from_s3s_config(cls, config_path: str) -> SplatNet_Scraper_Wrapper:
+        scraper = SplatNet_Scraper.from_s3s_config(config_path)
         scraper.query_handler.config.token_manager.f_token_url = [
             IMINK_URL,
             NXAPI_URL,
