@@ -177,25 +177,61 @@ class SplatNet_Scraper_Wrapper(QObject):
         self.cancelled = False
         self.fetching_started.emit()
         try:
-            self.simulated_fetch()
+            self.fetch(
+                anarchy=anarchy,
+                private=private,
+                turf_war=turf_war,
+                x_battle=x_battle,
+                challenge=challenge,
+                salmon_run=salmon_run,
+                limit=limit,
+            )
         except CancelFetchException:
             logging.debug("Fetch cancelled")
             self.fetching_finished.emit({})
 
-    def simulated_fetch(self) -> None:
-        logging.debug("Simulating fetch")
+    def fetch(
+        self,
+        anarchy: bool = False,
+        private: bool = False,
+        turf_war: bool = False,
+        x_battle: bool = False,
+        challenge: bool = False,
+        salmon_run: bool = False,
+        limit: int = 50,
+    ) -> None:
+        logging.debug("Fetching data")
         self.cancelled = False
-        import time
 
-        counter = 10
-        self.progress_outer_changed.emit(0, 1)
-        self.progress_inner_changed.emit(0, 10)
-        while counter > 0:
-            logging.debug("Counter: %s", counter)
-            time.sleep(1)
-            counter -= 1
-            self.progress_inner_changed.emit(10 - counter, 10)
-            if self.cancelled:
-                logging.debug("SIMULATED Cancelled")
-                raise CancelFetchException()
-        self.fetching_finished.emit({})
+        flags = [
+            # (flag, name, print name)
+            (anarchy, "anarchy", "Anarchy Battles"),
+            (private, "private", "Private Battles"),
+            (turf_war, "turf", "Turf War"),
+            (x_battle, "xbattle", "X Battles"),
+            (challenge, "challenge", "Challenges"),
+            (salmon_run, "salmon_run", "Salmon Run"),
+        ]
+        flags = [(name, print_name) for flag, name, print_name in flags if flag]
+        logging.debug("Fetching: %s", flags)
+        out = {}
+        for i, (name, print_name) in enumerate(flags):
+            logging.debug("Fetching %s", print_name)
+            self.progress_outer_changed.emit(i, len(flags))
+            data = self.scraper.get_matches(
+                name,
+                detail=True,
+                limit=limit,
+                progress_callback=self.progress_callback,
+            )
+            logging.debug("Fetched %s", print_name)
+            out[name] = data
+        logging.debug("Emitting fetching_finished signal")
+        self.fetching_finished.emit(out)
+
+    def progress_callback(self, current: int, total: int) -> None:
+        logging.debug("Progress: %s/%s", current, total)
+        if self.cancelled:
+            logging.debug("Detected cancellation, raising CancelFetchException")
+            raise CancelFetchException()
+        self.progress_inner_changed.emit(current, total)

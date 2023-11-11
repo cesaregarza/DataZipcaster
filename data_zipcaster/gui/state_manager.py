@@ -59,6 +59,9 @@ class StateManager(QObject):
             self.base.state.name,
             new_state.name,
         )
+        if self.base.state == new_state:
+            logging.debug("State is already %s, doing nothing", new_state.name)
+            return
 
         if (self.base.state, new_state) in self.state_transition_map:
             logging.debug("Transitioning state")
